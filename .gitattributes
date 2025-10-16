@@ -1,8 +1,8 @@
-# Generated files should not have line ending conversion
+# Regular source files (general pattern first)
+*.cs text eol=crlf
+
+# Generated files should not have line ending conversion (specific patterns last)
 *.generated.cs -text
 *.generated.yaml -text
-
-# Regular source files
-*.cs text eol=crlf
 *.sh text eol=lf
 Makefile text eol=lf
