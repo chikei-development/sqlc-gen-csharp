@@ -127,10 +127,10 @@ internal partial class QueriesGen(DbDriver dbDriver, string namespaceName)
     private MemberDeclarationSyntax? GetQueryParamsDataclass(Query query)
     {
         if (query.Params.Count <= 0) return null;
-        
+
         // Group parameters by Column.Name to detect duplicates and conflicts
         var parameterGroups = query.Params.GroupBy(p => p.Column.Name).ToList();
-        
+
         // Check for nullable/non-nullable conflicts
         foreach (var group in parameterGroups)
         {
@@ -144,7 +144,7 @@ internal partial class QueriesGen(DbDriver dbDriver, string namespaceName)
                 }
             }
         }
-        
+
         // Deduplicate parameters by Column.Name to handle cases where the same named parameter
         // is used multiple times in the SQL query (e.g., sqlc.narg(last_created_at) used 3 times)
         var columns = parameterGroups
