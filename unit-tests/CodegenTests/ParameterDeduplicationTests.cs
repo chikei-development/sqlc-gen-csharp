@@ -383,4 +383,73 @@ public class ParameterDeduplicationTests
             Assert.That(response.Result.Files, Is.Not.Empty);
         });
     }
+
+    [Test]
+    public void TestParameterDeduplicationInGeneratedMethodCode()
+    {
+        // Arrange - Create a query with duplicate parameter usage to test method generation
+        var duplicateColumn = new Column 
+        { 
+            Name = "test_param", 
+            Type = new Identifier { Name = "text" },
+            NotNull = false
+        };
+
+        var parameters = new[]
+        {
+            new Parameter { Number = 1, Column = new Column { Name = "other_param", Type = new Identifier { Name = "text" }, NotNull = true } },
+            new Parameter { Number = 2, Column = duplicateColumn.Clone() },
+            new Parameter { Number = 3, Column = duplicateColumn.Clone() }, // Duplicate - same name, same nullability
+            new Parameter { Number = 4, Column = duplicateColumn.Clone() }  // Another duplicate
+        };
+
+        var query = new Query
+        {
+            Filename = "query.sql",
+            Cmd = ":many", 
+            Name = "TestMethodParameterDeduplication",
+            Text = "SELECT 1 WHERE other_param = $1 AND (test_param IS NULL OR test_param = $2 OR test_param != $3 OR test_param LIKE $4)",
+            Columns = { new Column { Name = "result", Type = new Identifier { Name = "integer" } } },
+            Params = { parameters }
+        };
+
+        var request = new GenerateRequest
+        {
+            Settings = _postgresSettings,
+            Catalog = _emptyCatalog,
+            Queries = { query },
+            PluginOptions = ByteString.CopyFrom("{}", Encoding.UTF8)
+        };
+
+        // Act
+        var response = CodeGenerator.Generate(request);
+
+        // Assert
+        Assert.That(response.Result.Files, Is.Not.Empty);
+        
+        var queryFile = response.Result.Files.First(f => f.Name == "QuerySql.cs");
+        var generatedCode = queryFile.Contents.ToStringUtf8();
+
+        // Verify that each parameter appears exactly twice (once per code branch - connection and transaction)
+        // This is expected because we generate two code branches for handling different connection scenarios
+        var testParamOccurrences = System.Text.RegularExpressions.Regex.Matches(
+            generatedCode, @"command\.Parameters\.AddWithValue\(""@test_param""").Count;
+        
+        Assert.That(testParamOccurrences, Is.EqualTo(2), 
+            "test_param should be added exactly twice (once per branch) in the generated method");
+
+        var otherParamOccurrences = System.Text.RegularExpressions.Regex.Matches(
+            generatedCode, @"command\.Parameters\.AddWithValue\(""@other_param""").Count;
+        
+        Assert.That(otherParamOccurrences, Is.EqualTo(2), 
+            "other_param should be added exactly twice (once per branch) in the generated method");
+
+        // Verify the Args record only has unique parameters (not duplicated in the record itself)
+        Assert.That(generatedCode, Contains.Substring("TestMethodParameterDeduplicationArgs(string OtherParam, string? TestParam)"));
+        
+        // Verify no consecutive duplicate parameter additions within the same branch
+        // This regex looks for the same parameter being added twice in a row within the same block
+        Assert.That(generatedCode, Does.Not.Match(@"AddWithValue\(""@test_param""[^}]*AddWithValue\(""@test_param"""),
+            "Should not have duplicate AddWithValue calls for the same parameter within a single code branch");
+    }
 }

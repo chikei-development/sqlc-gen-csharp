@@ -528,7 +528,10 @@ public sealed partial class MySqlConnectorDriver(
         var connectionVar = Variable.Connection.AsVarName();
         var nullConverterFn = Variable.NullConverterFn.AsVarName();
 
-        var loaderColumns = query.Params.Select(p => $"\"{p.Column.Name}\"").JoinByComma();
+        var loaderColumns = query.Params
+            .GroupBy(p => p.Column.Name)
+            .Select(g => $"\"{g.First().Column.Name}\"")
+            .JoinByComma();
         var (establishConnection, connectionOpen) = EstablishConnection(query);
 
         return $$"""

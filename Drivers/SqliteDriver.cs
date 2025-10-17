@@ -318,7 +318,13 @@ public sealed partial class SqliteDriver(
         {
             var commandVar = Variable.Command.AsVarName();
             var argsVar = Variable.Args.AsVarName();
-            var addRecordParamsToCommand = query.Params.Select(p =>
+            // Deduplicate parameters by Column.Name for batch operations
+            var uniqueParams = query.Params
+                .GroupBy(p => p.Column.Name)
+                .Select(g => g.First())
+                .ToList();
+                
+            var addRecordParamsToCommand = uniqueParams.Select(p =>
             {
                 var param = p.Column.Name.ToPascalCase();
                 var nullParamCast = p.Column.NotNull ? string.Empty : " ?? (object)DBNull.Value";
