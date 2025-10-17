@@ -1,7 +1,9 @@
 CREATE TABLE authors (
     id BIGSERIAL PRIMARY KEY,
     name TEXT NOT NULL,
-    bio TEXT
+    bio TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE books (

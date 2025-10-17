@@ -577,7 +577,11 @@ public sealed class NpgsqlDriver : EnumDbDriver, IOne, IMany, IExec, IExecRows, 
 
         string GetCopyCommand()
         {
-            var copyParams = query.Params.Select(p => p.Column.Name).JoinByComma();
+            // Deduplicate parameters by Column.Name for COPY command
+            var copyParams = query.Params
+                .GroupBy(p => p.Column.Name)
+                .Select(g => g.First().Column.Name)
+                .JoinByComma();
             return $"COPY {query.InsertIntoTable.Name} ({copyParams}) FROM STDIN (FORMAT BINARY)";
         }
     }
@@ -673,7 +677,14 @@ public sealed class NpgsqlDriver : EnumDbDriver, IOne, IMany, IExec, IExecRows, 
 
     public override string AddParametersToCommand(Query query)
     {
-        return query.Params.Select(p =>
+        // Deduplicate parameters by Column.Name to avoid adding the same parameter multiple times
+        // This handles cases where the same named parameter is used multiple times in SQL
+        var uniqueParams = query.Params
+            .GroupBy(p => p.Column.Name)
+            .Select(g => g.First()) // Take the first parameter for each unique name
+            .ToList();
+
+        return uniqueParams.Select(p =>
         {
             var commandVar = Variable.Command.AsVarName();
             var param = $"{Variable.Args.AsVarName()}.{p.Column.Name.ToPascalCase()}";
