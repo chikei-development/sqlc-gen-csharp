@@ -683,7 +683,7 @@ public sealed class NpgsqlDriver : EnumDbDriver, IOne, IMany, IExec, IExecRows, 
             .GroupBy(p => p.Column.Name)
             .Select(g => g.First()) // Take the first parameter for each unique name
             .ToList();
-            
+
         return uniqueParams.Select(p =>
         {
             var commandVar = Variable.Command.AsVarName();

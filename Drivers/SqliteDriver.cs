@@ -323,7 +323,7 @@ public sealed partial class SqliteDriver(
                 .GroupBy(p => p.Column.Name)
                 .Select(g => g.First())
                 .ToList();
-                
+
             var addRecordParamsToCommand = uniqueParams.Select(p =>
             {
                 var param = p.Column.Name.ToPascalCase();
