@@ -1,4 +1,19 @@
 repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.6.0
+  hooks:
+    - id: check-yaml
+      name: Check YAML
+      description: Check YAML files for parseable syntax
+    - id: check-json
+      name: Check JSON
+      description: Check JSON files for parseable syntax
+- repo: https://github.com/python-jsonschema/check-jsonschema
+  rev: 0.29.3
+  hooks:
+    - id: check-github-workflows
+      name: GitHub Actions Workflow Validator
+      description: Validate GitHub Actions workflow files
 - repo: https://github.com/sqlfluff/sqlfluff
   rev: 3.4.1
   hooks:
