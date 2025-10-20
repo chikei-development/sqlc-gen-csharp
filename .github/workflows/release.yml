@@ -87,6 +87,34 @@ jobs:
           echo "SHA256_HASH=${SHA256_HASH}" >> $GITHUB_ENV
           echo "The calculated sha256 is $SHA256_HASH"
 
+      - name: Setup .NET for docs generation
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Generate and commit updated docs
+        run: |
+          # Generate updated documentation
+          ./docs/scripts/generate_all_docs.sh
+          
+          # Check if there are any changes to commit
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add docs/
+            git commit -m "Update auto-generated docs for release ${RELEASE_TAG}"
+            
+            # Move the tag to point to the new commit with updated docs
+            git tag -d ${RELEASE_TAG}
+            git tag ${RELEASE_TAG}
+            git push origin main
+            git push origin ${RELEASE_TAG} --force
+            
+            echo "Documentation updated, committed, and tag moved to include docs"
+          else
+            echo "No documentation changes to commit"
+          fi
+
       - name: Upload assets and update release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
