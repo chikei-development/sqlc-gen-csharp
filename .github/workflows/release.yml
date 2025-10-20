@@ -13,7 +13,7 @@ on:
 
 jobs:          
   release:
-    name: Build and Upload Release Assets
+    name: Download and Upload Release Assets
     runs-on: ubuntu-latest
     if: ${{ github.event.release.target_commitish == 'main' }}
     steps:
@@ -22,18 +22,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+      - name: Download WASM artifact from Build workflow
+        uses: dawidd6/action-download-artifact@v6
         with:
-          dotnet-version: 8.0.x
-
-      - name: Install WASI workload
-        run: dotnet workload install wasi-experimental
-
-      - name: Build WASM plugin
-        run: |
-          dotnet publish WasmRunner -c release --output dist/
-          ./scripts/wasm/copy_plugin_to.sh dist
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: build.yml
+          workflow_conclusion: success
+          name: wasm-file
+          commit: ${{ github.sha }}
           
       - name: Get release info
         run: |
