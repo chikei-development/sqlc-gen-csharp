@@ -43,21 +43,27 @@ jobs:
 
       - name: Wait for Build workflow to complete
         id: wait-for-build
-        uses: lewagon/wait-on-check-action@v1.3.4
+        uses: fountainhead/action-wait-for-check@v1.2.0
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: 'Build (WASM)'
           ref: ${{ github.sha }}
-          check-name: 'Build (WASM)'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 30
-          allowed-conclusions: success,failure,cancelled,skipped
-
+          intervalSeconds: 30
+          timeoutSeconds: 1800
+          
+      - name: Debug build conclusion
+        run: |
+          echo "Build conclusion: '${{ steps.wait-for-build.outputs.conclusion }}'"
+          echo "Build status: '${{ steps.wait-for-build.outputs.status }}'"
+          
       - name: Check Build workflow status
         if: steps.wait-for-build.outputs.conclusion != 'success'
         run: |
-          echo "::error::Build workflow failed with conclusion: ${{ steps.wait-for-build.outputs.conclusion }}"
+          CONCLUSION="${{ steps.wait-for-build.outputs.conclusion }}"
+          echo "::error::Build workflow failed with conclusion: '${CONCLUSION}'"
           echo "Cannot proceed with release until Build workflow succeeds."
           exit 1
-
+          
   release:
     name: Download and Upload Release Assets
     runs-on: ubuntu-latest
