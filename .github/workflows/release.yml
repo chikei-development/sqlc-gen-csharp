@@ -23,11 +23,22 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            await github.rest.repos.createReleaseComment({
+            // Get current release notes
+            const currentRelease = await github.rest.repos.getRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: context.payload.release.id
+            });
+            
+            const currentBody = currentRelease.data.body || '';
+            const statusMessage = '🔄 **Status: Waiting for Build workflow to complete...**\n\nThe WASM plugin will be built and attached to this release once the Build workflow succeeds.\n\n---\n\n';
+            
+            // Update release with status message
+            await github.rest.repos.updateRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
               release_id: context.payload.release.id,
-              body: '🔄 **Waiting for Build workflow to complete before processing release artifacts...**\n\nThe WASM plugin will be built and attached to this release once the Build workflow succeeds.'
+              body: statusMessage + currentBody
             });
 
       - name: Wait for Build workflow to complete
@@ -167,11 +178,26 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            await github.rest.repos.createReleaseComment({
+            // Get current release notes
+            const currentRelease = await github.rest.repos.getRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: context.payload.release.id
+            });
+            
+            let currentBody = currentRelease.data.body || '';
+            
+            // Remove the status message if it exists
+            currentBody = currentBody.replace(/🔄 \*\*Status: Waiting for Build workflow to complete\.\.\.\*\*\n\nThe WASM plugin will be built and attached to this release once the Build workflow succeeds\.\n\n---\n\n/, '');
+            
+            const successMessage = '✅ **Status: Release completed successfully!**\n\n- 🔧 WASM plugin built and attached\n- 📚 Documentation updated\n- 🏷️ Release notes enhanced with configuration examples\n\n---\n\n';
+            
+            // Update release with success message
+            await github.rest.repos.updateRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
               release_id: context.payload.release.id,
-              body: '✅ **Release artifacts have been successfully uploaded!**\n\n- 🔧 WASM plugin built and attached\n- 📚 Documentation updated\n- 🏷️ Release notes enhanced with configuration examples\n\nThe release is now ready for use!'
+              body: successMessage + currentBody
             });
 
   release-failure:
@@ -185,9 +211,25 @@ jobs:
         with:
           script: |
             const conclusion = '${{ needs.wait-for-build.outputs.build-conclusion }}';
-            await github.rest.repos.createReleaseComment({
+            
+            // Get current release notes
+            const currentRelease = await github.rest.repos.getRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: context.payload.release.id
+            });
+            
+            let currentBody = currentRelease.data.body || '';
+            
+            // Remove the status message if it exists
+            currentBody = currentBody.replace(/🔄 \*\*Status: Waiting for Build workflow to complete\.\.\.\*\*\n\nThe WASM plugin will be built and attached to this release once the Build workflow succeeds\.\n\n---\n\n/, '');
+            
+            const failureMessage = `❌ **Status: Release failed - Build workflow ${conclusion}**\n\n🔍 Please check the [Build workflow](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/workflows/build.yml) and ensure it passes before creating a release.\n\n💡 The WASM plugin cannot be built until all tests and checks pass successfully.\n\n---\n\n`;
+            
+            // Update release with failure message
+            await github.rest.repos.updateRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
               release_id: context.payload.release.id,
-              body: `❌ **Cannot process release: Build workflow ${conclusion}**\n\n🔍 Please check the [Build workflow](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/workflows/build.yml) and ensure it passes before creating a release.\n\n💡 The WASM plugin cannot be built until all tests and checks pass successfully.`
+              body: failureMessage + currentBody
             });
