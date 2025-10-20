@@ -18,6 +18,8 @@ jobs:
     if: ${{ github.event.release.target_commitish == 'main' }}
     outputs:
       build-conclusion: ${{ steps.wait-for-build.outputs.conclusion }}
+      build-run-id: ${{ steps.get-build-info.outputs.run-id }}
+      artifact-id: ${{ steps.get-build-info.outputs.artifact-id }}
     steps:
       - name: Add build status comment to release
         uses: actions/github-script@v7
@@ -63,6 +65,59 @@ jobs:
           echo "::error::Build workflow failed with conclusion: '${CONCLUSION}'"
           echo "Cannot proceed with release until Build workflow succeeds."
           exit 1
+
+      - name: Get build run and artifact information
+        id: get-build-info
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('🔍 Looking for build run with artifacts for commit:', context.sha);
+            
+            // Find the build workflow run for this exact commit
+            const { data: workflowRuns } = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'build.yml',
+              head_sha: context.sha,
+              status: 'completed',
+              conclusion: 'success',
+              per_page: 5
+            });
+            
+            if (workflowRuns.workflow_runs.length === 0) {
+              throw new Error(`No successful build workflow runs found for commit ${context.sha}`);
+            }
+            
+            const buildRun = workflowRuns.workflow_runs[0];
+            console.log(`✅ Found build run ${buildRun.id} for commit ${context.sha}`);
+            
+            // Get artifacts from this specific run
+            const { data: artifacts } = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: buildRun.id
+            });
+            
+            console.log(`Found ${artifacts.artifacts.length} artifacts in build run ${buildRun.id}`);
+            
+            // Find the wasm-file artifact
+            const wasmArtifact = artifacts.artifacts.find(a => a.name === 'wasm-file');
+            if (!wasmArtifact) {
+              console.log('Available artifacts:', artifacts.artifacts.map(a => a.name));
+              throw new Error('wasm-file artifact not found in build run');
+            }
+            
+            console.log(`✅ Found wasm-file artifact ${wasmArtifact.id} (${wasmArtifact.size_in_bytes} bytes)`);
+            
+            // Set outputs
+            core.setOutput('run-id', buildRun.id);
+            core.setOutput('artifact-id', wasmArtifact.id);
+            
+            return {
+              runId: buildRun.id,
+              artifactId: wasmArtifact.id,
+              artifactSize: wasmArtifact.size_in_bytes
+            };
           
   release:
     name: Download and Upload Release Assets
@@ -75,49 +130,24 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Debug available artifacts
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { data: artifacts } = await github.rest.actions.listWorkflowRunArtifacts({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: context.runId
-            });
-            console.log('Available artifacts for this run:', artifacts);
-            
-            // Also check for artifacts from build workflows
-            const { data: workflowRuns } = await github.rest.actions.listWorkflowRuns({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'build.yml',
-              status: 'completed',
-              per_page: 5
-            });
-            
-            for (const run of workflowRuns.workflow_runs) {
-              if (run.head_sha === context.sha) {
-                console.log(`Found matching build run ${run.id} for commit ${context.sha}`);
-                const { data: runArtifacts } = await github.rest.actions.listWorkflowRunArtifacts({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  run_id: run.id
-                });
-                console.log('Artifacts for matching run:', runArtifacts);
-                break;
-              }
-            }
-
-      - name: Download WASM artifact from Build workflow
+      - name: Download WASM artifact from specific build run
         uses: dawidd6/action-download-artifact@v6
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: build.yml
-          workflow_conclusion: success
+          run_id: ${{ needs.wait-for-build.outputs.build-run-id }}
           name: wasm-file
-          commit: ${{ github.sha }}
           if_no_artifact_found: fail
-          allow_forks: false
+
+      - name: Verify plugin.wasm exists
+        run: |
+          if [[ ! -f "plugin.wasm" ]]; then
+            echo "::error::plugin.wasm not found after artifact download"
+            ls -la
+            exit 1
+          fi
+          echo "✅ plugin.wasm found, size: $(stat -f%z plugin.wasm 2>/dev/null || stat -c%s plugin.wasm) bytes"
+          echo "📦 Artifact downloaded from build run: ${{ needs.wait-for-build.outputs.build-run-id }}"
+          echo "🎯 Artifact ID: ${{ needs.wait-for-build.outputs.artifact-id }}"
 
       - name: Get release info
         run: |
