@@ -80,26 +80,24 @@ jobs:
           # Get current release notes and append configuration info
           CURRENT_NOTES=$(gh release view ${RELEASE_TAG} --json body --jq '.body')
           
-          # Append configuration example and sha256 to existing notes
-          ADDITIONAL_NOTES=$(cat <<EOF
-
-## Configuration example
-\`\`\`yaml
-version: '2'
-plugins:
-- name: csharp
-  wasm:
-    url: https://github.com/chikei-development/sqlc-gen-csharp/releases/download/${RELEASE_TAG}/sqlc-gen-csharp.wasm
-    sha256: ${SHA256_HASH}
-\`\`\`
-
-## Release sha256
-\`${SHA256_HASH}\`
-
-## Changelog 
-${CHANGE_LOG}
-EOF
-          )
+          # Build additional notes by concatenating strings to avoid YAML parsing issues
+          CONFIG_SECTION="## Configuration example"$'\n'
+          CONFIG_SECTION+='```yaml'$'\n'
+          CONFIG_SECTION+="version: '2'"$'\n'
+          CONFIG_SECTION+="plugins:"$'\n'
+          CONFIG_SECTION+="- name: csharp"$'\n'
+          CONFIG_SECTION+="  wasm:"$'\n'
+          CONFIG_SECTION+="    url: https://github.com/chikei-development/sqlc-gen-csharp/releases/download/${RELEASE_TAG}/sqlc-gen-csharp.wasm"$'\n'
+          CONFIG_SECTION+="    sha256: ${SHA256_HASH}"$'\n'
+          CONFIG_SECTION+='```'$'\n'$'\n'
+          
+          SHA_SECTION="## Release sha256"$'\n'
+          SHA_SECTION+="\`${SHA256_HASH}\`"$'\n'$'\n'
+          
+          CHANGELOG_SECTION="## Changelog"$'\n'
+          CHANGELOG_SECTION+="${CHANGE_LOG}"$'\n'
+          
+          ADDITIONAL_NOTES="${CONFIG_SECTION}${SHA_SECTION}${CHANGELOG_SECTION}"
 
           # Update the release with the additional notes
           gh release edit ${RELEASE_TAG} --notes "${CURRENT_NOTES}${ADDITIONAL_NOTES}"
