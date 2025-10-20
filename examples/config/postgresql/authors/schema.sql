@@ -7,7 +7,7 @@ CREATE TABLE authors (
 );
 
 CREATE TABLE books (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT UUID_GENERATE_V4(),
     name TEXT NOT NULL,
     author_id BIGINT NOT NULL,
     description TEXT,

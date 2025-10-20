@@ -48,7 +48,7 @@ public partial class MySqlConnectorTester
             AuthorName = "Test Author",
             MinId = 3000
         });
-        
+
         // Should find the "Test Author" record since:
         // - name matches "Test Author" 
         // - bio contains "Test Author"

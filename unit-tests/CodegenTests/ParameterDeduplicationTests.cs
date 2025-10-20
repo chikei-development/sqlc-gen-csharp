@@ -116,7 +116,7 @@ public class ParameterDeduplicationTests
 
         // Use engine-appropriate parameter syntax and catalog
         var (paramSyntax, sqlText, settings, catalog) = GetEngineSpecificData(engine);
-        
+
         var query = new Query
         {
             Filename = "query.sql",

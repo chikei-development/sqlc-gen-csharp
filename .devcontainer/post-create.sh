@@ -8,7 +8,11 @@ echo "Setting up sqlc-gen-csharp development environment..."
 sudo apt-get update
 
 # Install make and other build essentials
-sudo apt-get install -y make build-essential wget curl unzip
+sudo apt-get install -y make build-essential wget curl unzip python3 python3-pip pipx
+
+# Install pre-commit using pipx
+echo "Installing pre-commit..."
+pipx install pre-commit
 
 # Install sqlc version 1.30.0 using Go (Go is provided by devcontainer feature)
 echo "Installing sqlc v1.30.0..."
@@ -44,11 +48,16 @@ sqlc version
 buf --version
 yq --version
 make --version
+pre-commit --version
 echo "WASI SDK: $(/opt/wasi-sdk/bin/clang --version | head -1)"
 
 # Set up .NET tools
 echo "Restoring .NET tools and packages..."
 dotnet restore
+
+# Set up pre-commit hooks
+echo "Setting up pre-commit hooks..."
+pre-commit install
 
 echo "Development environment setup complete!"
 echo ""
