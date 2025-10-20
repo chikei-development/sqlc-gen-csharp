@@ -401,7 +401,7 @@ pre-commit install
 SQLC protobuf are defined in sqlc-dev/sqlc repository.
 Generating C# code from protocol buffer files:
 ```
-make protobuf-generate
+make generate-protobuf
 ```
 
 ### Generating code

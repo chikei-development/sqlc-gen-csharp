@@ -3,7 +3,7 @@ plugins:
   - name: csharp
     wasm:
       url: file://dist/plugin.wasm
-      sha256: 
+      sha256: d3f56758cd72d22e284d8563a1cf2a52a0ee94657b026918985744af8520317e
 sql:
   # PostgresSQL
   - schema: ["examples/config/postgresql/authors/schema.sql", "examples/config/postgresql/types/schema.sql"]
@@ -198,7 +198,6 @@ sql:
               csharp_type:
                 type: "Instant"
                 notNull: false
-                
   # MySQL
   - schema: ["examples/config/mysql/authors/schema.sql", "examples/config/mysql/types/schema.sql"]
     queries: ["examples/config/mysql/authors/query.sql", "examples/config/mysql/types/query.sql"]
@@ -328,7 +327,6 @@ sql:
               csharp_type:
                 type: "Instant"
                 notNull: false
-
   # Sqlite
   - schema: ["examples/config/sqlite/authors/schema.sql", "examples/config/sqlite/types/schema.sql"]
     queries: ["examples/config/sqlite/authors/query.sql", "examples/config/sqlite/types/query.sql"]

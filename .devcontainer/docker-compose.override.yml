@@ -1,0 +1,28 @@
+# Docker Compose override for devcontainer development
+# This file extends the main docker-compose.yml with development-specific settings
+
+services:
+  mysqldb:
+    # Override to use a more predictable setup for development
+    environment:
+      MYSQL_DATABASE: tests
+      MYSQL_ALLOW_EMPTY_PASSWORD: true
+      MYSQL_ROOT_PASSWORD: ""
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  postgresdb:
+    environment:
+      POSTGRES_DB: tests
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  mysql_data:
+  postgres_data:
