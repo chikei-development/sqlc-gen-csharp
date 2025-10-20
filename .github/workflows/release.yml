@@ -19,12 +19,23 @@ jobs:
     outputs:
       build-conclusion: ${{ steps.wait-for-build.outputs.conclusion }}
     steps:
+      - name: Add build status comment to release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createReleaseComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: context.payload.release.id,
+              body: '🔄 **Waiting for Build workflow to complete before processing release artifacts...**\n\nThe WASM plugin will be built and attached to this release once the Build workflow succeeds.'
+            });
+
       - name: Wait for Build workflow to complete
         id: wait-for-build
         uses: lewagon/wait-on-check-action@v1.3.4
         with:
           ref: ${{ github.sha }}
-          check-name: 'Build'
+          check-name: 'Build (WASM)'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 30
           allowed-conclusions: success,failure,cancelled,skipped
@@ -42,17 +53,6 @@ jobs:
     needs: [wait-for-build]
     if: ${{ github.event.release.target_commitish == 'main' && needs.wait-for-build.outputs.build-conclusion == 'success' }}
     steps:
-      - name: Add build status comment to release
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.repos.createReleaseComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              release_id: context.payload.release.id,
-              body: '🔄 Waiting for Build workflow to complete before processing release artifacts...'
-            });
-
       - name: Check out Git repository
         uses: actions/checkout@v4
         with:
@@ -171,7 +171,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               release_id: context.payload.release.id,
-              body: '✅ Release artifacts have been successfully uploaded! The WASM plugin is now available for download.'
+              body: '✅ **Release artifacts have been successfully uploaded!**\n\n- 🔧 WASM plugin built and attached\n- 📚 Documentation updated\n- 🏷️ Release notes enhanced with configuration examples\n\nThe release is now ready for use!'
             });
 
   release-failure:
@@ -189,5 +189,5 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               release_id: context.payload.release.id,
-              body: `❌ Cannot process release: Build workflow ${conclusion}. Please check the [Build workflow](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/workflows/build.yml) and ensure it passes before creating a release.`
+              body: `❌ **Cannot process release: Build workflow ${conclusion}**\n\n🔍 Please check the [Build workflow](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/workflows/build.yml) and ensure it passes before creating a release.\n\n💡 The WASM plugin cannot be built until all tests and checks pass successfully.`
             });
