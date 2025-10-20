@@ -78,3 +78,11 @@ SELECT * FROM extended.bios WHERE bio_type = $1 LIMIT 1;
 
 -- name: TruncateExtendedBios :exec
 TRUNCATE TABLE extended.bios;
+
+-- name: GetAuthorsWithDuplicateParams :many
+-- This query demonstrates parameter deduplication where the same parameter is used multiple times
+SELECT * FROM authors 
+WHERE (name = sqlc.narg('author_name') OR bio LIKE '%' || sqlc.narg('author_name') || '%')
+  AND (id > sqlc.narg('min_id') OR id < sqlc.narg('min_id') + 1000)
+  AND created_at >= sqlc.narg('date_filter')
+  AND updated_at >= sqlc.narg('date_filter');

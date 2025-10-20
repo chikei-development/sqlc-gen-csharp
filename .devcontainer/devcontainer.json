@@ -1,0 +1,40 @@
+{
+  "name": "sqlc-gen-csharp Development",
+  "image": "mcr.microsoft.com/devcontainers/dotnet:1-8.0-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "moby": true,
+      "azureDnsAutoDetection": true,
+      "installDockerBuildx": true,
+      "dockerDashComposeVersion": "v2"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/go:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/dotnet:2": {
+      "version": "8.0.303",
+      "workloads": "wasm-tools"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.csdevkit",
+        "ms-vscode.makefile-tools",
+        "bufbuild.vscode-buf",
+        "ms-azuretools.vscode-docker",
+        "ms-vscode.vscode-json",
+        "golang.Go",
+        "elagil.pre-commit-helper"
+      ]
+    }
+  },
+  "postCreateCommand": ".devcontainer/post-create.sh",
+  "forwardPorts": [3306, 5432],
+  "remoteEnv": {
+    "WASI_SDK_PATH": "/opt/wasi-sdk"
+  },
+  "workspaceFolder": "/workspaces/sqlc-gen-csharp"
+}

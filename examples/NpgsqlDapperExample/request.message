@@ -3,11 +3,17 @@
 2
 postgresql-examples/config/postgresql/authors/schema.sql+examples/config/postgresql/types/schema.sql",examples/config/postgresql/authors/query.sql"*examples/config/postgresql/types/query.sqlb‡
 examples/NpgsqlDapperExamplecsharpÈ{"debugRequest":true,"generateCsproj":true,"namespaceName":"NpgsqlDapperExampleGen","overrides":[{"column":"GetPostgresFunctions:max_integer","csharp_type":{"notNull":false,"type":"int"}},{"column":"GetPostgresFunctions:max_varchar","csharp_type":{"notNull":false,"type":"string"}},{"column":"GetPostgresFunctions:max_timestamp","csharp_type":{"notNull":true,"type":"DateTime"}},{"column":"GetPostgresSpecialTypesCnt:c_json","csharp_type":{"notNull":false,"type":"JsonElement"}},{"column":"GetPostgresSpecialTypesCnt:c_jsonb","csharp_type":{"notNull":false,"type":"JsonElement"}},{"column":"*:c_json_string_override","csharp_type":{"notNull":false,"type":"string"}},{"column":"*:c_xml_string_override","csharp_type":{"notNull":false,"type":"string"}},{"column":"*:c_macaddr8","csharp_type":{"notNull":false,"type":"string"}},{"column":"*:c_timestamp_noda_instant_override","csharp_type":{"notNull":false,"type":"Instant"}}],"targetFramework":"net8.0","useDapper":true}*
-./dist/LocalRunner¡îpublic"ãpublicƒ
+./dist/LocalRunner›ïpublic"Ýpublicý
 	authors)
 id0ÿÿÿÿÿÿÿÿÿR	authorsb	bigserial&
 name0ÿÿÿÿÿÿÿÿÿR	authorsbtext#
-bio0ÿÿÿÿÿÿÿÿÿR	authorsbtextµ
+bio0ÿÿÿÿÿÿÿÿÿR	authorsbtext;
+
+created_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestamp;
+
+updated_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestampµ
 books"
 id0ÿÿÿÿÿÿÿÿÿRbooksbuuid$
 name0ÿÿÿÿÿÿÿÿÿRbooksbtext5
@@ -10227,45 +10233,85 @@ pg_catalogvarchar<
 name0ÿÿÿÿÿÿÿÿÿRextendedbiosb
 pg_catalogvarchar=
 bio_type0ÿÿÿÿÿÿÿÿÿRextendedbiosbextendedbio_type",
-bio_typeAutobiography	BiographyMemoir
-9SELECT id, name, bio FROM authors
+bio_typeAutobiography	BiographyMemoirº
+QSELECT id, name, bio, created_at, updated_at FROM authors
 WHERE name = $1 LIMIT 1	GetAuthor:one"-
 id0ÿÿÿÿÿÿÿÿÿR	authorsb	bigserialzid",
 name0ÿÿÿÿÿÿÿÿÿR	authorsbtextzname"(
-bio0ÿÿÿÿÿÿÿÿÿR	authorsbtextzbio*0,
-name0ÿÿÿÿÿÿÿÿÿR	authorsbtextzname:	query.sqlº
-CSELECT id, name, bio 
+bio0ÿÿÿÿÿÿÿÿÿR	authorsbtextzbio"G
+
+created_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestampz
+created_at"G
+
+updated_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestampz
+updated_at*0,
+name0ÿÿÿÿÿÿÿÿÿR	authorsbtextzname:	query.sqlä
+[SELECT id, name, bio, created_at, updated_at 
 FROM authors
 ORDER BY name
 LIMIT $2
 OFFSET $1ListAuthors:many"-
 id0ÿÿÿÿÿÿÿÿÿR	authorsb	bigserialzid",
 name0ÿÿÿÿÿÿÿÿÿR	authorsbtextzname"(
-bio0ÿÿÿÿÿÿÿÿÿR	authorsbtextzbio*&"
+bio0ÿÿÿÿÿÿÿÿÿR	authorsbtextzbio"G
+
+created_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestampz
+created_at"G
+
+updated_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestampz
+updated_at*&"
 offset0ÿÿÿÿÿÿÿÿÿ8b	integer*%!
-limit0ÿÿÿÿÿÿÿÿÿ8b	integer:	query.sql­
-OINSERT INTO authors (id, name, bio) VALUES ($1, $2, $3) RETURNING id, name, bioCreateAuthor:one"-
+limit0ÿÿÿÿÿÿÿÿÿ8b	integer:	query.sql×
+gINSERT INTO authors (id, name, bio) VALUES ($1, $2, $3) RETURNING id, name, bio, created_at, updated_atCreateAuthor:one"-
 id0ÿÿÿÿÿÿÿÿÿR	authorsb	bigserialzid",
 name0ÿÿÿÿÿÿÿÿÿR	authorsbtextzname"(
-bio0ÿÿÿÿÿÿÿÿÿR	authorsbtextzbio*95
+bio0ÿÿÿÿÿÿÿÿÿR	authorsbtextzbio"G
+
+created_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestampz
+created_at"G
+
+updated_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestampz
+updated_at*95
 id0ÿÿÿÿÿÿÿÿÿRpublicauthorsb	bigserialzid*84
 name0ÿÿÿÿÿÿÿÿÿRpublicauthorsbtextzname*40
 bio0ÿÿÿÿÿÿÿÿÿRpublicauthorsbtextzbio:	query.sqlB	authors–
 <INSERT INTO authors (name, bio) VALUES ($1, $2) RETURNING idCreateAuthorReturnId:execlastid"-
 id0ÿÿÿÿÿÿÿÿÿR	authorsb	bigserialzid*84
 name0ÿÿÿÿÿÿÿÿÿRpublicauthorsbtextzname*40
-bio0ÿÿÿÿÿÿÿÿÿRpublicauthorsbtextzbio:	query.sqlB	authors“
-7SELECT id, name, bio FROM authors
+bio0ÿÿÿÿÿÿÿÿÿRpublicauthorsbtextzbio:	query.sqlB	authors½
+OSELECT id, name, bio, created_at, updated_at FROM authors
 WHERE id = $1 LIMIT 1GetAuthorById:one"-
 id0ÿÿÿÿÿÿÿÿÿR	authorsb	bigserialzid",
 name0ÿÿÿÿÿÿÿÿÿR	authorsbtextzname"(
-bio0ÿÿÿÿÿÿÿÿÿR	authorsbtextzbio*1-
-id0ÿÿÿÿÿÿÿÿÿR	authorsb	bigserialzid:	query.sql°
-CSELECT id, name, bio FROM authors
+bio0ÿÿÿÿÿÿÿÿÿR	authorsbtextzbio"G
+
+created_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestampz
+created_at"G
+
+updated_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestampz
+updated_at*1-
+id0ÿÿÿÿÿÿÿÿÿR	authorsb	bigserialzid:	query.sqlÚ
+[SELECT id, name, bio, created_at, updated_at FROM authors
 WHERE name LIKE COALESCE($1, '%')GetAuthorByNamePattern:many"-
 id0ÿÿÿÿÿÿÿÿÿR	authorsb	bigserialzid",
 name0ÿÿÿÿÿÿÿÿÿR	authorsbtextzname"(
-bio0ÿÿÿÿÿÿÿÿÿR	authorsbtextzbio*84
+bio0ÿÿÿÿÿÿÿÿÿR	authorsbtextzbio"G
+
+created_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestampz
+created_at"G
+
+updated_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestampz
+updated_at*84
 name_pattern0ÿÿÿÿÿÿÿÿÿ8R	authorsbtextzname:	query.sqlw
 #DELETE FROM authors
 WHERE name = $1DeleteAuthor:exec*0,
@@ -10274,49 +10320,73 @@ WHERE name = $1DeleteAuthor:exec*0,
 1UPDATE authors
 SET bio = $1
 WHERE bio IS NOT NULLUpdateAuthors	:execrows*40
-bio0ÿÿÿÿÿÿÿÿÿRpublicauthorsbtextzbio:	query.sql—
-?SELECT id, name, bio FROM authors
+bio0ÿÿÿÿÿÿÿÿÿRpublicauthorsbtextzbio:	query.sqlÁ
+WSELECT id, name, bio, created_at, updated_at FROM authors
 WHERE id = ANY($1::BIGINT [])GetAuthorsByIds:many"-
 id0ÿÿÿÿÿÿÿÿÿR	authorsb	bigserialzid",
 name0ÿÿÿÿÿÿÿÿÿR	authorsbtextzname"(
-bio0ÿÿÿÿÿÿÿÿÿR	authorsbtextzbio**& 0ÿÿÿÿÿÿÿÿÿb
-pg_catalogint8ˆ:	query.sqlÛ
-[SELECT id, name, bio
+bio0ÿÿÿÿÿÿÿÿÿR	authorsbtextzbio"G
+
+created_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestampz
+created_at"G
+
+updated_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestampz
+updated_at**& 0ÿÿÿÿÿÿÿÿÿb
+pg_catalogint8ˆ:	query.sql…
+sSELECT id, name, bio, created_at, updated_at
 FROM authors
 WHERE id = ANY($1::BIGINT []) AND name = ANY($2::TEXT [])GetAuthorsByIdsAndNames:many"-
 id0ÿÿÿÿÿÿÿÿÿR	authorsb	bigserialzid",
 name0ÿÿÿÿÿÿÿÿÿR	authorsbtextzname"(
-bio0ÿÿÿÿÿÿÿÿÿR	authorsbtextzbio**& 0ÿÿÿÿÿÿÿÿÿb
+bio0ÿÿÿÿÿÿÿÿÿR	authorsbtextzbio"G
+
+created_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestampz
+created_at"G
+
+updated_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestampz
+updated_at**& 0ÿÿÿÿÿÿÿÿÿb
 pg_catalogint8ˆ* 0ÿÿÿÿÿÿÿÿÿbtextˆ:	query.sqlœ
 @INSERT INTO books (name, author_id) VALUES ($1, $2) RETURNING id
 CreateBook:execlastid"&
 id0ÿÿÿÿÿÿÿÿÿRbooksbuuidzid*62
 name0ÿÿÿÿÿÿÿÿÿRpublicbooksbtextzname*KG
-	author_id0ÿÿÿÿÿÿÿÿÿRpublicbooksbpg_catalog.int8z	author_id:	query.sqlBbooks®
-ÂSELECT
-    authors.id, authors.name, authors.bio,
+	author_id0ÿÿÿÿÿÿÿÿÿRpublicbooksbpg_catalog.int8z	author_id:	query.sqlBbooksÖ
+êSELECT
+    authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at,
     books.id, books.name, books.author_id, books.description
 FROM authors
 INNER JOIN books ON authors.id = books.author_id
 ORDER BY authors.nameListAllAuthorsBooks:many"!
 authors0ÿÿÿÿÿÿÿÿÿb r	authors"
-books0ÿÿÿÿÿÿÿÿÿb rbooks:	query.sqlÊ
-ÚSELECT
-    authors1.id, authors1.name, authors1.bio,
-    authors2.id, authors2.name, authors2.bio
+books0ÿÿÿÿÿÿÿÿÿb rbooks:	query.sqlž
+®SELECT
+    authors1.id, authors1.name, authors1.bio, authors1.created_at, authors1.updated_at,
+    authors2.id, authors2.name, authors2.bio, authors2.created_at, authors2.updated_at
 FROM authors AS authors1
 INNER JOIN authors AS authors2 ON authors1.name = authors2.name
 WHERE authors1.id < authors2.idGetDuplicateAuthors:many"!
 authors0ÿÿÿÿÿÿÿÿÿb r	authors"!
-authors0ÿÿÿÿÿÿÿÿÿb r	authors:	query.sqlÃ
-ÂSELECT
-    authors.id, authors.name, authors.bio,
+authors0ÿÿÿÿÿÿÿÿÿb r	authors:	query.sqlý
+êSELECT
+    authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at,
     books.id, books.name, books.author_id, books.description
 FROM authors INNER JOIN books ON authors.id = books.author_id
 WHERE books.name = $1GetAuthorsByBookName:many"-
 id0ÿÿÿÿÿÿÿÿÿR	authorsb	bigserialzid",
 name0ÿÿÿÿÿÿÿÿÿR	authorsbtextzname"(
-bio0ÿÿÿÿÿÿÿÿÿR	authorsbtextzbio"
+bio0ÿÿÿÿÿÿÿÿÿR	authorsbtextzbio"G
+
+created_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestampz
+created_at"G
+
+updated_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestampz
+updated_at"
 books0ÿÿÿÿÿÿÿÿÿb rbooks*.*
 name0ÿÿÿÿÿÿÿÿÿRbooksbtextzname:	query.sqlì
 KINSERT INTO extended.bios (author_name, name, bio_type) VALUES ($1, $2, $3)CreateExtendedBio:exec*SO
@@ -10330,7 +10400,27 @@ pg_catalogvarcharzauthor_name"B
 pg_catalogvarcharzname"G
 bio_type0ÿÿÿÿÿÿÿÿÿRextendedbiosbextendedbio_typezbio_type*JF
 bio_type0ÿÿÿÿÿÿÿÿÿRextendedbiosbextended.bio_typezbio_type:	query.sqlF
-TRUNCATE TABLE extended.biosTruncateExtendedBios:exec:	query.sqlü
+TRUNCATE TABLE extended.biosTruncateExtendedBios:exec:	query.sql§
+¹SELECT id, name, bio, created_at, updated_at FROM authors 
+WHERE (name = $1 OR bio LIKE '%' || $1 || '%')
+  AND (id > $2 OR id < $2 + 1000)
+  AND created_at >= $3
+  AND updated_at >= $3GetAuthorsWithDuplicateParams:many"-
+id0ÿÿÿÿÿÿÿÿÿR	authorsb	bigserialzid",
+name0ÿÿÿÿÿÿÿÿÿR	authorsbtextzname"(
+bio0ÿÿÿÿÿÿÿÿÿR	authorsbtextzbio"G
+
+created_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestampz
+created_at"G
+
+updated_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestampz
+updated_at*73
+author_name0ÿÿÿÿÿÿÿÿÿ8R	authorsbtextzname*51
+min_id0ÿÿÿÿÿÿÿÿÿ8R	authorsb	bigserialzid*MI
+date_filter0ÿÿÿÿÿÿÿÿÿ8R	authorsbpg_catalog.timestampz
+created_at2` This query demonstrates parameter deduplication where the same parameter is used multiple times:	query.sqlü
 ÒSELECT
     MAX(c_integer) AS max_integer,
     MAX(c_varchar) AS max_varchar,

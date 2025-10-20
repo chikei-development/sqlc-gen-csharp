@@ -68,3 +68,9 @@ WHERE books.name = ?;
 
 -- name: DeleteAllAuthors :exec
 DELETE FROM authors;
+
+-- name: GetAuthorsWithDuplicateParams :many
+-- This query demonstrates parameter deduplication where the same parameter is used multiple times
+SELECT * FROM authors 
+WHERE (name = sqlc.narg('author_name') OR bio LIKE '%' || sqlc.narg('author_name') || '%')
+  AND (id > sqlc.narg('min_id') OR id < sqlc.narg('min_id') + 1000);

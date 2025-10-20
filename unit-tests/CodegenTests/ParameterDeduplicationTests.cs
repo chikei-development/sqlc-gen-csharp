@@ -18,6 +18,18 @@ public class ParameterDeduplicationTests
         Codegen = new Codegen { Out = "DummyProject" }
     };
 
+    private readonly Settings _mysqlSettings = new()
+    {
+        Engine = "mysql",
+        Codegen = new Codegen { Out = "DummyProject" }
+    };
+
+    private readonly Settings _sqliteSettings = new()
+    {
+        Engine = "sqlite",
+        Codegen = new Codegen { Out = "DummyProject" }
+    };
+
     private readonly Catalog _emptyCatalog = new()
     {
         Schemas =
@@ -31,30 +43,57 @@ public class ParameterDeduplicationTests
         }
     };
 
+    private readonly Catalog _emptyCatalogMysqlSqlite = new()
+    {
+        Schemas =
+        {
+            new Schema
+            {
+                Name = string.Empty,
+                Tables = { Capacity = 0 },
+                Enums = { Capacity = 0 },
+            }
+        }
+    };
+
     private CodeGenerator CodeGenerator { get; } = new();
 
+    private (string paramSyntax, string sqlText, Settings settings, Catalog catalog) GetEngineSpecificData(string engine)
+    {
+        return engine switch
+        {
+            "postgresql" => ("$", "", _postgresSettings, _emptyCatalog),
+            "mysql" => ("?", "", _mysqlSettings, _emptyCatalogMysqlSqlite),
+            "sqlite" => ("?", "", _sqliteSettings, _emptyCatalogMysqlSqlite),
+            _ => throw new ArgumentException($"Unsupported engine: {engine}")
+        };
+    }
+
     [Test]
-    public void TestParameterDeduplicationWithSameNamedParams()
+    [TestCase("postgresql", "text", "integer", "boolean")]
+    [TestCase("mysql", "text", "int", "tinyint")]
+    [TestCase("sqlite", "text", "integer", "integer")]
+    public void TestParameterDeduplicationWithSameNamedParams(string engine, string textType, string intType, string boolType)
     {
         // Arrange - Create a query that simulates duplicate parameter names
         var duplicateColumn = new Column
         {
             Name = "param_a",
-            Type = new Identifier { Name = "text" },
+            Type = new Identifier { Name = textType },
             NotNull = false
         };
 
         var uniqueColumn1 = new Column
         {
             Name = "param_b",
-            Type = new Identifier { Name = "integer" },
+            Type = new Identifier { Name = intType },
             NotNull = false
         };
 
         var uniqueColumn2 = new Column
         {
             Name = "param_c",
-            Type = new Identifier { Name = "boolean" },
+            Type = new Identifier { Name = boolType },
             NotNull = true
         };
 
@@ -71,24 +110,27 @@ public class ParameterDeduplicationTests
 
         var resultColumns = new[]
         {
-            new Column { Name = "id", Type = new Identifier { Name = "integer" } },
-            new Column { Name = "name", Type = new Identifier { Name = "text" } }
+            new Column { Name = "id", Type = new Identifier { Name = intType } },
+            new Column { Name = "name", Type = new Identifier { Name = textType } }
         };
+
+        // Use engine-appropriate parameter syntax and catalog
+        var (paramSyntax, sqlText, settings, catalog) = GetEngineSpecificData(engine);
 
         var query = new Query
         {
             Filename = "query.sql",
             Cmd = ":many",
             Name = "TestDuplicateParams",
-            Text = "SELECT id, name FROM table WHERE param_b = $1 AND (param_a IS NULL OR condition1 = $2 OR condition2 = $3) AND param_c = $4",
+            Text = $"SELECT id, name FROM table WHERE param_b = {paramSyntax}1 AND (param_a IS NULL OR condition1 = {paramSyntax}2 OR condition2 = {paramSyntax}3) AND param_c = {paramSyntax}4",
             Columns = { resultColumns },
             Params = { parameters }
         };
 
         var request = new GenerateRequest
         {
-            Settings = _postgresSettings,
-            Catalog = _emptyCatalog,
+            Settings = settings,
+            Catalog = catalog,
             Queries = { query },
             PluginOptions = ByteString.CopyFrom("{}", Encoding.UTF8)
         };
@@ -137,16 +179,16 @@ public class ParameterDeduplicationTests
         };
 
         CollectionAssert.AreEquivalent(expectedPropertyNames, propertyNames,
-            "Args should contain each parameter only once, even if used multiple times in SQL");
+            $"Args should contain each parameter only once for {engine} engine, even if used multiple times in SQL");
 
         // Verify that ParamA appears exactly once (not three times)
         var duplicateParamCount = propertyNames.Count(name => name == "ParamA");
         Assert.That(duplicateParamCount, Is.EqualTo(1),
-            "ParamA parameter should appear exactly once in Args, not duplicated");
+            $"ParamA parameter should appear exactly once in Args for {engine} engine, not duplicated");
 
         // Additional verification: ensure the generated code compiles without duplicate parameter errors
         Assert.That(generatedCode.Contains("ParamA"), Is.True,
-            "Generated code should contain ParamA parameter");
+            $"Generated code should contain ParamA parameter for {engine} engine");
 
         // Verify that we don't have multiple consecutive ParamA parameters
         var paramAOccurrences = System.Text.RegularExpressions.Regex.Matches(
@@ -154,11 +196,14 @@ public class ParameterDeduplicationTests
 
         // Should appear in parameter declaration and usage, but not duplicated in parameter list
         Assert.That(paramAOccurrences, Is.LessThan(10),
-            "ParamA should not appear excessively due to duplication in parameter list");
+            $"ParamA should not appear excessively due to duplication in parameter list for {engine} engine");
     }
 
     [Test]
-    public void TestParameterDeduplicationPreservesOrder()
+    [TestCase("postgresql")]
+    [TestCase("mysql")]
+    [TestCase("sqlite")]
+    public void TestParameterDeduplicationPreservesOrder(string engine)
     {
         // Arrange - Test that deduplication preserves the order of first occurrence
         var duplicateColumn = new Column
@@ -177,6 +222,8 @@ public class ParameterDeduplicationTests
             new Parameter { Number = 5, Column = new Column { Name = "last_param", Type = new Identifier { Name = "text" } } }
         };
 
+        var (paramSyntax, _, settings, catalog) = GetEngineSpecificData(engine);
+
         var query = new Query
         {
             Filename = "query.sql",
@@ -189,8 +236,8 @@ public class ParameterDeduplicationTests
 
         var request = new GenerateRequest
         {
-            Settings = _postgresSettings,
-            Catalog = _emptyCatalog,
+            Settings = settings,
+            Catalog = catalog,
             Queries = { query },
             PluginOptions = ByteString.CopyFrom("{}", Encoding.UTF8)
         };
@@ -220,19 +267,32 @@ public class ParameterDeduplicationTests
         // Verify order is preserved and duplicates are removed
         var expectedOrder = new[] { "FirstParam", "DuplicateParam", "MiddleParam", "LastParam" };
         CollectionAssert.AreEqual(expectedOrder, propertyNames,
-            "Parameter order should be preserved with duplicates removed");
+            $"Parameter order should be preserved with duplicates removed for {engine} engine");
     }
 
     [Test]
-    public void TestNoDuplicationWhenParametersAreUnique()
+    [TestCase("postgresql")]
+    [TestCase("mysql")]
+    [TestCase("sqlite")]
+    public void TestNoDuplicationWhenParametersAreUnique(string engine)
     {
         // Arrange - Verify that unique parameters work normally (regression test)
+        var boolType = engine switch
+        {
+            "postgresql" => "boolean",
+            "mysql" => "tinyint",
+            "sqlite" => "integer",
+            _ => "boolean"
+        };
+
         var parameters = new[]
         {
             new Parameter { Number = 1, Column = new Column { Name = "param1", Type = new Identifier { Name = "text" } } },
             new Parameter { Number = 2, Column = new Column { Name = "param2", Type = new Identifier { Name = "integer" } } },
-            new Parameter { Number = 3, Column = new Column { Name = "param3", Type = new Identifier { Name = "boolean" } } }
+            new Parameter { Number = 3, Column = new Column { Name = "param3", Type = new Identifier { Name = boolType } } }
         };
+
+        var (paramSyntax, _, settings, catalog) = GetEngineSpecificData(engine);
 
         var query = new Query
         {
@@ -246,8 +306,8 @@ public class ParameterDeduplicationTests
 
         var request = new GenerateRequest
         {
-            Settings = _postgresSettings,
-            Catalog = _emptyCatalog,
+            Settings = settings,
+            Catalog = catalog,
             Queries = { query },
             PluginOptions = ByteString.CopyFrom("{}", Encoding.UTF8)
         };
@@ -276,14 +336,17 @@ public class ParameterDeduplicationTests
 
         var expectedParams = new[] { "Param1", "Param2", "Param3" };
         CollectionAssert.AreEquivalent(expectedParams, propertyNames,
-            "All unique parameters should be present without any missing");
+            $"All unique parameters should be present without any missing for {engine} engine");
 
         Assert.That(propertyNames, Has.Count.EqualTo(3),
-            "Should have exactly 3 parameters when all are unique");
+            $"Should have exactly 3 parameters when all are unique for {engine} engine");
     }
 
     [Test]
-    public void TestParameterNullabilityConflictThrowsError()
+    [TestCase("postgresql")]
+    [TestCase("mysql")]
+    [TestCase("sqlite")]
+    public void TestParameterNullabilityConflictThrowsError(string engine)
     {
         // Arrange - Create parameters with the same name but different nullability
         var nullableColumn = new Column
@@ -308,20 +371,22 @@ public class ParameterDeduplicationTests
             new Parameter { Number = 4, Column = new Column { Name = "final_param", Type = new Identifier { Name = "text" }, NotNull = false } }
         };
 
+        var (paramSyntax, _, settings, catalog) = GetEngineSpecificData(engine);
+
         var query = new Query
         {
             Filename = "query.sql",
             Cmd = ":many",
             Name = "ConflictingNullabilityQuery",
-            Text = "SELECT 1 WHERE other_param = $1 AND (conflicting_param IS NULL OR conflicting_param = $2 OR conflicting_param != $3) AND final_param = $4",
+            Text = $"SELECT 1 WHERE other_param = {paramSyntax}1 AND (conflicting_param IS NULL OR conflicting_param = {paramSyntax}2 OR conflicting_param != {paramSyntax}3) AND final_param = {paramSyntax}4",
             Columns = { new Column { Name = "result", Type = new Identifier { Name = "integer" } } },
             Params = { parameters }
         };
 
         var request = new GenerateRequest
         {
-            Settings = _postgresSettings,
-            Catalog = _emptyCatalog,
+            Settings = settings,
+            Catalog = catalog,
             Queries = { query },
             PluginOptions = ByteString.CopyFrom("{}", Encoding.UTF8)
         };
@@ -334,7 +399,10 @@ public class ParameterDeduplicationTests
     }
 
     [Test]
-    public void TestParameterSameNullabilityDoesNotThrowError()
+    [TestCase("postgresql")]
+    [TestCase("mysql")]
+    [TestCase("sqlite")]
+    public void TestParameterSameNullabilityDoesNotThrowError(string engine)
     {
         // Arrange - Create parameters with the same name and same nullability (should work fine)
         var nullableColumn1 = new Column
@@ -358,20 +426,22 @@ public class ParameterDeduplicationTests
             new Parameter { Number = 3, Column = nullableColumn2.Clone() }, // Same name, same nullability - OK
         };
 
+        var (paramSyntax, _, settings, catalog) = GetEngineSpecificData(engine);
+
         var query = new Query
         {
             Filename = "query.sql",
             Cmd = ":many",
             Name = "SameNullabilityQuery",
-            Text = "SELECT 1 WHERE other_param = $1 AND (same_param IS NULL OR same_param = $2 OR same_param = $3)",
+            Text = $"SELECT 1 WHERE other_param = {paramSyntax}1 AND (same_param IS NULL OR same_param = {paramSyntax}2 OR same_param = {paramSyntax}3)",
             Columns = { new Column { Name = "result", Type = new Identifier { Name = "integer" } } },
             Params = { parameters }
         };
 
         var request = new GenerateRequest
         {
-            Settings = _postgresSettings,
-            Catalog = _emptyCatalog,
+            Settings = settings,
+            Catalog = catalog,
             Queries = { query },
             PluginOptions = ByteString.CopyFrom("{}", Encoding.UTF8)
         };
@@ -382,5 +452,88 @@ public class ParameterDeduplicationTests
             var response = CodeGenerator.Generate(request);
             Assert.That(response.Result.Files, Is.Not.Empty);
         });
+    }
+
+    [Test]
+    [TestCase("postgresql")]
+    [TestCase("mysql")]
+    [TestCase("sqlite")]
+    public void TestParameterDeduplicationInGeneratedMethodCode(string engine)
+    {
+        // Arrange - Create a query with duplicate parameter usage to test method generation
+        var duplicateColumn = new Column
+        {
+            Name = "test_param",
+            Type = new Identifier { Name = "text" },
+            NotNull = false
+        };
+
+        var parameters = new[]
+        {
+            new Parameter { Number = 1, Column = new Column { Name = "other_param", Type = new Identifier { Name = "text" }, NotNull = true } },
+            new Parameter { Number = 2, Column = duplicateColumn.Clone() },
+            new Parameter { Number = 3, Column = duplicateColumn.Clone() }, // Duplicate - same name, same nullability
+            new Parameter { Number = 4, Column = duplicateColumn.Clone() }  // Another duplicate
+        };
+
+        var (paramSyntax, _, settings, catalog) = GetEngineSpecificData(engine);
+
+        var query = new Query
+        {
+            Filename = "query.sql",
+            Cmd = ":many",
+            Name = "TestMethodParameterDeduplication",
+            Text = $"SELECT 1 WHERE other_param = {paramSyntax}1 AND (test_param IS NULL OR test_param = {paramSyntax}2 OR test_param != {paramSyntax}3 OR test_param LIKE {paramSyntax}4)",
+            Columns = { new Column { Name = "result", Type = new Identifier { Name = "integer" } } },
+            Params = { parameters }
+        };
+
+        var request = new GenerateRequest
+        {
+            Settings = settings,
+            Catalog = catalog,
+            Queries = { query },
+            PluginOptions = ByteString.CopyFrom("{}", Encoding.UTF8)
+        };
+
+        // Act
+        var response = CodeGenerator.Generate(request);
+
+        // Assert
+        Assert.That(response.Result.Files, Is.Not.Empty);
+
+        var queryFile = response.Result.Files.First(f => f.Name == "QuerySql.cs");
+        var generatedCode = queryFile.Contents.ToStringUtf8();
+
+        // Get the appropriate parameter name based on engine
+        var parameterName = engine switch
+        {
+            "postgresql" => "@test_param",
+            "mysql" or "sqlite" => "@test_param", // All engines use @paramName in generated code
+            _ => throw new ArgumentException($"Unsupported engine: {engine}")
+        };
+
+        // Verify that each parameter appears exactly twice (once per code branch - connection and transaction)
+        // This is expected because we generate two code branches for handling different connection scenarios
+        var testParamOccurrences = System.Text.RegularExpressions.Regex.Matches(
+            generatedCode, @"command\.Parameters\.AddWithValue\(""@test_param""").Count;
+
+        Assert.That(testParamOccurrences, Is.EqualTo(2),
+            $"test_param should be added exactly twice (once per branch) in the generated method for {engine} engine");
+
+        var otherParamOccurrences = System.Text.RegularExpressions.Regex.Matches(
+            generatedCode, @"command\.Parameters\.AddWithValue\(""@other_param""").Count;
+
+        Assert.That(otherParamOccurrences, Is.EqualTo(2),
+            $"other_param should be added exactly twice (once per branch) in the generated method for {engine} engine");
+
+        // Verify the Args record only has unique parameters (not duplicated in the record itself)
+        Assert.That(generatedCode, Contains.Substring("TestMethodParameterDeduplicationArgs(string OtherParam, string? TestParam)"),
+            $"Args record should contain unique parameters for {engine} engine");
+
+        // Verify no consecutive duplicate parameter additions within the same branch
+        // This regex looks for the same parameter being added twice in a row within the same block
+        Assert.That(generatedCode, Does.Not.Match(@"AddWithValue\(""@test_param""[^}]*AddWithValue\(""@test_param"""),
+            $"Should not have duplicate AddWithValue calls for the same parameter within a single code branch for {engine} engine");
     }
 }

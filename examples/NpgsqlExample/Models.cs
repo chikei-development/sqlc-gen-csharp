@@ -11,7 +11,7 @@ using System.Text.Json;
 using System.Xml;
 
 namespace NpgsqlExampleGen;
-public readonly record struct Author(long Id, string Name, string? Bio);
+public readonly record struct Author(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt);
 public readonly record struct Book(Guid Id, string Name, long AuthorId, string? Description);
 public readonly record struct PostgresNumericType(bool? CBoolean, byte[]? CBit, short? CSmallint, int? CInteger, long? CBigint, decimal? CDecimal, decimal? CNumeric, float? CReal, double? CDoublePrecision, decimal? CMoney);
 public readonly record struct PostgresStringType(string? CChar, string? CVarchar, string? CCharacterVarying, string? CBpchar, string? CText);

@@ -12,3 +12,4 @@ repos:
       language: system
       pass_filenames: true
       files: ^((?!GeneratedProtobuf/|examples/).)*\.cs$
+      require_serial: true

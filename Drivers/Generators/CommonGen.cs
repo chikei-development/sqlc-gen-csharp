@@ -22,7 +22,13 @@ public class CommonGen(DbDriver dbDriver)
         var argsVar = Variable.Args.AsVarName();
         var queryParamsVar = Variable.QueryParams.AsVarName();
 
-        var dapperParamsCommands = query.Params.Select(p =>
+        // Deduplicate parameters by Column.Name for Dapper
+        var uniqueParams = query.Params
+            .GroupBy(p => p.Column.Name)
+            .Select(g => g.First())
+            .ToList();
+
+        var dapperParamsCommands = uniqueParams.Select(p =>
         {
             var param = p.Column.Name.ToPascalCase();
             if (p.Column.IsSqlcSlice)

@@ -8,92 +8,45 @@ permissions:
   pull-requests: write
 
 on:
-  workflow_run: 
-    workflows: [Build]
-    types: [completed]
-    branches: [main]
-
-jobs:
-  check_commit:
-    name: Check Commit
-    runs-on: ubuntu-latest
-    outputs:
-      IS_RELEASE: ${{ steps.check_msg.outputs.IS_RELEASE }}
-    steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v4
-
-      - name: Check latest commit message
-        id: check_msg
-        run: |
-          LATEST_COMMIT_MSG=$(git log -1 --pretty=%B | cat)
-          if [[ ${LATEST_COMMIT_MSG} == *"[release]"* ]]; then
-            echo "release message found - continuing with the release"
-            IS_RELEASE="true"
-          else
-            echo "no release message found - skipping..."
-            IS_RELEASE="false"
-          fi
-          echo "IS_RELEASE=${IS_RELEASE}" >> $GITHUB_OUTPUT
-          
   release:
-    name: Release
-    needs: [check_commit]
+    types: [created]
+
+jobs:          
+  release:
+    name: Build and Upload Release Assets
     runs-on: ubuntu-latest
-    if: ${{ needs.check_commit.outputs.IS_RELEASE == 'true' }}
-    env:
-      IS_RELEASE: ${{  needs.check_commit.outputs.IS_RELEASE }}
+    if: ${{ github.event.release.target_commitish == 'main' }}
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          
-      - name: Download artifact
-        id: download-artifact
-        uses: dawidd6/action-download-artifact@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
-          github_token: ${{secrets.GITHUB_TOKEN}}
-          workflow: build.yml
-          workflow_conclusion: success
-          name: wasm-file
+          dotnet-version: 8.0.x
+
+      - name: Install WASI workload
+        run: dotnet workload install wasi-experimental
+
+      - name: Build WASM plugin
+        run: |
+          dotnet publish WasmRunner -c release --output dist/
+          ./scripts/wasm/copy_plugin_to.sh dist
           
-      - name: Bump version
+      - name: Get release info
         run: |
           set -e
-          LATEST_COMMIT_MSG=$(git log -1 --pretty=%B | cat)
           
-          echo "Extract the latest tag version"
-          LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
+          # Get the tag name from the release event
+          RELEASE_TAG=${{ github.event.release.tag_name }}
           
-          BUMP_TYPE="patch" # Initialize the default version bump type to patch
-          if [[ "${LATEST_COMMIT_MSG}" == *"[major]"* ]]; then
-            BUMP_TYPE="major"
-          elif [[ "${LATEST_COMMIT_MSG}" == *"[minor]"* ]]; then
-            BUMP_TYPE="minor"
-          fi
-
-          case ${BUMP_TYPE} in
-            "major")
-              NEW_TAG=$(echo "${LATEST_TAG}" | awk -F. '{OFS="."; $1="v" substr($1,2)+1; $2="0"; $3="0"; print}')
-              ;;
-            "minor")
-              NEW_TAG=$(echo "${LATEST_TAG}" | awk -F. '{OFS="."; $2=$2+1; $3="0"; print}')
-              ;;
-            "patch")
-              NEW_TAG=$(echo "${LATEST_TAG}" | awk -F. '{OFS="."; $3=$3+1; print}')
-              ;;
-          esac
+          # Get the previous tag for changelog
+          LATEST_TAG=$(git describe --tags --abbrev=0 ${RELEASE_TAG}^ 2>/dev/null || echo "")
           
+          echo "RELEASE_TAG=${RELEASE_TAG}" >> $GITHUB_ENV
           echo "LATEST_TAG=${LATEST_TAG}" >> $GITHUB_ENV
-          echo "NEW_TAG=${NEW_TAG}" >> $GITHUB_ENV
-
-      - name: Push tag
-        run: |
-          NEW_TAG=${{ env.NEW_TAG }}
-          
-          git tag ${NEW_TAG}
-          git push origin ${NEW_TAG}
           
       - name: Calculate sha256
         run: |
@@ -101,45 +54,52 @@ jobs:
           echo "SHA256_HASH=${SHA256_HASH}" >> $GITHUB_ENV
           echo "The calculated sha256 is $SHA256_HASH"
 
-      - name: Create release draft
+      - name: Upload assets and update release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
           
           LATEST_TAG=${{ env.LATEST_TAG }}
-          NEW_TAG=${{ env.NEW_TAG }}
+          RELEASE_TAG=${{ env.RELEASE_TAG }}
           SHA256_HASH=${{ env.SHA256_HASH }}
 
-          CHANGE_LOG=$(git --no-pager log ${LATEST_TAG}..HEAD --pretty=format:'%h - %an, %ar : %s')
-
-          # Define the release notes template
-          RELEASE_NOTES=$(cat <<EOF
-          ## Release version ${NEW_TAG}
-          Release sha256 is \`${SHA256_HASH}\`
-
-          ## Configuration example
-          \`\`\`yaml
-          version: '2'
-          plugins:
-          - name: csharp
-            wasm:
-              url: https://github.com/DaredevilOSS/sqlc-gen-csharp/releases/download/${NEW_TAG}/sqlc-gen-csharp.wasm
-              sha256: ${SHA256_HASH}
-          \`\`\`
-          ## Changelog 
-          ${CHANGE_LOG}
-
-          ## Contributors
-          * @SockworkOrange
-          EOF
-          )
+          # Generate changelog if we have a previous tag
+          if [[ -n "${LATEST_TAG}" ]]; then
+            CHANGE_LOG=$(git --no-pager log ${LATEST_TAG}..${RELEASE_TAG} --pretty=format:'%h - %an, %ar : %s')
+          else
+            CHANGE_LOG="Initial release"
+          fi
 
           # change file name to convention
           mv plugin.wasm sqlc-gen-csharp.wasm
 
-          # Create a draft release
-          gh release create ${NEW_TAG} sqlc-gen-csharp.wasm \
-          --draft \
-          --title "${NEW_TAG}" \
-          --notes "${RELEASE_NOTES}"
+          # Upload the WASM file to the existing release
+          gh release upload ${RELEASE_TAG} sqlc-gen-csharp.wasm --clobber
+
+          # Get current release notes and append configuration info
+          CURRENT_NOTES=$(gh release view ${RELEASE_TAG} --json body --jq '.body')
+          
+          # Append configuration example and sha256 to existing notes
+          ADDITIONAL_NOTES=$(cat <<EOF
+
+## Configuration example
+\`\`\`yaml
+version: '2'
+plugins:
+- name: csharp
+  wasm:
+    url: https://github.com/chikei-development/sqlc-gen-csharp/releases/download/${RELEASE_TAG}/sqlc-gen-csharp.wasm
+    sha256: ${SHA256_HASH}
+\`\`\`
+
+## Release sha256
+\`${SHA256_HASH}\`
+
+## Changelog 
+${CHANGE_LOG}
+EOF
+          )
+
+          # Update the release with the additional notes
+          gh release edit ${RELEASE_TAG} --notes "${CURRENT_NOTES}${ADDITIONAL_NOTES}"
