@@ -1,6 +1,7 @@
 using NpgsqlExampleGen;
 using NUnit.Framework;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace EndToEndTests;
@@ -28,7 +29,7 @@ public partial class NpgsqlTester
     public async Task TestParameterDeduplication()
     {
         // Create test data with explicit dates
-        var testDate = new DateTime(2023, 1, 1, 10, 0, 0, DateTimeKind.Utc);
+        var testDate = new DateTime(2023, 1, 1, 10, 0, 0, DateTimeKind.Unspecified); // this needs to be unspecified for Postgres timestamp without time zone
 
         // Insert test authors with specified creation and update dates
         // Note: This test will work once the schema and code generation include the new query
@@ -51,8 +52,6 @@ public partial class NpgsqlTester
         // - 'min_id' parameter is used twice (greater than and less than conditions)  
         // - 'date_filter' parameter is used twice (created_at and updated_at filters)
 
-        // TODO: Uncomment when GetAuthorsWithDuplicateParams is generated
-        /*
         var results = await QuerySql.GetAuthorsWithDuplicateParams(new QuerySql.GetAuthorsWithDuplicateParamsArgs
         {
             AuthorName = "Test Author",
@@ -68,6 +67,5 @@ public partial class NpgsqlTester
         Assert.That(results, Is.Not.Null);
         Assert.That(results.Count, Is.GreaterThan(0));
         Assert.That(results.Any(r => r.Name == "Test Author"), Is.True);
-        */
     }
 }

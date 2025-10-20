@@ -854,6 +854,58 @@ namespace MySqlConnectorLegacyExampleGen
             }
         }
 
+        private const string GetAuthorsWithDuplicateParamsSql = "SELECT id, name, bio FROM authors WHERE (name = @author_name OR bio LIKE CONCAT('%', @author_name, '%')) AND (id > @min_id OR id < @min_id + 1000)";
+        public class GetAuthorsWithDuplicateParamsRow
+        {
+            public long Id { get; set; }
+            public string Name { get; set; }
+            public string Bio { get; set; }
+        };
+        public class GetAuthorsWithDuplicateParamsArgs
+        {
+            public string AuthorName { get; set; }
+            public long? MinId { get; set; }
+        };
+        public async Task<List<GetAuthorsWithDuplicateParamsRow>> GetAuthorsWithDuplicateParams(GetAuthorsWithDuplicateParamsArgs args)
+        {
+            if (this.Transaction == null)
+            {
+                using (var connection = new MySqlConnection(ConnectionString))
+                {
+                    await connection.OpenAsync();
+                    using (var command = new MySqlCommand(GetAuthorsWithDuplicateParamsSql, connection))
+                    {
+                        command.Parameters.AddWithValue("@author_name", args.AuthorName ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@min_id", args.MinId ?? (object)DBNull.Value);
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            var result = new List<GetAuthorsWithDuplicateParamsRow>();
+                            while (await reader.ReadAsync())
+                                result.Add(new GetAuthorsWithDuplicateParamsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) });
+                            return result;
+                        }
+                    }
+                }
+            }
+
+            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+                throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+            using (var command = this.Transaction.Connection.CreateCommand())
+            {
+                command.CommandText = GetAuthorsWithDuplicateParamsSql;
+                command.Transaction = this.Transaction;
+                command.Parameters.AddWithValue("@author_name", args.AuthorName ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@min_id", args.MinId ?? (object)DBNull.Value);
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    var result = new List<GetAuthorsWithDuplicateParamsRow>();
+                    while (await reader.ReadAsync())
+                        result.Add(new GetAuthorsWithDuplicateParamsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) });
+                    return result;
+                }
+            }
+        }
+
         private const string InsertMysqlNumericTypesSql = " INSERT INTO mysql_numeric_types ( c_bool, c_boolean, c_tinyint, c_smallint, c_mediumint, c_int, c_integer, c_bigint, c_decimal, c_dec, c_numeric, c_fixed, c_float, c_double, c_double_precision ) VALUES (@c_bool, @c_boolean, @c_tinyint, @c_smallint, @c_mediumint, @c_int, @c_integer, @c_bigint, @c_decimal, @c_dec, @c_numeric, @c_fixed, @c_float, @c_double, @c_double_precision)";
         public class InsertMysqlNumericTypesArgs
         {

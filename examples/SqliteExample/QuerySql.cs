@@ -685,6 +685,49 @@ public class QuerySql
         }
     }
 
+    private const string GetAuthorsWithDuplicateParamsSql = "SELECT id, name, bio FROM authors WHERE (name = @author_name OR bio LIKE '%' || @author_name || '%') AND (id > @min_id OR id < @min_id + 1000)";
+    public readonly record struct GetAuthorsWithDuplicateParamsRow(int Id, string Name, string? Bio);
+    public readonly record struct GetAuthorsWithDuplicateParamsArgs(string? AuthorName, int? MinId);
+    public async Task<List<GetAuthorsWithDuplicateParamsRow>> GetAuthorsWithDuplicateParams(GetAuthorsWithDuplicateParamsArgs args)
+    {
+        if (this.Transaction == null)
+        {
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                await connection.OpenAsync();
+                using (var command = new SqliteCommand(GetAuthorsWithDuplicateParamsSql, connection))
+                {
+                    command.Parameters.AddWithValue("@author_name", args.AuthorName ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@min_id", args.MinId ?? (object)DBNull.Value);
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        var result = new List<GetAuthorsWithDuplicateParamsRow>();
+                        while (await reader.ReadAsync())
+                            result.Add(new GetAuthorsWithDuplicateParamsRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) });
+                        return result;
+                    }
+                }
+            }
+        }
+
+        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        using (var command = this.Transaction.Connection.CreateCommand())
+        {
+            command.CommandText = GetAuthorsWithDuplicateParamsSql;
+            command.Transaction = this.Transaction;
+            command.Parameters.AddWithValue("@author_name", args.AuthorName ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@min_id", args.MinId ?? (object)DBNull.Value);
+            using (var reader = await command.ExecuteReaderAsync())
+            {
+                var result = new List<GetAuthorsWithDuplicateParamsRow>();
+                while (await reader.ReadAsync())
+                    result.Add(new GetAuthorsWithDuplicateParamsRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) });
+                return result;
+            }
+        }
+    }
+
     private const string InsertSqliteTypesSql = "INSERT INTO types_sqlite ( c_integer, c_real, c_text, c_blob, c_text_datetime_override, c_integer_datetime_override, c_text_noda_instant_override, c_integer_noda_instant_override, c_text_bool_override, c_integer_bool_override ) VALUES (@c_integer, @c_real, @c_text, @c_blob, @c_text_datetime_override, @c_integer_datetime_override, @c_text_noda_instant_override, @c_integer_noda_instant_override, @c_text_bool_override, @c_integer_bool_override)";
     public readonly record struct InsertSqliteTypesArgs(int? CInteger, decimal? CReal, string? CText, byte[]? CBlob, DateTime? CTextDatetimeOverride, DateTime? CIntegerDatetimeOverride, Instant? CTextNodaInstantOverride, Instant? CIntegerNodaInstantOverride, bool? CTextBoolOverride, bool? CIntegerBoolOverride);
     public async Task InsertSqliteTypes(InsertSqliteTypesArgs args)

@@ -1028,6 +1028,84 @@
       "filename": "query.sql"
     },
     {
+      "text": "SELECT id, name, bio FROM authors \nWHERE (name = ?1 OR bio LIKE '%' || ?1 || '%')\n  AND (id \u003e ?2 OR id \u003c ?2 + 1000)",
+      "name": "GetAuthorsWithDuplicateParams",
+      "cmd": ":many",
+      "columns": [
+        {
+          "name": "id",
+          "notNull": true,
+          "length": -1,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "name": "INTEGER"
+          },
+          "originalName": "id"
+        },
+        {
+          "name": "name",
+          "notNull": true,
+          "length": -1,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "name": "TEXT"
+          },
+          "originalName": "name"
+        },
+        {
+          "name": "bio",
+          "length": -1,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "name": "TEXT"
+          },
+          "originalName": "bio"
+        }
+      ],
+      "parameters": [
+        {
+          "number": 1,
+          "column": {
+            "name": "author_name",
+            "length": -1,
+            "isNamedParam": true,
+            "table": {
+              "name": "authors"
+            },
+            "type": {
+              "name": "TEXT"
+            },
+            "originalName": "name"
+          }
+        },
+        {
+          "number": 2,
+          "column": {
+            "name": "min_id",
+            "length": -1,
+            "isNamedParam": true,
+            "table": {
+              "name": "authors"
+            },
+            "type": {
+              "name": "INTEGER"
+            },
+            "originalName": "id"
+          }
+        }
+      ],
+      "comments": [
+        " This query demonstrates parameter deduplication where the same parameter is used multiple times"
+      ],
+      "filename": "query.sql"
+    },
+    {
       "text": "INSERT INTO types_sqlite \n(\n    c_integer,\n    c_real,\n    c_text,\n    c_blob,\n    c_text_datetime_override,\n    c_integer_datetime_override,\n    c_text_noda_instant_override,\n    c_integer_noda_instant_override,\n    c_text_bool_override,\n    c_integer_bool_override\n) \nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       "name": "InsertSqliteTypes",
       "cmd": ":exec",
