@@ -5,6 +5,7 @@ public enum Variable
     Options,
     Config,
     ConnectionString,
+    DataSource,
     Transaction,
     Connection,
     Command,
@@ -20,7 +21,7 @@ public enum Variable
     QueryParams,
     TransformedSql,
     Row,
-    Result
+    Result,
 }
 
 public static class VariablesExtensions

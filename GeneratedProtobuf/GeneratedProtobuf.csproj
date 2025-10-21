@@ -1,14 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <RootNamespace>SqlcGenCsharp</RootNamespace>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Google.Protobuf" Version="3.33.0" />
-        <PackageReference Include="Grpc.Core.Api" Version="2.71.0" />
-    </ItemGroup>
-
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <RootNamespace>SqlcGenCsharp</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.33.0" />
+    <PackageReference Include="Grpc.Core.Api" Version="2.71.0" />
+  </ItemGroup>
 </Project>

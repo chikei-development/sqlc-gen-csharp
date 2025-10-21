@@ -173,10 +173,9 @@ namespace SqliteLegacyExampleGen
                         command.Parameters.AddWithValue("@name", args.Name);
                         command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
                         await command.ExecuteNonQueryAsync();
+                        return;
                     }
                 }
-
-                return;
             }
 
             if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
@@ -225,6 +224,8 @@ namespace SqliteLegacyExampleGen
             {
                 command.CommandText = CreateAuthorReturnIdSql;
                 command.Transaction = this.Transaction;
+                command.Parameters.AddWithValue("@name", args.Name);
+                command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@name", args.Name);
                 command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
                 var result = await command.ExecuteScalarAsync();
@@ -569,10 +570,9 @@ namespace SqliteLegacyExampleGen
                     {
                         command.Parameters.AddWithValue("@name", args.Name);
                         await command.ExecuteNonQueryAsync();
+                        return;
                     }
                 }
-
-                return;
             }
 
             if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
@@ -619,6 +619,8 @@ namespace SqliteLegacyExampleGen
             {
                 command.CommandText = CreateBookSql;
                 command.Transaction = this.Transaction;
+                command.Parameters.AddWithValue("@name", args.Name);
+                command.Parameters.AddWithValue("@author_id", args.AuthorId);
                 command.Parameters.AddWithValue("@name", args.Name);
                 command.Parameters.AddWithValue("@author_id", args.AuthorId);
                 var result = await command.ExecuteScalarAsync();
@@ -771,10 +773,9 @@ namespace SqliteLegacyExampleGen
                     using (var command = new SqliteCommand(DeleteAllAuthorsSql, connection))
                     {
                         await command.ExecuteNonQueryAsync();
+                        return;
                     }
                 }
-
-                return;
             }
 
             if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
@@ -873,10 +874,9 @@ namespace SqliteLegacyExampleGen
                         command.Parameters.AddWithValue("@c_text_bool_override", args.CTextBoolOverride != null ? Convert.ToString(args.CTextBoolOverride) : (object)DBNull.Value);
                         command.Parameters.AddWithValue("@c_integer_bool_override", args.CIntegerBoolOverride != null ? (int? )Convert.ToInt32(args.CIntegerBoolOverride) : (object)DBNull.Value);
                         await command.ExecuteNonQueryAsync();
+                        return;
                     }
                 }
-
-                return;
             }
 
             if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
@@ -1135,10 +1135,9 @@ namespace SqliteLegacyExampleGen
                     using (var command = new SqliteCommand(DeleteAllSqliteTypesSql, connection))
                     {
                         await command.ExecuteNonQueryAsync();
+                        return;
                     }
                 }
-
-                return;
             }
 
             if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)

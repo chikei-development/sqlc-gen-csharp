@@ -1,40 +1,36 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <RootNamespace>EndToEndTests</RootNamespace>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <Content Include="../../.env">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </Content>
-        <Content Include="../../examples/config/sqlite/authors/schema.sql">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-            <TargetPath>authors.sqlite.schema.sql</TargetPath>
-        </Content>
-        <Content Include="../../examples/config/sqlite/types/schema.sql">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-            <TargetPath>types.sqlite.schema.sql</TargetPath>
-        </Content>
-    </ItemGroup>
-    
-    <ItemGroup>
-        <PackageReference Include="dotenv.net" Version="3.2.1" />
-        <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.10" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0"/>
-        <PackageReference Include="NUnit" Version="4.1.0" />
-        <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
-    </ItemGroup>
-    
-    <ItemGroup>
-      <ProjectReference Include="..\EndToEndCommon\EndToEndCommon.csproj" />
-      <ProjectReference Include="..\..\examples\MySqlConnectorDapperExample\MySqlConnectorDapperExample.csproj" />
-      <ProjectReference Include="..\..\examples\MySqlConnectorExample\MySqlConnectorExample.csproj" />
-      <ProjectReference Include="..\..\examples\NpgsqlDapperExample\NpgsqlDapperExample.csproj" />
-      <ProjectReference Include="..\..\examples\NpgsqlExample\NpgsqlExample.csproj" />
-      <ProjectReference Include="..\..\examples\SqliteDapperExample\SqliteDapperExample.csproj" />
-      <ProjectReference Include="..\..\examples\SqliteExample\SqliteExample.csproj" />
-    </ItemGroup>
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <RootNamespace>EndToEndTests</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="../../.env">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="../../examples/config/sqlite/authors/schema.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <TargetPath>authors.sqlite.schema.sql</TargetPath>
+    </Content>
+    <Content Include="../../examples/config/sqlite/types/schema.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <TargetPath>types.sqlite.schema.sql</TargetPath>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="dotenv.net" Version="3.2.1" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.10" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+    <PackageReference Include="NUnit" Version="4.1.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EndToEndCommon\EndToEndCommon.csproj" />
+    <ProjectReference Include="..\..\examples\MySqlConnectorDapperExample\MySqlConnectorDapperExample.csproj" />
+    <ProjectReference Include="..\..\examples\MySqlConnectorExample\MySqlConnectorExample.csproj" />
+    <ProjectReference Include="..\..\examples\NpgsqlDapperExample\NpgsqlDapperExample.csproj" />
+    <ProjectReference Include="..\..\examples\NpgsqlExample\NpgsqlExample.csproj" />
+    <ProjectReference Include="..\..\examples\SqliteDapperExample\SqliteDapperExample.csproj" />
+    <ProjectReference Include="..\..\examples\SqliteExample\SqliteExample.csproj" />
+  </ItemGroup>
 </Project>
