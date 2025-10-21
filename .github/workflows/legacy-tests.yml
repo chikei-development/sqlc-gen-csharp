@@ -18,6 +18,34 @@ jobs:
     name: End-to-End Tests
     runs-on: windows-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: pass
+          POSTGRES_USER: postgres
+          POSTGRES_DB: tests
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+          
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: tests
+        options: >-
+          --health-cmd "mysqladmin ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 3306:3306
+
     steps:
       - uses: actions/checkout@v4
           
@@ -34,74 +62,37 @@ jobs:
       - name: Setup NuGet
         uses: NuGet/setup-nuget@v2.0.1
         
-      - name: Install Chocolatey
+      - name: Setup PostgreSQL Client
+        shell: powershell  
+        run: |
+          choco install postgresql --params '/Password:${{ env.POSTGRES_PASSWORD }}' --no-progress -y
+          
+      - name: Setup MySQL Client
         shell: powershell
         run: |
-          Set-ExecutionPolicy Bypass -Scope Process -Force
-          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-          iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-
-      - uses: ikalnytskyi/action-setup-postgres@v7
-        with:
-          username: ${{ env.POSTGRES_USER }}
-          password: ${{ env.POSTGRES_PASSWORD }}
-          database: ${{ env.TESTS_DB }}
-          postgres-version: "16"
-        id: postgres
-        
-      - name: Init PostgresSQL Schema
-        shell: powershell
-        run: psql -U $Env:POSTGRES_USER -f 'examples/config/postgresql/types/schema.sql' -f 'examples/config/postgresql/authors/schema.sql'
-        env:
-          PGSERVICE: ${{ steps.postgres.outputs.service-name }}
-          PGPASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          choco install mysql.utilities --no-progress -y
           
-      - uses: nick-fields/retry@v3
-        name: Install MySQL and restore test projects in parallel (with retry)
-        with:
-          retry_on: error
-          max_attempts: 2
-          timeout_minutes: 7
-          shell: pwsh
-          command: |
-            $mysqlJob = Start-Job -ScriptBlock { 
-              choco install mysql --no-progress --version=8.4.4 -y --params "/serviceName:MySQL" 
-              return $LASTEXITCODE
-            }
-            
-            $restoreJob = Start-Job -ScriptBlock { 
-              Get-ChildItem -Path examples -Recurse -Filter *.csproj |
-                Where-Object { $_.FullName -like '*Legacy*' } |
-                ForEach-Object { nuget restore $_.FullName }
-              nuget restore ./end2end/EndToEndCommon/EndToEndCommon.csproj
-              nuget restore ./end2end/EndToEndTestsLegacy/EndToEndTestsLegacy.csproj
-              msbuild.exe ./end2end/EndToEndTestsLegacy/EndToEndTestsLegacy.csproj -p:Configuration=Release -p:FrameworkVersion=v4.7.2
-              return $LASTEXITCODE
-            }
-  
-            Wait-Job -Job $mysqlJob, $restoreJob
-            
-            $mysqlOutput = Receive-Job -Job $mysqlJob
-            $mysqlExitCode = @($mysqlOutput)[-1]
-            if ($mysqlExitCode -ne 0) {
-              Write-Error "MySQL install failed with exit code: $mysqlExitCode`n$mysqlOutput"
-              return $mysqlExitCode
-            }
-  
-            $restoreOutput = Receive-Job -Job $restoreJob
-            $restoreExitCode = @($restoreOutput)[-1]
-            if ($restoreExitCode -ne 0) {
-              Write-Error "Restore/build failed with exit code: $restoreExitCode`n$restoreOutput"
-              return $restoreExitCode
-            }
+      - name: Init PostgreSQL Schema
+        shell: powershell
+        run: |
+          $env:PGPASSWORD = "${{ env.POSTGRES_PASSWORD }}"
+          psql -h localhost -p 5432 -U ${{ env.POSTGRES_USER }} -d ${{ env.TESTS_DB }} -f 'examples/config/postgresql/types/schema.sql' -f 'examples/config/postgresql/authors/schema.sql'
+          
+      - name: Restore and Build Test Projects
+        shell: powershell
+        run: |
+          Get-ChildItem -Path examples -Recurse -Filter *.csproj |
+            Where-Object { $_.FullName -like '*Legacy*' } |
+            ForEach-Object { nuget restore $_.FullName }
+          nuget restore ./end2end/EndToEndCommon/EndToEndCommon.csproj
+          nuget restore ./end2end/EndToEndTestsLegacy/EndToEndTestsLegacy.csproj
+          msbuild.exe ./end2end/EndToEndTestsLegacy/EndToEndTestsLegacy.csproj -p:Configuration=Release -p:TargetFramework=net8.0
           
       - name: Init MySQL Schema
         shell: powershell
         run: |
-          $env:Path += ";C:\Program Files\MySQL\MySQL Server 8.0\bin"
-          [Environment]::SetEnvironmentVariable("Path", $env:Path, "Machine")
-          mysql -u root -e "SET GLOBAL local_infile=1; CREATE DATABASE $Env:TESTS_DB;"
-          mysql -u root $Env:TESTS_DB --execute="source examples/config/mysql/types/schema.sql; source examples/config/mysql/authors/schema.sql;"    
+          mysql -h 127.0.0.1 -P 3306 -u root -proot -e "SET GLOBAL local_infile=1;"
+          mysql -h 127.0.0.1 -P 3306 -u root -proot ${{ env.TESTS_DB }} -e "source examples/config/mysql/types/schema.sql; source examples/config/mysql/authors/schema.sql;"    
 
       - name: Run Tests
         shell: powershell
