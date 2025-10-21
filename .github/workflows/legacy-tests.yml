@@ -17,6 +17,8 @@ jobs:
   end2end-tests: 
     name: End-to-End Tests
     runs-on: windows-latest
+    env:
+      DOCKER_DEFAULT_PLATFORM: linux/amd64
 
     steps:
       - uses: actions/checkout@v4
@@ -34,52 +36,46 @@ jobs:
       - name: Setup NuGet
         uses: NuGet/setup-nuget@v2.0.1
         
-      - name: Start PostgreSQL Container
+      - name: Install and Setup PostgreSQL
         shell: powershell
         run: |
-          docker run -d --name postgres-test `
-            --platform linux/amd64 `
-            -e POSTGRES_PASSWORD=${{ env.POSTGRES_PASSWORD }} `
-            -e POSTGRES_USER=${{ env.POSTGRES_USER }} `
-            -e POSTGRES_DB=${{ env.TESTS_DB }} `
-            -p 5432:5432 `
-            postgres:16
+          # Install PostgreSQL
+          choco install postgresql16 --params '/Password:${{ env.POSTGRES_PASSWORD }}' --no-progress -y
           
+          # Add PostgreSQL to PATH
+          $env:Path += ";C:\Program Files\PostgreSQL\16\bin"
+          [Environment]::SetEnvironmentVariable("Path", $env:Path, "Machine")
+
           # Wait for PostgreSQL to be ready
-          do {
-            Start-Sleep -Seconds 2
-            $result = docker exec postgres-test pg_isready -U ${{ env.POSTGRES_USER }}
-            Write-Host "Waiting for PostgreSQL... $result"
-          } while ($LASTEXITCODE -ne 0)
+          Start-Sleep -Seconds 10
           
-      - name: Start MySQL Container
+          # Create database using psql
+          $env:PGPASSWORD = "${{ env.POSTGRES_PASSWORD }}"
+          psql -U ${{ env.POSTGRES_USER }} -d postgres -c "CREATE DATABASE ${{ env.TESTS_DB }};"
+          psql -U ${{ env.POSTGRES_USER }} -d ${{ env.TESTS_DB }} -f examples/config/postgresql/types/schema.sql
+          psql -U ${{ env.POSTGRES_USER }} -d ${{ env.TESTS_DB }} -f examples/config/postgresql/authors/schema.sql
+          
+      - name: Install and Setup MySQL
         shell: powershell
         run: |
-          docker run -d --name mysql-test `
-            --platform linux/amd64 `
-            -e MYSQL_ROOT_PASSWORD=root `
-            -e MYSQL_DATABASE=${{ env.TESTS_DB }} `
-            -p 3306:3306 `
-            mysql:8.0
+          # Install MySQL
+          choco install mysql --params '/serviceName:MySQL' --no-progress -y
+          
+          # Add MySQL to PATH
+          $env:Path += ";C:\tools\mysql\current\bin"
+          [Environment]::SetEnvironmentVariable("Path", $env:Path, "Machine")
+          
+          # Start MySQL service
+          Start-Service MySQL
           
           # Wait for MySQL to be ready
-          do {
-            Start-Sleep -Seconds 3
-            $result = docker exec mysql-test mysqladmin ping -h localhost --silent
-            Write-Host "Waiting for MySQL... Exit code: $LASTEXITCODE"
-          } while ($LASTEXITCODE -ne 0)
-        
-      - name: Setup Database Clients
-        shell: powershell  
-        run: |
-          choco install postgresql --params '/Password:${{ env.POSTGRES_PASSWORD }}' --no-progress -y
-          choco install mysql.utilities --no-progress -y
+          Start-Sleep -Seconds 10
           
-      - name: Init PostgreSQL Schema
-        shell: powershell
-        run: |
-          docker exec -i postgres-test psql -U ${{ env.POSTGRES_USER }} -d ${{ env.TESTS_DB }} < examples/config/postgresql/types/schema.sql
-          docker exec -i postgres-test psql -U ${{ env.POSTGRES_USER }} -d ${{ env.TESTS_DB }} < examples/config/postgresql/authors/schema.sql
+          # Create database
+          mysql -u root -e "CREATE DATABASE ${{ env.TESTS_DB }};"
+          mysql -u root -e "SET GLOBAL local_infile=1;"
+          mysql -u root ${{ env.TESTS_DB }} -e "source examples/config/mysql/types/schema.sql;"
+          mysql -u root ${{ env.TESTS_DB }} -e "source examples/config/mysql/authors/schema.sql;"          
           
       - name: Restore and Build Test Projects
         shell: powershell
@@ -89,14 +85,7 @@ jobs:
             ForEach-Object { nuget restore $_.FullName }
           nuget restore ./end2end/EndToEndCommon/EndToEndCommon.csproj
           nuget restore ./end2end/EndToEndTestsLegacy/EndToEndTestsLegacy.csproj
-          msbuild.exe ./end2end/EndToEndTestsLegacy/EndToEndTestsLegacy.csproj -p:Configuration=Release -p:TargetFramework=net8.0
-          
-      - name: Init MySQL Schema
-        shell: powershell
-        run: |
-          docker exec mysql-test mysql -u root -proot -e "SET GLOBAL local_infile=1;"
-          docker exec -i mysql-test mysql -u root -proot ${{ env.TESTS_DB }} < examples/config/mysql/types/schema.sql
-          docker exec -i mysql-test mysql -u root -proot ${{ env.TESTS_DB }} < examples/config/mysql/authors/schema.sql    
+          msbuild.exe ./end2end/EndToEndTestsLegacy/EndToEndTestsLegacy.csproj -p:Configuration=Release -p:TargetFramework=net472
 
       - name: Run Tests
         shell: powershell
@@ -104,10 +93,3 @@ jobs:
           $path = vswhere -latest -products * -requires Microsoft.VisualStudio.Workload.ManagedDesktop Microsoft.VisualStudio.Workload.Web -requiresAny -property installationPath
           $path = join-path $path 'Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe'
           & $path ./end2end/EndToEndTestsLegacy/bin/Release/net472/EndToEndTestsLegacy.dll
-
-      - name: Cleanup Docker Containers
-        if: always()
-        shell: powershell
-        run: |
-          docker stop postgres-test mysql-test
-          docker rm postgres-test mysql-test
