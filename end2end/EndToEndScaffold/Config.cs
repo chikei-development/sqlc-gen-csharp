@@ -33,6 +33,7 @@ public enum KnownTestType
     SqliteCopyFrom,
     SqliteTransaction,
     SqliteTransactionRollback,
+    SqliteInlineComments,
 
     // Postgres
     PostgresTransaction,
@@ -42,6 +43,7 @@ public enum KnownTestType
     PostgresDataTypesOverride,
     PostgresInvalidJson,
     PostgresInvalidXml,
+    PostgresInlineComments,
 
     // Data types
     PostgresStringDataTypes,
@@ -75,6 +77,7 @@ public enum KnownTestType
     MySqlDataTypesOverride,
     MySqlScopedSchemaEnum,
     MySqlInvalidJson,
+    MySqlInlineComments,
 
     // Data types
     MySqlStringDataTypes,
@@ -103,6 +106,7 @@ internal static class Config
         KnownTestType.MySqlDataTypesOverride,
         KnownTestType.MySqlScopedSchemaEnum,
         KnownTestType.MySqlInvalidJson,
+        KnownTestType.MySqlInlineComments,
 
         // query annotations
         KnownTestType.One,
@@ -145,6 +149,7 @@ internal static class Config
         KnownTestType.MultipleArraysAsParams,
         KnownTestType.PostgresInvalidJson,
         KnownTestType.PostgresInvalidXml,
+        KnownTestType.PostgresInlineComments,
 
         // query annotations
         KnownTestType.One,
@@ -204,7 +209,8 @@ internal static class Config
         KnownTestType.SqliteDataTypes,
         KnownTestType.SqliteCopyFrom,
         KnownTestType.SqliteDataTypesOverride,
-        KnownTestType.SqliteMultipleNamedParam
+        KnownTestType.SqliteMultipleNamedParam,
+        KnownTestType.SqliteInlineComments
     ];
 
     public static Dictionary<string, ClassGenConfig> FilesToGenerate { get; } =

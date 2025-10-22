@@ -270,7 +270,7 @@ public sealed partial class SqliteDriver(
 
     public override string TransformQueryText(Query query)
     {
-        var queryText = query.Text;
+        var queryText = RemoveComments(query.Text);
         var areArgumentsNumbered = NumberedArgumentsRegex().IsMatch(queryText);
 
         foreach (var p in query.Params)
@@ -285,12 +285,31 @@ public sealed partial class SqliteDriver(
         return queryText;
     }
 
+    private static string RemoveComments(string sql)
+    {
+        // Remove inline comments (-- comment)
+        sql = InlineCommentRegex().Replace(sql, "");
+
+        // Remove block comments (/* comment */)
+        sql = BlockCommentRegex().Replace(sql, "");
+
+        return sql;
+    }
+
     // Regex to detect numbered parameters like ?1, ?2
     [GeneratedRegex(@"\?\d+\b")]
     private static partial Regex NumberedArgumentsRegex();
 
     [GeneratedRegex(@"\?")]
     private static partial Regex QueryParamRegex();
+
+    // Regex for inline comments
+    [GeneratedRegex(@"--[^\r\n]*")]
+    private static partial Regex InlineCommentRegex();
+
+    // Regex for block comments that are NOT slice comments
+    [GeneratedRegex(@"/\*(?!SLICE:).*?\*/", RegexOptions.Singleline)]
+    private static partial Regex BlockCommentRegex();
 
     public string GetCopyFromImpl(Query query, string queryTextConstant)
     {

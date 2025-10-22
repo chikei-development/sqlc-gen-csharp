@@ -1307,6 +1307,29 @@ public static class PostgresTests
                          }
                      }
                      """
+        },
+        [KnownTestType.PostgresInlineComments] = new TestImpl
+        {
+            Impl = $$"""
+                     [Test]
+                     public async Task TestPostgresInlineComments()
+                     {
+                         // This test verifies that queries with inline comments work correctly
+                         // The bug has been fixed - inline comments are now properly removed during code generation
+                         
+                         // Test the CreateAuthorIncludingComment method
+                         var result = await QuerySql.CreateAuthorIncludingComment(new QuerySql.CreateAuthorIncludingCommentArgs
+                         {
+                             Id = 9999,
+                             Name = "Test Author With Comments",
+                             Bio = "Biography with inline comments test"
+                         });
+                         
+                         Assert.That(result, Is.Not.Null);
+                         Assert.That(result{{Consts.UnknownRecordValuePlaceholder}}.Name, Is.EqualTo("Test Author With Comments"));
+                         Assert.That(result{{Consts.UnknownRecordValuePlaceholder}}.Bio, Is.EqualTo("Biography with inline comments test"));
+                     }
+                     """
         }
     };
 }

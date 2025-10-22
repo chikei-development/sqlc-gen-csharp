@@ -258,6 +258,30 @@ public static class SqliteTests
                          }
                      }
                      """
+        },
+        [KnownTestType.SqliteInlineComments] = new TestImpl
+        {
+            Impl = $$"""
+                     [Test]
+                     public async Task TestSqliteInlineComments()
+                     {
+                         // This test verifies that queries with inline comments work correctly
+                         // The bug has been fixed - inline comments are now properly removed during code generation
+                         
+                         // Test the CreateAuthorIncludingComment method
+                         await QuerySql.CreateAuthorIncludingComment(new QuerySql.CreateAuthorIncludingCommentArgs
+                         {
+                             Id = 9999,
+                             Name = "Test Author With Comments",
+                             Bio = "Biography with inline comments test"
+                         });
+                         
+                         var author = await QuerySql.GetAuthorById(new QuerySql.GetAuthorByIdArgs { Id = 9999 });
+                         Assert.That(author, Is.Not.Null);
+                         Assert.That(author{{Consts.UnknownRecordValuePlaceholder}}.Name, Is.EqualTo("Test Author With Comments"));
+                         Assert.That(author{{Consts.UnknownRecordValuePlaceholder}}.Bio, Is.EqualTo("Biography with inline comments test"));
+                     }
+                     """
         }
     };
 }

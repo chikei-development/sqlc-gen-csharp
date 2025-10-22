@@ -489,15 +489,41 @@ public sealed partial class MySqlConnectorDriver(
         if (query.Cmd == ":copyfrom")
             return string.Empty;
 
-        var counter = 0;
         var queryText = query.Text;
-        queryText = QueryParamRegex().Replace(queryText, _ => "@" + query.Params[counter++].Column.Name);
+
+        // Remove comments first to avoid matching ? in comments during parameter replacement
+        queryText = RemoveComments(queryText);
+
+        // Replace parameters one by one in the order they appear in query.Params
+        foreach (var p in query.Params)
+        {
+            var column = GetColumnFromParam(p, query);
+            queryText = QueryParamRegex().Replace(queryText, $"@{column.Name}", 1);
+        }
+
         queryText = Options.UseDapper && query.Cmd == ":execlastid"
             ? $"{queryText}; SELECT LAST_INSERT_ID()"
             : queryText;
 
         return queryText;
     }
+
+    private static string RemoveComments(string sql)
+    {
+        // Remove inline comments (-- comment) to avoid matching ? in comments
+        var withoutInlineComments = InlineCommentRegex().Replace(sql, "");
+
+        // Remove block comments (/* comment */) 
+        var withoutBlockComments = BlockCommentRegex().Replace(withoutInlineComments, "");
+
+        return withoutBlockComments;
+    }
+
+    [GeneratedRegex(@"--[^\r\n]*")]
+    private static partial Regex InlineCommentRegex();
+
+    [GeneratedRegex(@"/\*(?!SLICE:).*?\*/", RegexOptions.Singleline)]
+    private static partial Regex BlockCommentRegex();
 
     [GeneratedRegex(@"\?")]
     private static partial Regex QueryParamRegex();
