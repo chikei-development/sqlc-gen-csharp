@@ -414,7 +414,7 @@
       }
     },
     {
-      "text": "INSERT INTO authors (\n    id, -- this is an id\n    name, -- this is a name!@#$%,\n    bio -- comment?\n    ) VALUES (?, ?, ?)",
+      "text": "INSERT INTO authors (\n    id, -- this is an id\n    name, -- this is a name!@#$%,\n    bio -- comment?\n) VALUES (?, ?, ?)",
       "name": "CreateAuthorIncludingComment",
       "cmd": ":exec",
       "parameters": [

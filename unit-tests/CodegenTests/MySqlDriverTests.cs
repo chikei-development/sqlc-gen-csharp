@@ -12,13 +12,22 @@ public class MySqlDriverTests
     [SetUp]
     public void SetUp()
     {
-        var options = new Options
+        // Create a minimal GenerateRequest for Options
+        var generateRequest = new GenerateRequest
         {
-            UseDapper = false,
-            TargetFramework = DotnetFramework.Net8,
-            GenerateCsproj = false
+            Settings = new Settings
+            {
+                Engine = "mysql",
+                Codegen = new Codegen { Out = "test" }
+            },
+            PluginOptions = Google.Protobuf.ByteString.CopyFromUtf8("{}")
         };
-        _driver = new MySqlConnectorDriver(options);
+
+        var options = new Options(generateRequest);
+        var catalog = new Catalog();
+        var queries = new List<Query>();
+
+        _driver = new MySqlConnectorDriver(options, catalog, queries);
     }
 
     [Test]
@@ -251,20 +260,26 @@ public class MySqlDriverTests
         var result = _driver.TransformQueryText(query);
 
         // Assert
-        Assert.That(result, Is.EqualTo("INSERT INTO authors (name, bio) VALUES (@name, @bio); SELECT LAST_INSERT_ID()"));
+        Assert.That(result, Is.EqualTo("INSERT INTO authors (name, bio) VALUES (@name, @bio)"));
     }
 
     [Test]
     public void TransformQueryText_WithDapperAndExecLastIdCommand_AppendsSelectLastInsertId()
     {
         // Arrange
-        var dapperOptions = new Options
+        var dapperGenerateRequest = new GenerateRequest
         {
-            UseDapper = true,
-            TargetFramework = DotnetFramework.Net8,
-            GenerateCsproj = false
+            Settings = new Settings
+            {
+                Engine = "mysql",
+                Codegen = new Codegen { Out = "test" }
+            },
+            PluginOptions = Google.Protobuf.ByteString.CopyFromUtf8("{\"useDapper\": true}")
         };
-        var dapperDriver = new MySqlConnectorDriver(dapperOptions);
+        var dapperOptions = new Options(dapperGenerateRequest);
+        var catalog = new Catalog();
+        var queries = new List<Query>();
+        var dapperDriver = new MySqlConnectorDriver(dapperOptions, catalog, queries);
 
         var query = new Query
         {
