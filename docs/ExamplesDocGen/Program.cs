@@ -16,9 +16,9 @@ public static class ExamplesDocGen
 
         var exampleNodes = sqlArray.Children.Select(ParseConfigNode).ToList();
         var contents = $"""
-                        # Examples
-                        {exampleNodes.JoinByNewLine()}
-                        """;
+            # Examples
+            {exampleNodes.JoinByNewLine()}
+            """;
         using var stdout = Console.OpenStandardOutput();
         Console.Write(contents);
     }
@@ -44,16 +44,18 @@ public static class ExamplesDocGen
         var optionsStr = optionsWriter.ToString().Trim().TrimEnd('.');
 
         return $"""
-                <details>
-                <summary>{projectName.Replace("Example", "")}</summary>
-                
-                ## Engine `{item["engine"]}`: [{projectName}]({outputDirectory})
-                ### [Schema]({item["schema"][0]}) | [Queries]({item["queries"][0]}) | [End2End Test](end2end/{testProject}/{testClassName}.cs)
-                ### Config
-                ```yaml
-                {optionsStr}```
-                
-                </details>
-                """;
+            <details>
+            <summary>{projectName.Replace("Example", "")}</summary>
+
+            ## Engine `{item["engine"]}`: [{projectName}]({outputDirectory})
+            ### [Schema]({item["schema"][0]}) | [Queries]({item["queries"][
+                0
+            ]}) | [End2End Test](end2end/{testProject}/{testClassName}.cs)
+            ### Config
+            ```yaml
+            {optionsStr}```
+
+            </details>
+            """;
     }
 }

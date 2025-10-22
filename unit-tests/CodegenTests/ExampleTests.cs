@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using SqlcGenCsharp;
+using System.Net;
 
 namespace CodegenTests;
 
@@ -29,7 +30,12 @@ public class ExampleTests
         {
             var request = Plugin.GenerateRequest.Parser.ParseFrom(File.ReadAllBytes(requestFile));
             var codeGenerator = new CodeGenerator();
-            await codeGenerator.Generate(request);
+            var response = await codeGenerator.Generate(request);
+            var queryFileContents = response
+                .Files.First(x => x.Name.EndsWith("QuerySql.cs"))
+                .Contents
+                .ToStringUtf8();
+            Assert.NotNull(queryFileContents);
         });
     }
 }
