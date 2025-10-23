@@ -10,7 +10,8 @@ public abstract class EnumDbDriver : DbDriver
 {
     public Dictionary<string, Dictionary<string, Enum>> Enums { get; }
 
-    public EnumDbDriver(Options options, Catalog catalog, IList<Query> queries) : base(options, catalog, queries)
+    public EnumDbDriver(Options options, Catalog catalog, IList<Query> queries)
+        : base(options, catalog, queries)
     {
         Enums = ConstructEnumsLookup(catalog);
 
@@ -19,11 +20,17 @@ public abstract class EnumDbDriver : DbDriver
                 NullableTypes.Add(e.Key.ToModelName(schemaEnums.Key, DefaultSchema));
     }
 
-    public virtual MemberDeclarationSyntax[] GetEnumExtensionsMembers(string name, IList<string> possibleValues)
+    public virtual MemberDeclarationSyntax[] GetEnumExtensionsMembers(
+        string name,
+        IList<string> possibleValues
+    )
     {
-        return [.. new List<MemberDeclarationSyntax>()
-        {
-            ParseMemberDeclaration($$"""
+        return
+        [
+            .. new List<MemberDeclarationSyntax>()
+            {
+                ParseMemberDeclaration(
+                    $$"""
                 private static readonly Dictionary<string, {{name}}> StringToEnum = new Dictionary<string, {{name}}>()
                 {
                     [string.Empty] = {{name}}.Invalid,
@@ -31,17 +38,22 @@ public abstract class EnumDbDriver : DbDriver
                         .Select(v => $"[\"{v}\"] = {name}.{v.ToPascalCase()}")
                         .JoinByComma()}}
                 };
-                """)!
-        }.AddRangeIf(
-            [
-                ParseMemberDeclaration($$"""
-                    public static {{name}} To{{name}}(this string me)
-                    {
-                        return StringToEnum[me];
-                    }
-                """)!
-            ],
-            !Options.UseDapper)];
+                """
+                )!,
+            }.AddRangeIf(
+                [
+                    ParseMemberDeclaration(
+                        $$"""
+                            public static {{name}} To{{name}}(this string me)
+                            {
+                                return StringToEnum[me];
+                            }
+                        """
+                    )!,
+                ],
+                !Options.UseDapper
+            ),
+        ];
     }
 
     protected abstract Enum? GetEnumType(Column column);
@@ -68,18 +80,16 @@ public abstract class EnumDbDriver : DbDriver
         return base.GetCsharpTypeWithoutNullableSuffix(column, query);
     }
 
-    private static Dictionary<string, Dictionary<string, Enum>> ConstructEnumsLookup(Catalog catalog)
+    private static Dictionary<string, Dictionary<string, Enum>> ConstructEnumsLookup(
+        Catalog catalog
+    )
     {
         return catalog
-            .Schemas
-            .SelectMany(s => s.Enums.Select(e => new { EnumItem = e, Schema = s.Name }))
+            .Schemas.SelectMany(s => s.Enums.Select(e => new { EnumItem = e, Schema = s.Name }))
             .GroupBy(x => x.Schema == catalog.DefaultSchema ? string.Empty : x.Schema)
             .ToDictionary(
                 group => group.Key,
-                group => group.ToDictionary(
-                    x => x.EnumItem.Name,
-                    x => x.EnumItem
-                )
+                group => group.ToDictionary(x => x.EnumItem.Name, x => x.EnumItem)
             );
     }
 }

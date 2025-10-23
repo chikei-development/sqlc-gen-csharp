@@ -26,12 +26,7 @@ public abstract class DbDriver
     protected IList<Query> Queries { get; }
 
     private HashSet<string> NullableTypesInDotnetCore { get; } =
-    [
-        "string",
-        "object",
-        "PhysicalAddress",
-        "IPAddress"
-    ];
+    ["string", "object", "PhysicalAddress", "IPAddress"];
 
     protected HashSet<string> NullableTypes { get; } =
     [
@@ -55,49 +50,47 @@ public abstract class DbDriver
         "NpgsqlCircle",
         "JsonElement",
         "NpgsqlCidr",
-        "Instant"
+        "Instant",
     ];
 
     protected abstract Dictionary<string, ColumnMapping> ColumnMappings { get; }
 
     protected const string TransformQueryForSliceArgsImpl = """
-           public static string TransformQueryForSliceArgs(string originalSql, int sliceSize, string paramName)
-           {
-               var paramArgs = Enumerable.Range(0, sliceSize).Select(i => $"@{paramName}Arg{i}").ToList();
-               return originalSql.Replace($"/*SLICE:{paramName}*/@{paramName}", string.Join(",", paramArgs));
-           }
-           """;
-
-    public readonly string TransactionConnectionNullExcetionThrow = $"""
-         if (this.{Variable.Transaction.AsPropertyName()}?.Connection == null || this.{Variable.Transaction.AsPropertyName()}?.Connection.State != System.Data.ConnectionState.Open)
-             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-         """;
-
-    protected static readonly SqlMapperImplFunc DateTimeNodaInstantTypeHandler = _ => $$"""
-        private class NodaInstantTypeHandler : SqlMapper.TypeHandler<Instant>
+        public static string TransformQueryForSliceArgs(string originalSql, int sliceSize, string paramName)
         {
-            public override Instant Parse(object value)
-            {
-                if (value is DateTime dt)
-                {
-                    if (dt.Kind != DateTimeKind.Utc)
-                        dt = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
-                    return dt.ToInstant();
-                }
-                throw new DataException($"Cannot convert {value?.GetType()} to Instant");
-            }
-
-            public override void SetValue(IDbDataParameter parameter, Instant value)
-            {
-                parameter.Value = value;
-            }
+            var paramArgs = Enumerable.Range(0, sliceSize).Select(i => $"@{paramName}Arg{i}").ToList();
+            return originalSql.Replace($"/*SLICE:{paramName}*/@{paramName}", string.Join(",", paramArgs));
         }
         """;
 
-    protected DbDriver(
-        Options options,
-        Catalog catalog,
-        IList<Query> queries)
+    public readonly string TransactionConnectionNullExcetionThrow = $"""
+        if (this.{Variable.Transaction.AsPropertyName()}?.Connection == null || this.{Variable.Transaction.AsPropertyName()}?.Connection.State != System.Data.ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        """;
+
+    protected static readonly SqlMapperImplFunc DateTimeNodaInstantTypeHandler = _ =>
+        $$"""
+            private class NodaInstantTypeHandler : SqlMapper.TypeHandler<Instant>
+            {
+                public override Instant Parse(object value)
+                {
+                    if (value is DateTime dt)
+                    {
+                        if (dt.Kind != DateTimeKind.Utc)
+                            dt = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
+                        return dt.ToInstant();
+                    }
+                    throw new DataException($"Cannot convert {value?.GetType()} to Instant");
+                }
+
+                public override void SetValue(IDbDataParameter parameter, Instant value)
+                {
+                    parameter.Value = value;
+                }
+            }
+            """;
+
+    protected DbDriver(Options options, Catalog catalog, IList<Query> queries)
     {
         Options = options;
         DefaultSchema = catalog.DefaultSchema;
@@ -111,16 +104,14 @@ public abstract class DbDriver
             NullableTypes.Add(t);
     }
 
-    private static readonly HashSet<string> _excludedSchemas =
-    [
-        "pg_catalog",
-        "information_schema"
-    ];
+    private static readonly HashSet<string> _excludedSchemas = ["pg_catalog", "information_schema"];
 
-    private static Dictionary<string, Dictionary<string, Table>> ConstructTablesLookup(Catalog catalog)
+    private static Dictionary<string, Dictionary<string, Table>> ConstructTablesLookup(
+        Catalog catalog
+    )
     {
-        return catalog.Schemas
-            .Where(s => !_excludedSchemas.Contains(s.Name))
+        return catalog
+            .Schemas.Where(s => !_excludedSchemas.Contains(s.Name))
             .ToDictionary(
                 s => s.Name == catalog.DefaultSchema ? string.Empty : s.Name,
                 s => s.Tables.ToDictionary(t => t.Rel.Name, t => t)
@@ -129,30 +120,37 @@ public abstract class DbDriver
 
     public virtual IDictionary<string, string> GetPackageReferences()
     {
-        return new Dictionary<string, string> {
-            { "Dapper", Options.OverrideDapperVersion != string.Empty ? Options.OverrideDapperVersion : DefaultDapperVersion }
-         }
-        .MergeIf(new Dictionary<string, string>
+        return new Dictionary<string, string>
         {
-            { "System.Text.Json", DefaultSystemTextJsonVersion }
-        }, IsSystemTextJsonNeeded())
-        .MergeIf(new Dictionary<string, string>
-        {
-            { "NodaTime", DefaultNodaTimeVersion }
-        }, TypeExistsInQueries("Instant"));
+            {
+                "Dapper",
+                Options.OverrideDapperVersion != string.Empty
+                    ? Options.OverrideDapperVersion
+                    : DefaultDapperVersion
+            },
+        }
+            .MergeIf(
+                new Dictionary<string, string>
+                {
+                    { "System.Text.Json", DefaultSystemTextJsonVersion },
+                },
+                IsSystemTextJsonNeeded()
+            )
+            .MergeIf(
+                new Dictionary<string, string> { { "NodaTime", DefaultNodaTimeVersion } },
+                TypeExistsInQueries("Instant")
+            );
     }
 
     public virtual ISet<string> GetUsingDirectivesForQueries()
     {
         return new HashSet<string>
-            {
-                "System",
-                "System.Collections.Generic",
-                "System.Threading.Tasks"
-            }
-            .AddRangeIf([
-                "Dapper"
-            ], Options.UseDapper)
+        {
+            "System",
+            "System.Collections.Generic",
+            "System.Threading.Tasks",
+        }
+            .AddRangeIf(["Dapper"], Options.UseDapper)
             .AddRangeExcludeNulls(GetUsingDirectivesForColumnMappings());
     }
 
@@ -160,6 +158,8 @@ public abstract class DbDriver
     {
         var usingDirectives = new HashSet<string>();
         foreach (var query in Queries)
+        {
+            // Check return columns
             foreach (var column in query.Columns)
             {
                 var csharpType = GetCsharpTypeWithoutNullableSuffix(column, query);
@@ -167,38 +167,110 @@ public abstract class DbDriver
                     continue;
 
                 var columnMapping = ColumnMappings[csharpType];
-                usingDirectives.AddRangeIf(columnMapping.UsingDirectives!, columnMapping.UsingDirectives is not null);
+                usingDirectives.AddRangeIf(
+                    columnMapping.UsingDirectives!,
+                    columnMapping.UsingDirectives is not null
+                );
             }
+
+            // Check parameters
+            foreach (var param in query.Params)
+            {
+                var csharpType = GetCsharpTypeWithoutNullableSuffix(param.Column, query);
+                if (!ColumnMappings.ContainsKey(csharpType))
+                    continue;
+
+                var columnMapping = ColumnMappings[csharpType];
+                usingDirectives.AddRangeIf(
+                    columnMapping.UsingDirectives!,
+                    columnMapping.UsingDirectives is not null
+                );
+            }
+        }
         return usingDirectives;
     }
 
     public virtual ISet<string> GetUsingDirectivesForUtils()
     {
-        return new HashSet<string>
-            {
-                "System.Linq"
-            }
+        return new HashSet<string> { "System.Linq" }
             .AddRangeIf(["System.Data", "Dapper"], Options.UseDapper)
             .AddRangeIf(GetUsingDirectivesForColumnMappings(), Options.UseDapper);
     }
 
     public virtual ISet<string> GetUsingDirectivesForModels()
     {
-        return new HashSet<string>
-            {
-                "System.Linq"
-            }
-            .AddRangeExcludeNulls(GetUsingDirectivesForColumnMappings());
+        return new HashSet<string> { "System.Linq" }.AddRangeExcludeNulls(
+            GetUsingDirectivesForColumnMappings()
+        );
     }
 
-    public string[] GetConstructorStatements()
+    public virtual ClassDeclarationSyntax GetClassDeclaration(
+        string className,
+        IEnumerable<MemberDeclarationSyntax> classMembers,
+        Dictionary<string, Dictionary<string, Plugin.Enum>> enums
+    )
     {
-        return [$"this.{Variable.ConnectionString.AsPropertyName()} = {Variable.ConnectionString.AsVarName()};"];
+        var dapperStatements = Options.UseDapper
+            ? $$"""
+                  Utils.ConfigureSqlMapper();
+                  Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
+                """
+            : string.Empty;
+        var classDeclaration = (ClassDeclarationSyntax)
+            ParseMemberDeclaration(
+                $$"""
+                public class {{className}}
+                {
+                    public {{className}}()
+                    {
+                        {{dapperStatements}}
+                    }
+
+                    public {{className}}(string {{Variable.ConnectionString.AsVarName()}}) : this()
+                    {
+                        {{GetConstructorStatements(enums).JoinByNewLine()}}
+                    }
+
+                    private {{className}}({{TransactionClassName}} {{Variable.Transaction.AsVarName()}}) : this()
+                    {
+                        {{GetTransactionConstructorStatements().JoinByNewLine()}}
+                    }
+
+                    public static {{className}} WithTransaction({{TransactionClassName}} {{Variable.Transaction.AsVarName()}})
+                    {
+                        return new {{className}}({{Variable.Transaction.AsVarName()}});
+                    }
+
+                    private {{AddNullableSuffixIfNeeded(
+                    TransactionClassName,
+                    false
+                )}} {{Variable.Transaction.AsPropertyName()}} { get; }
+                    private {{AddNullableSuffixIfNeeded(
+                    "string",
+                    false
+                )}} {{Variable.ConnectionString.AsPropertyName()}} { get; }
+                }
+                """
+            )!;
+        return classDeclaration.AddMembers(classMembers.ToArray());
+    }
+
+    public virtual string[] GetConstructorStatements(
+        Dictionary<string, Dictionary<string, Plugin.Enum>> enums
+    )
+    {
+        return
+        [
+            $"this.{Variable.ConnectionString.AsPropertyName()} = {Variable.ConnectionString.AsVarName()};",
+        ];
     }
 
     public string[] GetTransactionConstructorStatements()
     {
-        return [$"this.{Variable.Transaction.AsPropertyName()} = {Variable.Transaction.AsVarName()};"];
+        return
+        [
+            $"this.{Variable.Transaction.AsPropertyName()} = {Variable.Transaction.AsVarName()};",
+        ];
     }
 
     protected virtual ISet<string> GetConfigureSqlMappings()
@@ -213,21 +285,32 @@ public abstract class DbDriver
     {
         if (!Options.UseDapper)
             return [];
-        return [..
-            GetSqlMapperMemberDeclarations(),
-            ParseMemberDeclaration($$"""
-                 public static void ConfigureSqlMapper()
-                 {
-                     {{GetConfigureSqlMappings().JoinByNewLine()}}
-                 }
-               """)!];
+        return
+        [
+            .. GetSqlMapperMemberDeclarations(),
+            ParseMemberDeclaration(
+                $$"""
+                  public static void ConfigureSqlMapper()
+                  {
+                      {{GetConfigureSqlMappings().JoinByNewLine()}}
+                  }
+                """
+            )!,
+        ];
     }
 
     private MemberDeclarationSyntax[] GetSqlMapperMemberDeclarations()
     {
-        return [.. ColumnMappings
-            .Where(m => TypeExistsInQueries(m.Key) && m.Value.SqlMapperImpl is not null)
-            .Select(m => ParseMemberDeclaration(m.Value.SqlMapperImpl!(Options.DotnetFramework.IsDotnetCore()))!)];
+        return
+        [
+            .. ColumnMappings
+                .Where(m => TypeExistsInQueries(m.Key) && m.Value.SqlMapperImpl is not null)
+                .Select(m =>
+                    ParseMemberDeclaration(
+                        m.Value.SqlMapperImpl!(Options.DotnetFramework.IsDotnetCore())
+                    )!
+                ),
+        ];
     }
 
     public abstract string TransformQueryText(Query query);
@@ -236,30 +319,140 @@ public abstract class DbDriver
 
     public abstract string CreateSqlCommand(string sqlTextConstant);
 
+    /// <summary>
+    /// Gets the connection establishment code for scenarios without transaction.
+    /// Override this for DataSource-based drivers like Npgsql.
+    /// </summary>
+    public virtual string GetNoTransactionConnectionCode(Query query)
+    {
+        var (establishConnection, connectionOpen) = EstablishConnection(query);
+        return $$"""
+            using ({{establishConnection}})
+            {
+                {{connectionOpen.AppendSemicolonUnlessEmpty()}}
+            """;
+    }
+
+    /// <summary>
+    /// Gets the connection establishment code for scenarios with transaction.
+    /// Override this for DataSource-based drivers that need different transaction handling.
+    /// </summary>
+    public virtual string GetWithTransactionConnectionCode(Query query)
+    {
+        return string.Empty; // Default: no special connection code for transactions
+    }
+
+    /// <summary>
+    /// Gets the command creation code for scenarios without transaction.
+    /// Override this for DataSource-based drivers like Npgsql.
+    /// </summary>
+    public virtual string GetNoTransactionCommandCode(string sqlVar, Query query)
+    {
+        var createSqlCommand = CreateSqlCommand(sqlVar);
+        return $$"""
+            using ({{createSqlCommand}})
+            {
+            """;
+    }
+
+    /// <summary>
+    /// Gets the command creation code for scenarios with transaction.
+    /// Default implementation works for most drivers.
+    /// </summary>
+    public virtual string GetWithTransactionCommandCode(string sqlVar, Query query)
+    {
+        var transactionProperty = Variable.Transaction.AsPropertyName();
+        var commandVar = Variable.Command.AsVarName();
+        return $$"""
+            using (var {{commandVar}} = this.{{transactionProperty}}.Connection.CreateCommand())
+            {
+                {{commandVar}}.CommandText = {{sqlVar}};
+                {{commandVar}}.Transaction = this.{{transactionProperty}};
+            """;
+    }
+
+    /// <summary>
+    /// Generates the complete method body for non-transaction scenarios.
+    /// This is a helper method that combines connection and command patterns.
+    /// </summary>
+    public virtual string GenerateNoTransactionMethodBody(
+        string sqlVar,
+        Query query,
+        string innerBody
+    )
+    {
+        var connectionCode = GetNoTransactionConnectionCode(query);
+        var commandCode = GetNoTransactionCommandCode(sqlVar, query);
+        var commandParameters = AddParametersToCommand(query);
+
+        // For DataSource-based drivers (like Npgsql), connectionCode will be empty
+        var connectionWrapper = string.IsNullOrEmpty(connectionCode)
+            ? string.Empty
+            : connectionCode;
+        var connectionClose = string.IsNullOrEmpty(connectionCode) ? string.Empty : "    }";
+
+        return $$"""
+               {{connectionWrapper}}
+               {{commandCode}}
+                  {{commandParameters}}
+                   {{innerBody}}
+               }
+               {{connectionClose}}
+            """;
+    }
+
+    /// <summary>
+    /// Generates the complete method body for transaction scenarios.
+    /// </summary>
+    public virtual string GenerateWithTransactionMethodBody(
+        string sqlVar,
+        Query query,
+        string innerBody
+    )
+    {
+        var commandCode = GetWithTransactionCommandCode(sqlVar, query);
+        var commandParameters = AddParametersToCommand(query);
+
+        return $$"""
+               {{TransactionConnectionNullExcetionThrow}}
+               {{commandCode}}
+                   {{commandParameters}}
+                   {{innerBody}}
+               }
+            """;
+    }
+
     /* Since there is no indication of the primary key column in SQLC protobuf (assuming it is a single column),
        this method uses a few heuristics to assess the data type of the id column
     */
     public string GetIdColumnType(Query query)
     {
         var tableColumns = Tables[query.InsertIntoTable.Schema][query.InsertIntoTable.Name].Columns;
-        var idColumn = tableColumns.First(c => c.Name.Equals("id", StringComparison.OrdinalIgnoreCase));
+        var idColumn = tableColumns.First(c =>
+            c.Name.Equals("id", StringComparison.OrdinalIgnoreCase)
+        );
         if (idColumn is not null)
             return GetCsharpType(idColumn, query);
 
-        idColumn = tableColumns.First(c => c.Name.Contains("id", StringComparison.CurrentCultureIgnoreCase));
+        idColumn = tableColumns.First(c =>
+            c.Name.Contains("id", StringComparison.CurrentCultureIgnoreCase)
+        );
         return GetCsharpType(idColumn ?? tableColumns[0], query);
     }
 
     public virtual string[] GetLastIdStatement(Query query)
     {
         var idColumnType = GetIdColumnType(query);
-        var convertFunc = ColumnMappings[idColumnType].ConvertFunc ??
-            throw new InvalidOperationException($"ConvertFunc is missing for id column type {idColumnType}");
+        var convertFunc =
+            ColumnMappings[idColumnType].ConvertFunc
+            ?? throw new InvalidOperationException(
+                $"ConvertFunc is missing for id column type {idColumnType}"
+            );
         var convertFuncCall = convertFunc(Variable.Result.AsVarName());
         return
         [
             $"var {Variable.Result.AsVarName()} = await {Variable.Command.AsVarName()}.ExecuteScalarAsync();",
-            $"return {convertFuncCall};"
+            $"return {convertFuncCall};",
         ];
     }
 
@@ -267,39 +460,46 @@ public abstract class DbDriver
     {
         // Deduplicate parameters by Column.Name to avoid adding the same parameter multiple times
         // This handles cases where the same named parameter is used multiple times in SQL
-        var uniqueParams = query.Params
-            .GroupBy(p => p.Column.Name)
+        var uniqueParams = query
+            .Params.GroupBy(p => p.Column.Name)
             .Select(g => g.First()) // Take the first parameter for each unique name
             .ToList();
 
-        return uniqueParams.Select(p =>
-        {
-            var commandVar = Variable.Command.AsVarName();
-            var param = $"{Variable.Args.AsVarName()}.{p.Column.Name.ToPascalCase()}";
-            var columnMapping = GetCsharpTypeWithoutNullableSuffix(p.Column, query);
+        return uniqueParams
+            .Select(p =>
+            {
+                var commandVar = Variable.Command.AsVarName();
+                var param = $"{Variable.Args.AsVarName()}.{p.Column.Name.ToPascalCase()}";
+                var columnMapping = GetCsharpTypeWithoutNullableSuffix(p.Column, query);
 
-            if (p.Column.IsSqlcSlice)
-                return $$"""
-                         for (int i = 0; i < {{param}}.Length; i++)
-                             {{commandVar}}.Parameters.AddWithValue($"@{{p.Column.Name}}Arg{i}", {{param}}[i]);
-                         """;
+                if (p.Column.IsSqlcSlice)
+                    return $$"""
+                    for (int i = 0; i < {{param}}.Length; i++)
+                        {{commandVar}}.Parameters.AddWithValue($"@{{p.Column.Name}}Arg{i}", {{param}}[i]);
+                    """;
 
-            var writerFn = GetWriterFn(p.Column, query);
-            var paramToWrite = writerFn is null ? param : writerFn(
-                param,
-                p.Column.Type.Name,
-                IsColumnNotNull(p.Column, query),
-                Options.UseDapper,
-                Options.DotnetFramework.IsDotnetLegacy());
-            var addParamToCommand = $"""{commandVar}.Parameters.AddWithValue("@{p.Column.Name}", {paramToWrite});""";
-            return addParamToCommand;
-        }).JoinByNewLine();
+                var writerFn = GetWriterFn(p.Column, query);
+                var paramToWrite = writerFn is null
+                    ? param
+                    : writerFn(
+                        param,
+                        p.Column.Type.Name,
+                        IsColumnNotNull(p.Column, query),
+                        Options.UseDapper,
+                        Options.DotnetFramework.IsDotnetLegacy()
+                    );
+                var addParamToCommand =
+                    $"""{commandVar}.Parameters.AddWithValue("@{p.Column.Name}", {paramToWrite});""";
+                return addParamToCommand;
+            })
+            .JoinByNewLine();
     }
 
     public Column GetColumnFromParam(Parameter queryParam, Query query)
     {
         if (string.IsNullOrEmpty(queryParam.Column.Name))
-            queryParam.Column.Name = $"{GetCsharpType(queryParam.Column, query).Replace("[]", "Arr")}_{queryParam.Number}";
+            queryParam.Column.Name =
+                $"{GetCsharpType(queryParam.Column, query).Replace("[]", "Arr")}_{queryParam.Number}";
         return queryParam.Column;
     }
 
@@ -310,10 +510,12 @@ public abstract class DbDriver
 
     protected bool TypeExistsInQuery(string csharpType, Query query)
     {
-        return query.Columns
-            .Any(column => csharpType == GetCsharpTypeWithoutNullableSuffix(column, query)) ||
-               query.Params
-            .Any(p => csharpType == GetCsharpTypeWithoutNullableSuffix(p.Column, query));
+        return query.Columns.Any(column =>
+                csharpType == GetCsharpTypeWithoutNullableSuffix(column, query)
+            )
+            || query.Params.Any(p =>
+                csharpType == GetCsharpTypeWithoutNullableSuffix(p.Column, query)
+            );
     }
 
     protected bool SliceQueryExists()
@@ -331,7 +533,10 @@ public abstract class DbDriver
         if (query is null)
             return null;
         foreach (var overrideOption in Options.Overrides)
-            if (overrideOption.Column == $"{query.Name}:{column.Name}" || overrideOption.Column == $"*:{column.Name}")
+            if (
+                overrideOption.Column == $"{query.Name}:{column.Name}"
+                || overrideOption.Column == $"*:{column.Name}"
+            )
                 return overrideOption;
         return null;
     }
@@ -360,7 +565,8 @@ public abstract class DbDriver
 
     public bool IsTypeNullable(string csharpType)
     {
-        if (NullableTypes.Contains(csharpType.Replace("?", ""))) return true;
+        if (NullableTypes.Contains(csharpType.Replace("?", "")))
+            return true;
         return Options.DotnetFramework.IsDotnetCore(); // non-primitives in .Net Core are inherently nullable
     }
 
@@ -375,13 +581,19 @@ public abstract class DbDriver
         if (FindOverrideForQueryColumn(query, column) is { CsharpType: var csharpType })
             return csharpType.Type;
 
-        foreach (var columnMapping in ColumnMappings
-                     .Where(columnMapping => DoesColumnMappingApply(columnMapping.Value, column)))
+        foreach (
+            var columnMapping in ColumnMappings.Where(columnMapping =>
+                DoesColumnMappingApply(columnMapping.Value, column)
+            )
+        )
         {
-            if (column.IsArray || column.IsSqlcSlice) return $"{columnMapping.Key}[]";
+            if (column.IsArray || column.IsSqlcSlice)
+                return $"{columnMapping.Key}[]";
             return columnMapping.Key;
         }
-        throw new NotSupportedException($"Column {column.Name} has unsupported column type: {column.Type.Name} in {GetType().Name}");
+        throw new NotSupportedException(
+            $"Column {column.Name} has unsupported column type: {column.Type.Name} in {GetType().Name}"
+        );
     }
 
     private static bool DoesColumnMappingApply(ColumnMapping columnMapping, Column column)
@@ -401,7 +613,13 @@ public abstract class DbDriver
         if (writerFn is not null)
             return writerFn;
 
-        static string DefaultWriterFn(string el, string dbType, bool notNull, bool isDapper, bool isLegacy) => notNull ? el : $"{el} ?? (object)DBNull.Value";
+        static string DefaultWriterFn(
+            string el,
+            string dbType,
+            bool notNull,
+            bool isDapper,
+            bool isLegacy
+        ) => notNull ? el : $"{el} ?? (object)DBNull.Value";
         return Options.UseDapper ? null : DefaultWriterFn;
     }
 
@@ -410,7 +628,9 @@ public abstract class DbDriver
     {
         if (ColumnMappings.TryGetValue(csharpTypeOption.Type, out var value))
             return value.ReaderFn(ordinal, column.Type.Name);
-        throw new NotSupportedException($"Could not find column mapping for type override: {csharpTypeOption.Type}");
+        throw new NotSupportedException(
+            $"Could not find column mapping for type override: {csharpTypeOption.Type}"
+        );
     }
 
     public virtual string GetColumnReader(Column column, int ordinal, Query? query)
@@ -418,14 +638,20 @@ public abstract class DbDriver
         if (FindOverrideForQueryColumn(query, column) is { CsharpType: var csharpType })
             return GetColumnReader(csharpType, column, ordinal);
 
-        foreach (var columnMapping in ColumnMappings.Values
-                     .Where(columnMapping => DoesColumnMappingApply(columnMapping, column)))
+        foreach (
+            var columnMapping in ColumnMappings.Values.Where(columnMapping =>
+                DoesColumnMappingApply(columnMapping, column)
+            )
+        )
         {
             if (column.IsArray)
-                return columnMapping.ReaderArrayFn?.Invoke(ordinal, column.Type.Name) ?? throw new InvalidOperationException("ReaderArrayFn is null");
+                return columnMapping.ReaderArrayFn?.Invoke(ordinal, column.Type.Name)
+                    ?? throw new InvalidOperationException("ReaderArrayFn is null");
             return columnMapping.ReaderFn(ordinal, column.Type.Name);
         }
-        throw new NotSupportedException($"column {column.Name} has unsupported column type: {column.Type.Name} in {GetType().Name}");
+        throw new NotSupportedException(
+            $"column {column.Name} has unsupported column type: {column.Type.Name} in {GetType().Name}"
+        );
     }
 
     private bool IsSystemTextJsonNeeded()

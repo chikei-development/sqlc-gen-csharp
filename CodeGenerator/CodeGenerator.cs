@@ -80,7 +80,8 @@ public class CodeGenerator
             return;
 
         Queries = generateRequest.Queries.ToList();
-        var namespaceName = Options.NamespaceName == string.Empty ? projectName : Options.NamespaceName;
+        var namespaceName =
+            Options.NamespaceName == string.Empty ? projectName : Options.NamespaceName;
         Catalog = generateRequest.Catalog;
         DbDriver = InstantiateDriver();
 
@@ -98,7 +99,7 @@ public class CodeGenerator
             DriverName.MySqlConnector => new MySqlConnectorDriver(Options, Catalog, Queries),
             DriverName.Npgsql => new NpgsqlDriver(Options, Catalog, Queries),
             DriverName.Sqlite => new SqliteDriver(Options, Catalog, Queries),
-            _ => throw new ArgumentException($"unknown driver: {Options.DriverName}")
+            _ => throw new ArgumentException($"unknown driver: {Options.DriverName}"),
         };
     }
 
@@ -106,47 +107,48 @@ public class CodeGenerator
     {
         InitGenerators(generateRequest); // the request is necessary in order to know which generators are needed
         if (Options.DebugRequest)
-            return Task.FromResult(new GenerateResponse
-            {
-                Files =
+            return Task.FromResult(
+                new GenerateResponse
                 {
-                    RequestToJsonFile(generateRequest),
-                    RequestToProtobufFile(generateRequest)
+                    Files =
+                    {
+                        RequestToJsonFile(generateRequest),
+                        RequestToProtobufFile(generateRequest),
+                    },
                 }
-            });
+            );
 
         var enums = DbDriver is EnumDbDriver enumDbDriver ? enumDbDriver.Enums : [];
         var files = GetFileQueries()
-            .Select(fq => QueriesGen.GenerateFile(fq.Value, fq.Key))
-            .AddRangeExcludeNulls([
-                ModelsGen.GenerateFile(DbDriver.Tables, enums),
-                UtilsGen.GenerateFile()
-            ])
+            .Select(fq => QueriesGen.GenerateFile(fq.Value, fq.Key, enums))
+            .AddRangeExcludeNulls(
+                [ModelsGen.GenerateFile(DbDriver.Tables, enums), UtilsGen.GenerateFile()]
+            )
             .AddRangeIf([CsprojGen.GenerateFile()], Options.GenerateCsproj);
 
         return Task.FromResult(new GenerateResponse { Files = { files } });
 
         Dictionary<string, Query[]> GetFileQueries()
         {
-            return generateRequest.Queries
-                .GroupBy(query => QueryFilenameToClassName(query.Filename))
-                .ToDictionary(
-                    group => group.Key,
-                    group => group.ToArray());
+            return generateRequest
+                .Queries.GroupBy(query => QueryFilenameToClassName(query.Filename))
+                .ToDictionary(group => group.Key, group => group.ToArray());
         }
 
         string QueryFilenameToClassName(string filenameWithExtension)
         {
             return string.Concat(
                 Path.GetFileNameWithoutExtension(filenameWithExtension).ToPascalCase(),
-                Path.GetExtension(filenameWithExtension)[1..].ToPascalCase());
+                Path.GetExtension(filenameWithExtension)[1..].ToPascalCase()
+            );
         }
     }
 
     private static ByteString GetOptionsWithoutDebugRequest(GenerateRequest request)
     {
         var text = Encoding.UTF8.GetString(request.PluginOptions.ToByteArray());
-        var rawOptions = JsonSerializer.Deserialize<RawOptions>(text) ?? throw new InvalidOperationException();
+        var rawOptions =
+            JsonSerializer.Deserialize<RawOptions>(text) ?? throw new InvalidOperationException();
         var newOptions = rawOptions with { DebugRequest = false };
         return ByteString.CopyFromUtf8(JsonSerializer.Serialize(newOptions));
     }
@@ -155,7 +157,11 @@ public class CodeGenerator
     {
         var formatter = new JsonFormatter(JsonFormatter.Settings.Default.WithIndentation());
         request.PluginOptions = GetOptionsWithoutDebugRequest(request);
-        return new() { Name = "request.json", Contents = ByteString.CopyFromUtf8(formatter.Format(request)) };
+        return new()
+        {
+            Name = "request.json",
+            Contents = ByteString.CopyFromUtf8(formatter.Format(request)),
+        };
     }
 
     private static Plugin.File RequestToProtobufFile(GenerateRequest request)

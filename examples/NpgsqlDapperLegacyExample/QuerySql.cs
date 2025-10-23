@@ -10,6 +10,7 @@ namespace NpgsqlDapperLegacyExampleGen
     using NodaTime;
     using NodaTime.Extensions;
     using Npgsql;
+    using Npgsql.NameTranslation;
     using NpgsqlTypes;
     using System;
     using System.Collections.Generic;
@@ -30,6 +31,10 @@ namespace NpgsqlDapperLegacyExampleGen
 
         public QuerySql(string connectionString) : this()
         {
+            var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
+            dataSourceBuilder.MapEnum<CEnum>("c_enum");
+            dataSourceBuilder.MapEnum<ExtendedBioType>("bio_type");
+            this.DataSource = dataSourceBuilder.Build();
             this.ConnectionString = connectionString;
         }
 
@@ -44,6 +49,7 @@ namespace NpgsqlDapperLegacyExampleGen
         }
 
         private NpgsqlTransaction Transaction { get; }
+        private NpgsqlDataSource DataSource { get; }
         private string ConnectionString { get; }
 
         private const string GetAuthorSql = "SELECT id, name, bio, created_at, updated_at FROM authors WHERE name = @name LIMIT 1";
@@ -424,17 +430,14 @@ namespace NpgsqlDapperLegacyExampleGen
         {
             if (this.Transaction == null)
             {
-                using (var connection = NpgsqlDataSource.Create(ConnectionString))
+                using (var command = DataSource.CreateCommand(ListAllAuthorsBooksSql))
                 {
-                    using (var command = connection.CreateCommand(ListAllAuthorsBooksSql))
+                    using (var reader = await command.ExecuteReaderAsync())
                     {
-                        using (var reader = await command.ExecuteReaderAsync())
-                        {
-                            var result = new List<ListAllAuthorsBooksRow>();
-                            while (await reader.ReadAsync())
-                                result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4) }, Book = new Book { Id = reader.GetFieldValue<Guid>(5), Name = reader.GetString(6), AuthorId = reader.GetInt64(7), Description = reader.IsDBNull(8) ? null : reader.GetString(8) } });
-                            return result;
-                        }
+                        var result = new List<ListAllAuthorsBooksRow>();
+                        while (await reader.ReadAsync())
+                            result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4) }, Book = new Book { Id = reader.GetFieldValue<Guid>(5), Name = reader.GetString(6), AuthorId = reader.GetInt64(7), Description = reader.IsDBNull(8) ? null : reader.GetString(8) } });
+                        return result;
                     }
                 }
             }
@@ -465,17 +468,14 @@ namespace NpgsqlDapperLegacyExampleGen
         {
             if (this.Transaction == null)
             {
-                using (var connection = NpgsqlDataSource.Create(ConnectionString))
+                using (var command = DataSource.CreateCommand(GetDuplicateAuthorsSql))
                 {
-                    using (var command = connection.CreateCommand(GetDuplicateAuthorsSql))
+                    using (var reader = await command.ExecuteReaderAsync())
                     {
-                        using (var reader = await command.ExecuteReaderAsync())
-                        {
-                            var result = new List<GetDuplicateAuthorsRow>();
-                            while (await reader.ReadAsync())
-                                result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4) }, Author2 = new Author { Id = reader.GetInt64(5), Name = reader.GetString(6), Bio = reader.IsDBNull(7) ? null : reader.GetString(7), CreatedAt = reader.IsDBNull(8) ? (DateTime? )null : reader.GetDateTime(8), UpdatedAt = reader.IsDBNull(9) ? (DateTime? )null : reader.GetDateTime(9) } });
-                            return result;
-                        }
+                        var result = new List<GetDuplicateAuthorsRow>();
+                        while (await reader.ReadAsync())
+                            result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4) }, Author2 = new Author { Id = reader.GetInt64(5), Name = reader.GetString(6), Bio = reader.IsDBNull(7) ? null : reader.GetString(7), CreatedAt = reader.IsDBNull(8) ? (DateTime? )null : reader.GetDateTime(8), UpdatedAt = reader.IsDBNull(9) ? (DateTime? )null : reader.GetDateTime(9) } });
+                        return result;
                     }
                 }
             }
@@ -514,18 +514,15 @@ namespace NpgsqlDapperLegacyExampleGen
         {
             if (this.Transaction == null)
             {
-                using (var connection = NpgsqlDataSource.Create(ConnectionString))
+                using (var command = DataSource.CreateCommand(GetAuthorsByBookNameSql))
                 {
-                    using (var command = connection.CreateCommand(GetAuthorsByBookNameSql))
+                    command.Parameters.AddWithValue("@name", args.Name);
+                    using (var reader = await command.ExecuteReaderAsync())
                     {
-                        command.Parameters.AddWithValue("@name", args.Name);
-                        using (var reader = await command.ExecuteReaderAsync())
-                        {
-                            var result = new List<GetAuthorsByBookNameRow>();
-                            while (await reader.ReadAsync())
-                                result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Book = new Book { Id = reader.GetFieldValue<Guid>(5), Name = reader.GetString(6), AuthorId = reader.GetInt64(7), Description = reader.IsDBNull(8) ? null : reader.GetString(8) } });
-                            return result;
-                        }
+                        var result = new List<GetAuthorsByBookNameRow>();
+                        while (await reader.ReadAsync())
+                            result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Book = new Book { Id = reader.GetFieldValue<Guid>(5), Name = reader.GetString(6), AuthorId = reader.GetInt64(7), Description = reader.IsDBNull(8) ? null : reader.GetString(8) } });
+                        return result;
                     }
                 }
             }
@@ -559,7 +556,7 @@ namespace NpgsqlDapperLegacyExampleGen
             var queryParams = new Dictionary<string, object>();
             queryParams.Add("author_name", args.AuthorName);
             queryParams.Add("name", args.Name);
-            queryParams.Add("bio_type", args.BioType != null ? args.BioType.Value.Stringify() : null);
+            queryParams.Add("bio_type", args.BioType.HasValue ? args.BioType.Value.Stringify() : null);
             if (this.Transaction == null)
             {
                 using (var connection = new NpgsqlConnection(ConnectionString))
@@ -586,7 +583,7 @@ namespace NpgsqlDapperLegacyExampleGen
         public async Task<GetFirstExtendedBioByTypeRow> GetFirstExtendedBioByType(GetFirstExtendedBioByTypeArgs args)
         {
             var queryParams = new Dictionary<string, object>();
-            queryParams.Add("bio_type", args.BioType != null ? args.BioType.Value.Stringify() : null);
+            queryParams.Add("bio_type", args.BioType.HasValue ? args.BioType.Value.Stringify() : null);
             if (this.Transaction == null)
             {
                 using (var connection = new NpgsqlConnection(ConnectionString))
@@ -1262,7 +1259,7 @@ namespace NpgsqlDapperLegacyExampleGen
             queryParams.Add("c_xml", args.CXml != null ? args.CXml.OuterXml : null);
             queryParams.Add("c_xml_string_override", args.CXmlStringOverride);
             queryParams.Add("c_uuid", args.CUuid);
-            queryParams.Add("c_enum", args.CEnum != null ? args.CEnum.Value.Stringify() : null);
+            queryParams.Add("c_enum", args.CEnum.HasValue ? args.CEnum.Value.Stringify() : null);
             if (this.Transaction == null)
             {
                 using (var connection = new NpgsqlConnection(ConnectionString))

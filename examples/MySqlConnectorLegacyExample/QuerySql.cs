@@ -179,10 +179,9 @@ namespace MySqlConnectorLegacyExampleGen
                         command.Parameters.AddWithValue("@name", args.Name);
                         command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
                         await command.ExecuteNonQueryAsync();
+                        return;
                     }
                 }
-
-                return;
             }
 
             if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
@@ -401,10 +400,9 @@ namespace MySqlConnectorLegacyExampleGen
                     {
                         command.Parameters.AddWithValue("@name", args.Name);
                         await command.ExecuteNonQueryAsync();
+                        return;
                     }
                 }
-
-                return;
             }
 
             if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
@@ -429,10 +427,9 @@ namespace MySqlConnectorLegacyExampleGen
                     using (var command = new MySqlCommand(DeleteAllAuthorsSql, connection))
                     {
                         await command.ExecuteNonQueryAsync();
+                        return;
                     }
                 }
-
-                return;
             }
 
             if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
@@ -780,10 +777,9 @@ namespace MySqlConnectorLegacyExampleGen
                         command.Parameters.AddWithValue("@bio_type", args.BioType ?? (object)DBNull.Value);
                         command.Parameters.AddWithValue("@author_type", args.AuthorType != null ? string.Join(",", args.AuthorType) : (object)DBNull.Value);
                         await command.ExecuteNonQueryAsync();
+                        return;
                     }
                 }
-
-                return;
             }
 
             if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
@@ -877,10 +873,9 @@ namespace MySqlConnectorLegacyExampleGen
                     using (var command = new MySqlCommand(TruncateExtendedBiosSql, connection))
                     {
                         await command.ExecuteNonQueryAsync();
+                        return;
                     }
                 }
-
-                return;
             }
 
             if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
@@ -989,10 +984,9 @@ namespace MySqlConnectorLegacyExampleGen
                         command.Parameters.AddWithValue("@c_double", args.CDouble ?? (object)DBNull.Value);
                         command.Parameters.AddWithValue("@c_double_precision", args.CDoublePrecision ?? (object)DBNull.Value);
                         await command.ExecuteNonQueryAsync();
+                        return;
                     }
                 }
-
-                return;
             }
 
             if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
@@ -1289,10 +1283,9 @@ namespace MySqlConnectorLegacyExampleGen
                     using (var command = new MySqlCommand(TruncateMysqlNumericTypesSql, connection))
                     {
                         await command.ExecuteNonQueryAsync();
+                        return;
                     }
                 }
-
-                return;
             }
 
             if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
@@ -1343,10 +1336,9 @@ namespace MySqlConnectorLegacyExampleGen
                         command.Parameters.AddWithValue("@c_enum", args.CEnum ?? (object)DBNull.Value);
                         command.Parameters.AddWithValue("@c_set", args.CSet != null ? string.Join(",", args.CSet) : (object)DBNull.Value);
                         await command.ExecuteNonQueryAsync();
+                        return;
                     }
                 }
-
-                return;
             }
 
             if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
@@ -1616,10 +1608,9 @@ namespace MySqlConnectorLegacyExampleGen
                     using (var command = new MySqlCommand(TruncateMysqlStringTypesSql, connection))
                     {
                         await command.ExecuteNonQueryAsync();
+                        return;
                     }
                 }
-
-                return;
             }
 
             if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
@@ -1658,10 +1649,9 @@ namespace MySqlConnectorLegacyExampleGen
                         command.Parameters.AddWithValue("@c_time", args.CTime ?? (object)DBNull.Value);
                         command.Parameters.AddWithValue("@c_timestamp_noda_instant_override", args.CTimestampNodaInstantOverride is null ? (object)DBNull.Value : (DateTime? )DateTime.SpecifyKind(args.CTimestampNodaInstantOverride.Value.ToDateTimeUtc(), DateTimeKind.Unspecified));
                         await command.ExecuteNonQueryAsync();
+                        return;
                     }
                 }
-
-                return;
             }
 
             if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
@@ -1890,10 +1880,9 @@ namespace MySqlConnectorLegacyExampleGen
                     using (var command = new MySqlCommand(TruncateMysqlDatetimeTypesSql, connection))
                     {
                         await command.ExecuteNonQueryAsync();
+                        return;
                     }
                 }
-
-                return;
             }
 
             if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
@@ -1934,10 +1923,9 @@ namespace MySqlConnectorLegacyExampleGen
                         command.Parameters.AddWithValue("@c_mediumblob", args.CMediumblob ?? (object)DBNull.Value);
                         command.Parameters.AddWithValue("@c_longblob", args.CLongblob ?? (object)DBNull.Value);
                         await command.ExecuteNonQueryAsync();
+                        return;
                     }
                 }
-
-                return;
             }
 
             if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
@@ -2166,10 +2154,9 @@ namespace MySqlConnectorLegacyExampleGen
                     using (var command = new MySqlCommand(TruncateMysqlBinaryTypesSql, connection))
                     {
                         await command.ExecuteNonQueryAsync();
+                        return;
                     }
                 }
-
-                return;
             }
 
             if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
