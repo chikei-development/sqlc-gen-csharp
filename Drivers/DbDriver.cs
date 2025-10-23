@@ -158,6 +158,8 @@ public abstract class DbDriver
     {
         var usingDirectives = new HashSet<string>();
         foreach (var query in Queries)
+        {
+            // Check return columns
             foreach (var column in query.Columns)
             {
                 var csharpType = GetCsharpTypeWithoutNullableSuffix(column, query);
@@ -170,6 +172,21 @@ public abstract class DbDriver
                     columnMapping.UsingDirectives is not null
                 );
             }
+
+            // Check parameters
+            foreach (var param in query.Params)
+            {
+                var csharpType = GetCsharpTypeWithoutNullableSuffix(param.Column, query);
+                if (!ColumnMappings.ContainsKey(csharpType))
+                    continue;
+
+                var columnMapping = ColumnMappings[csharpType];
+                usingDirectives.AddRangeIf(
+                    columnMapping.UsingDirectives!,
+                    columnMapping.UsingDirectives is not null
+                );
+            }
+        }
         return usingDirectives;
     }
 
