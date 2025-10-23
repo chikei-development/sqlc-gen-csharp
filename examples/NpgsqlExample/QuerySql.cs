@@ -225,8 +225,6 @@ public class QuerySql
             command.Transaction = this.Transaction;
             command.Parameters.AddWithValue("@name", args.Name);
             command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@name", args.Name);
-            command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
             var result = await command.ExecuteScalarAsync();
             return Convert.ToInt64(result);
         }
@@ -493,8 +491,6 @@ public class QuerySql
         {
             command.CommandText = CreateBookSql;
             command.Transaction = this.Transaction;
-            command.Parameters.AddWithValue("@name", args.Name);
-            command.Parameters.AddWithValue("@author_id", args.AuthorId);
             command.Parameters.AddWithValue("@name", args.Name);
             command.Parameters.AddWithValue("@author_id", args.AuthorId);
             var result = await command.ExecuteScalarAsync();

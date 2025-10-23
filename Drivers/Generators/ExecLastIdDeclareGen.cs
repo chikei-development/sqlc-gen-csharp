@@ -93,16 +93,8 @@ public class ExecLastIdDeclareGen(DbDriver dbDriver)
 
     private string GetDriverWithTxBody(string sqlVar, Query query)
     {
-        var commandParameters = dbDriver.AddParametersToCommand(query);
         var returnLastId = ((IExecLastId)dbDriver).GetLastIdStatement(query).JoinByNewLine();
 
-        return dbDriver.GenerateWithTransactionMethodBody(
-            sqlVar,
-            query,
-            $$"""
-                    {{commandParameters}}
-                    {{returnLastId}}
-            """
-        );
+        return dbDriver.GenerateWithTransactionMethodBody(sqlVar, query, returnLastId);
     }
 }
