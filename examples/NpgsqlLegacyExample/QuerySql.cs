@@ -254,26 +254,23 @@ namespace NpgsqlLegacyExampleGen
         {
             if (this.Transaction == null)
             {
-                using (var connection = NpgsqlDataSource.Create(ConnectionString))
+                using (var command = DataSource.CreateCommand(CreateAuthorIncludingCommentSql))
                 {
-                    using (var command = connection.CreateCommand(CreateAuthorIncludingCommentSql))
+                    command.Parameters.AddWithValue("@id", args.Id);
+                    command.Parameters.AddWithValue("@name", args.Name);
+                    command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
+                    using (var reader = await command.ExecuteReaderAsync())
                     {
-                        command.Parameters.AddWithValue("@id", args.Id);
-                        command.Parameters.AddWithValue("@name", args.Name);
-                        command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
-                        using (var reader = await command.ExecuteReaderAsync())
+                        if (await reader.ReadAsync())
                         {
-                            if (await reader.ReadAsync())
+                            return new CreateAuthorIncludingCommentRow
                             {
-                                return new CreateAuthorIncludingCommentRow
-                                {
-                                    Id = reader.GetInt64(0),
-                                    Name = reader.GetString(1),
-                                    Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
-                                    CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3),
-                                    UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4)
-                                };
-                            }
+                                Id = reader.GetInt64(0),
+                                Name = reader.GetString(1),
+                                Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
+                                CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3),
+                                UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4)
+                            };
                         }
                     }
                 }

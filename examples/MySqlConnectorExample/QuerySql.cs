@@ -189,10 +189,9 @@ public class QuerySql
                     command.Parameters.AddWithValue("@name", args.Name);
                     command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
                     await command.ExecuteNonQueryAsync();
+                    return;
                 }
             }
-
-            return;
         }
 
         if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
