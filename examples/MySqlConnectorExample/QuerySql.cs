@@ -201,8 +201,6 @@ public class QuerySql
             command.Transaction = this.Transaction;
             command.Parameters.AddWithValue("@name", args.Name);
             command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@name", args.Name);
-            command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
             await command.ExecuteNonQueryAsync();
             return command.LastInsertedId;
         }
@@ -507,8 +505,6 @@ public class QuerySql
         {
             command.CommandText = CreateBookSql;
             command.Transaction = this.Transaction;
-            command.Parameters.AddWithValue("@name", args.Name);
-            command.Parameters.AddWithValue("@author_id", args.AuthorId);
             command.Parameters.AddWithValue("@name", args.Name);
             command.Parameters.AddWithValue("@author_id", args.AuthorId);
             await command.ExecuteNonQueryAsync();
