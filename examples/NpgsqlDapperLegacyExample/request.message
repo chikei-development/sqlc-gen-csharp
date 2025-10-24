@@ -10280,6 +10280,25 @@ pg_catalog	timestampz
 updated_at*95
 id0ÿÿÿÿÿÿÿÿÿRpublicauthorsb	bigserialzid*84
 name0ÿÿÿÿÿÿÿÿÿRpublicauthorsbtextzname*40
+bio0ÿÿÿÿÿÿÿÿÿRpublicauthorsbtextzbio:	query.sqlB	authors¯
+®INSERT INTO authors (
+    id, -- this is an id
+    name, -- this is a name!@#$%,
+    bio -- comment?
+    ) VALUES ($1, $2, $3) RETURNING id, name, bio, created_at, updated_atCreateAuthorIncludingComment:one"-
+id0ÿÿÿÿÿÿÿÿÿR	authorsb	bigserialzid",
+name0ÿÿÿÿÿÿÿÿÿR	authorsbtextzname"(
+bio0ÿÿÿÿÿÿÿÿÿR	authorsbtextzbio"G
+
+created_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestampz
+created_at"G
+
+updated_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestampz
+updated_at*95
+id0ÿÿÿÿÿÿÿÿÿRpublicauthorsb	bigserialzid*84
+name0ÿÿÿÿÿÿÿÿÿRpublicauthorsbtextzname*40
 bio0ÿÿÿÿÿÿÿÿÿRpublicauthorsbtextzbio:	query.sqlB	authors–
 <INSERT INTO authors (name, bio) VALUES ($1, $2) RETURNING idCreateAuthorReturnId:execlastid"-
 id0ÿÿÿÿÿÿÿÿÿR	authorsb	bigserialzid*84

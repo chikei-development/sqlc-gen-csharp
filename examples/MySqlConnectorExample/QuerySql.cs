@@ -174,6 +174,39 @@ public class QuerySql
         }
     }
 
+    private const string CreateAuthorIncludingCommentSql = "INSERT INTO authors ( id, name, bio ) VALUES (@id, @name, @bio)";
+    public readonly record struct CreateAuthorIncludingCommentArgs(long Id, string Name, string? Bio);
+    public async Task CreateAuthorIncludingComment(CreateAuthorIncludingCommentArgs args)
+    {
+        if (this.Transaction == null)
+        {
+            using (var connection = new MySqlConnection(ConnectionString))
+            {
+                await connection.OpenAsync();
+                using (var command = new MySqlCommand(CreateAuthorIncludingCommentSql, connection))
+                {
+                    command.Parameters.AddWithValue("@id", args.Id);
+                    command.Parameters.AddWithValue("@name", args.Name);
+                    command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
+                    await command.ExecuteNonQueryAsync();
+                    return;
+                }
+            }
+        }
+
+        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        using (var command = this.Transaction.Connection.CreateCommand())
+        {
+            command.CommandText = CreateAuthorIncludingCommentSql;
+            command.Transaction = this.Transaction;
+            command.Parameters.AddWithValue("@id", args.Id);
+            command.Parameters.AddWithValue("@name", args.Name);
+            command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
+            await command.ExecuteNonQueryAsync();
+        }
+    }
+
     private const string CreateAuthorReturnIdSql = "INSERT INTO authors (name, bio) VALUES (@name, @bio)";
     public readonly record struct CreateAuthorReturnIdArgs(string Name, string? Bio);
     public async Task<long> CreateAuthorReturnId(CreateAuthorReturnIdArgs args)
@@ -790,7 +823,7 @@ public class QuerySql
         }
     }
 
-    private const string InsertMysqlNumericTypesSql = " INSERT INTO mysql_numeric_types ( c_bool, c_boolean, c_tinyint, c_smallint, c_mediumint, c_int, c_integer, c_bigint, c_decimal, c_dec, c_numeric, c_fixed, c_float, c_double, c_double_precision ) VALUES (@c_bool, @c_boolean, @c_tinyint, @c_smallint, @c_mediumint, @c_int, @c_integer, @c_bigint, @c_decimal, @c_dec, @c_numeric, @c_fixed, @c_float, @c_double, @c_double_precision)";
+    private const string InsertMysqlNumericTypesSql = "INSERT INTO mysql_numeric_types ( c_bool, c_boolean, c_tinyint, c_smallint, c_mediumint, c_int, c_integer, c_bigint, c_decimal, c_dec, c_numeric, c_fixed, c_float, c_double, c_double_precision ) VALUES (@c_bool, @c_boolean, @c_tinyint, @c_smallint, @c_mediumint, @c_int, @c_integer, @c_bigint, @c_decimal, @c_dec, @c_numeric, @c_fixed, @c_float, @c_double, @c_double_precision)";
     public readonly record struct InsertMysqlNumericTypesArgs(bool? CBool, bool? CBoolean, short? CTinyint, short? CSmallint, int? CMediumint, int? CInt, int? CInteger, long? CBigint, decimal? CDecimal, decimal? CDec, decimal? CNumeric, decimal? CFixed, double? CFloat, double? CDouble, double? CDoublePrecision);
     public async Task InsertMysqlNumericTypes(InsertMysqlNumericTypesArgs args)
     {
@@ -1079,7 +1112,7 @@ public class QuerySql
         }
     }
 
-    private const string InsertMysqlStringTypesSql = " INSERT INTO mysql_string_types ( c_char, c_nchar, c_national_char, c_varchar, c_tinytext, c_mediumtext, c_text, c_longtext, c_json, c_json_string_override, c_enum, c_set ) VALUES (@c_char, @c_nchar, @c_national_char, @c_varchar, @c_tinytext, @c_mediumtext, @c_text, @c_longtext, @c_json, @c_json_string_override, @c_enum, @c_set)";
+    private const string InsertMysqlStringTypesSql = "INSERT INTO mysql_string_types ( c_char, c_nchar, c_national_char, c_varchar, c_tinytext, c_mediumtext, c_text, c_longtext, c_json, c_json_string_override, c_enum, c_set ) VALUES (@c_char, @c_nchar, @c_national_char, @c_varchar, @c_tinytext, @c_mediumtext, @c_text, @c_longtext, @c_json, @c_json_string_override, @c_enum, @c_set)";
     public readonly record struct InsertMysqlStringTypesArgs(string? CChar, string? CNchar, string? CNationalChar, string? CVarchar, string? CTinytext, string? CMediumtext, string? CText, string? CLongtext, JsonElement? CJson, string? CJsonStringOverride, MysqlStringTypesCEnum? CEnum, HashSet<MysqlStringTypesCSet>? CSet);
     public async Task InsertMysqlStringTypes(InsertMysqlStringTypesArgs args)
     {
@@ -1348,7 +1381,7 @@ public class QuerySql
         }
     }
 
-    private const string InsertMysqlDatetimeTypesSql = " INSERT INTO mysql_datetime_types ( c_year, c_date, c_datetime, c_timestamp, c_time, c_timestamp_noda_instant_override ) VALUES (@c_year, @c_date, @c_datetime, @c_timestamp, @c_time, @c_timestamp_noda_instant_override)";
+    private const string InsertMysqlDatetimeTypesSql = "INSERT INTO mysql_datetime_types ( c_year, c_date, c_datetime, c_timestamp, c_time, c_timestamp_noda_instant_override ) VALUES (@c_year, @c_date, @c_datetime, @c_timestamp, @c_time, @c_timestamp_noda_instant_override)";
     public readonly record struct InsertMysqlDatetimeTypesArgs(short? CYear, DateTime? CDate, DateTime? CDatetime, DateTime? CTimestamp, TimeSpan? CTime, Instant? CTimestampNodaInstantOverride);
     public async Task InsertMysqlDatetimeTypes(InsertMysqlDatetimeTypesArgs args)
     {
@@ -1589,7 +1622,7 @@ public class QuerySql
         }
     }
 
-    private const string InsertMysqlBinaryTypesSql = " INSERT INTO mysql_binary_types ( c_bit, c_binary, c_varbinary, c_tinyblob, c_blob, c_mediumblob, c_longblob ) VALUES (@c_bit, @c_binary, @c_varbinary, @c_tinyblob, @c_blob, @c_mediumblob, @c_longblob)";
+    private const string InsertMysqlBinaryTypesSql = "INSERT INTO mysql_binary_types ( c_bit, c_binary, c_varbinary, c_tinyblob, c_blob, c_mediumblob, c_longblob ) VALUES (@c_bit, @c_binary, @c_varbinary, @c_tinyblob, @c_blob, @c_mediumblob, @c_longblob)";
     public readonly record struct InsertMysqlBinaryTypesArgs(byte? CBit, byte[]? CBinary, byte[]? CVarbinary, byte[]? CTinyblob, byte[]? CBlob, byte[]? CMediumblob, byte[]? CLongblob);
     public async Task InsertMysqlBinaryTypes(InsertMysqlBinaryTypesArgs args)
     {
@@ -1827,7 +1860,7 @@ public class QuerySql
         }
     }
 
-    private const string GetMysqlFunctionsSql = " SELECT MAX(c_int) AS max_int, MAX(c_varchar) AS max_varchar, MAX(c_timestamp) AS max_timestamp FROM mysql_numeric_types CROSS JOIN mysql_string_types CROSS JOIN mysql_datetime_types";
+    private const string GetMysqlFunctionsSql = "SELECT MAX(c_int) AS max_int, MAX(c_varchar) AS max_varchar, MAX(c_timestamp) AS max_timestamp FROM mysql_numeric_types CROSS JOIN mysql_string_types CROSS JOIN mysql_datetime_types";
     public readonly record struct GetMysqlFunctionsRow(int? MaxInt, string? MaxVarchar, DateTime MaxTimestamp);
     public async Task<GetMysqlFunctionsRow?> GetMysqlFunctions()
     {

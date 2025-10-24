@@ -125,6 +125,31 @@ public class QuerySql
         await this.Transaction.Connection.ExecuteAsync(CreateAuthorSql, queryParams, transaction: this.Transaction);
     }
 
+    private const string CreateAuthorIncludingCommentSql = "INSERT INTO authors ( id, name, bio ) VALUES (@id, @name, @bio)";
+    public class CreateAuthorIncludingCommentArgs
+    {
+        public required int Id { get; init; }
+        public required string Name { get; init; }
+        public string? Bio { get; init; }
+    };
+    public async Task CreateAuthorIncludingComment(CreateAuthorIncludingCommentArgs args)
+    {
+        var queryParams = new Dictionary<string, object?>();
+        queryParams.Add("id", args.Id);
+        queryParams.Add("name", args.Name);
+        queryParams.Add("bio", args.Bio);
+        if (this.Transaction == null)
+        {
+            using (var connection = new SqliteConnection(ConnectionString))
+                await connection.ExecuteAsync(CreateAuthorIncludingCommentSql, queryParams);
+            return;
+        }
+
+        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        await this.Transaction.Connection.ExecuteAsync(CreateAuthorIncludingCommentSql, queryParams, transaction: this.Transaction);
+    }
+
     private const string CreateAuthorReturnIdSql = "INSERT INTO authors (name, bio) VALUES (@name, @bio) RETURNING id";
     public class CreateAuthorReturnIdRow
     {

@@ -168,6 +168,39 @@ public class QuerySql
         }
     }
 
+    private const string CreateAuthorIncludingCommentSql = "INSERT INTO authors ( id, name, bio ) VALUES (@id, @name, @bio)";
+    public readonly record struct CreateAuthorIncludingCommentArgs(int Id, string Name, string? Bio);
+    public async Task CreateAuthorIncludingComment(CreateAuthorIncludingCommentArgs args)
+    {
+        if (this.Transaction == null)
+        {
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                await connection.OpenAsync();
+                using (var command = new SqliteCommand(CreateAuthorIncludingCommentSql, connection))
+                {
+                    command.Parameters.AddWithValue("@id", args.Id);
+                    command.Parameters.AddWithValue("@name", args.Name);
+                    command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
+                    await command.ExecuteNonQueryAsync();
+                    return;
+                }
+            }
+        }
+
+        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        using (var command = this.Transaction.Connection.CreateCommand())
+        {
+            command.CommandText = CreateAuthorIncludingCommentSql;
+            command.Transaction = this.Transaction;
+            command.Parameters.AddWithValue("@id", args.Id);
+            command.Parameters.AddWithValue("@name", args.Name);
+            command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
+            await command.ExecuteNonQueryAsync();
+        }
+    }
+
     private const string CreateAuthorReturnIdSql = "INSERT INTO authors (name, bio) VALUES (@name, @bio) RETURNING id";
     public readonly record struct CreateAuthorReturnIdRow(int Id);
     public readonly record struct CreateAuthorReturnIdArgs(string Name, string? Bio);

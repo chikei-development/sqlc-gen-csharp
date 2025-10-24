@@ -151,6 +151,41 @@ namespace NpgsqlDapperLegacyExampleGen
             return await this.Transaction.Connection.QueryFirstOrDefaultAsync<CreateAuthorRow>(CreateAuthorSql, queryParams, transaction: this.Transaction);
         }
 
+        private const string CreateAuthorIncludingCommentSql = "INSERT INTO authors ( id, name, bio ) VALUES (@id, @name, @bio) RETURNING id, name, bio, created_at, updated_at";
+        public class CreateAuthorIncludingCommentRow
+        {
+            public long Id { get; set; }
+            public string Name { get; set; }
+            public string Bio { get; set; }
+            public DateTime? CreatedAt { get; set; }
+            public DateTime? UpdatedAt { get; set; }
+        };
+        public class CreateAuthorIncludingCommentArgs
+        {
+            public long Id { get; set; }
+            public string Name { get; set; }
+            public string Bio { get; set; }
+        };
+        public async Task<CreateAuthorIncludingCommentRow> CreateAuthorIncludingComment(CreateAuthorIncludingCommentArgs args)
+        {
+            var queryParams = new Dictionary<string, object>();
+            queryParams.Add("id", args.Id);
+            queryParams.Add("name", args.Name);
+            queryParams.Add("bio", args.Bio);
+            if (this.Transaction == null)
+            {
+                using (var connection = new NpgsqlConnection(ConnectionString))
+                {
+                    var result = await connection.QueryFirstOrDefaultAsync<CreateAuthorIncludingCommentRow>(CreateAuthorIncludingCommentSql, queryParams);
+                    return result;
+                }
+            }
+
+            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+                throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+            return await this.Transaction.Connection.QueryFirstOrDefaultAsync<CreateAuthorIncludingCommentRow>(CreateAuthorIncludingCommentSql, queryParams, transaction: this.Transaction);
+        }
+
         private const string CreateAuthorReturnIdSql = "INSERT INTO authors (name, bio) VALUES (@name, @bio) RETURNING id";
         public class CreateAuthorReturnIdRow
         {
@@ -636,7 +671,7 @@ namespace NpgsqlDapperLegacyExampleGen
             return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetPostgresFunctionsRow>(GetPostgresFunctionsSql, transaction: this.Transaction);
         }
 
-        private const string InsertPostgresNumericTypesSql = " INSERT INTO postgres_numeric_types ( c_boolean, c_bit, c_smallint, c_integer, c_bigint, c_decimal, c_numeric, c_real, c_double_precision, c_money ) VALUES (@c_boolean, @c_bit, @c_smallint, @c_integer, @c_bigint, @c_decimal, @c_numeric, @c_real, @c_double_precision, @c_money)";
+        private const string InsertPostgresNumericTypesSql = "INSERT INTO postgres_numeric_types ( c_boolean, c_bit, c_smallint, c_integer, c_bigint, c_decimal, c_numeric, c_real, c_double_precision, c_money ) VALUES (@c_boolean, @c_bit, @c_smallint, @c_integer, @c_bigint, @c_decimal, @c_numeric, @c_real, @c_double_precision, @c_money)";
         public class InsertPostgresNumericTypesArgs
         {
             public bool? CBoolean { get; set; }
@@ -794,7 +829,7 @@ namespace NpgsqlDapperLegacyExampleGen
             }
         }
 
-        private const string InsertPostgresStringTypesSql = " INSERT INTO postgres_string_types ( c_char, c_varchar, c_character_varying, c_bpchar, c_text ) VALUES (@c_char, @c_varchar, @c_character_varying, @c_bpchar, @c_text)";
+        private const string InsertPostgresStringTypesSql = "INSERT INTO postgres_string_types ( c_char, c_varchar, c_character_varying, c_bpchar, c_text ) VALUES (@c_char, @c_varchar, @c_character_varying, @c_bpchar, @c_text)";
         public class InsertPostgresStringTypesArgs
         {
             public string CChar { get; set; }
@@ -952,7 +987,7 @@ namespace NpgsqlDapperLegacyExampleGen
             return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetPostgresStringTypesTextSearchRow>(GetPostgresStringTypesTextSearchSql, queryParams, transaction: this.Transaction);
         }
 
-        private const string InsertPostgresDateTimeTypesSql = " INSERT INTO postgres_datetime_types ( c_date, c_time, c_timestamp, c_timestamp_with_tz, c_interval, c_timestamp_noda_instant_override ) VALUES (@c_date, @c_time, @c_timestamp, @c_timestamp_with_tz, @c_interval, @c_timestamp_noda_instant_override)";
+        private const string InsertPostgresDateTimeTypesSql = "INSERT INTO postgres_datetime_types ( c_date, c_time, c_timestamp, c_timestamp_with_tz, c_interval, c_timestamp_noda_instant_override ) VALUES (@c_date, @c_time, @c_timestamp, @c_timestamp_with_tz, @c_interval, @c_timestamp_noda_instant_override)";
         public class InsertPostgresDateTimeTypesArgs
         {
             public DateTime? CDate { get; set; }
@@ -1083,7 +1118,7 @@ namespace NpgsqlDapperLegacyExampleGen
             }
         }
 
-        private const string InsertPostgresNetworkTypesSql = " INSERT INTO postgres_network_types ( c_cidr, c_inet, c_macaddr, c_macaddr8 ) VALUES ( @c_cidr, @c_inet, @c_macaddr, @c_macaddr8::macaddr8 )";
+        private const string InsertPostgresNetworkTypesSql = "INSERT INTO postgres_network_types ( c_cidr, c_inet, c_macaddr, c_macaddr8 ) VALUES ( @c_cidr, @c_inet, @c_macaddr, @c_macaddr8::macaddr8 )";
         public class InsertPostgresNetworkTypesArgs
         {
             public NpgsqlCidr? CCidr { get; set; }
@@ -1202,7 +1237,7 @@ namespace NpgsqlDapperLegacyExampleGen
             }
         }
 
-        private const string InsertPostgresSpecialTypesSql = " INSERT INTO postgres_special_types ( c_json, c_json_string_override, c_jsonb, c_jsonpath, c_xml, c_xml_string_override, c_uuid, c_enum ) VALUES ( @c_json, @c_json_string_override::json, @c_jsonb, @c_jsonpath::jsonpath, @c_xml::xml, @c_xml_string_override::xml, @c_uuid, @c_enum::c_enum )";
+        private const string InsertPostgresSpecialTypesSql = "INSERT INTO postgres_special_types ( c_json, c_json_string_override, c_jsonb, c_jsonpath, c_xml, c_xml_string_override, c_uuid, c_enum ) VALUES ( @c_json, @c_json_string_override::json, @c_jsonb, @c_jsonpath::jsonpath, @c_xml::xml, @c_xml_string_override::xml, @c_uuid, @c_enum::c_enum )";
         public class InsertPostgresSpecialTypesArgs
         {
             public JsonElement? CJson { get; set; }
@@ -1390,7 +1425,7 @@ namespace NpgsqlDapperLegacyExampleGen
             return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetPostgresSpecialTypesCntRow>(GetPostgresSpecialTypesCntSql, transaction: this.Transaction);
         }
 
-        private const string InsertPostgresArrayTypesSql = " INSERT INTO postgres_array_types ( c_bytea, c_boolean_array, c_text_array, c_integer_array, c_decimal_array, c_date_array, c_timestamp_array ) VALUES (@c_bytea, @c_boolean_array, @c_text_array, @c_integer_array, @c_decimal_array, @c_date_array, @c_timestamp_array)";
+        private const string InsertPostgresArrayTypesSql = "INSERT INTO postgres_array_types ( c_bytea, c_boolean_array, c_text_array, c_integer_array, c_decimal_array, c_date_array, c_timestamp_array ) VALUES (@c_bytea, @c_boolean_array, @c_text_array, @c_integer_array, @c_decimal_array, @c_date_array, @c_timestamp_array)";
         public class InsertPostgresArrayTypesArgs
         {
             public byte[] CBytea { get; set; }
@@ -1527,7 +1562,7 @@ namespace NpgsqlDapperLegacyExampleGen
             await this.Transaction.Connection.ExecuteAsync(TruncatePostgresArrayTypesSql, transaction: this.Transaction);
         }
 
-        private const string InsertPostgresGeoTypesSql = " INSERT INTO postgres_geometric_types ( c_point, c_line, c_lseg, c_box, c_path, c_polygon, c_circle ) VALUES (@c_point, @c_line, @c_lseg, @c_box, @c_path, @c_polygon, @c_circle)";
+        private const string InsertPostgresGeoTypesSql = "INSERT INTO postgres_geometric_types ( c_point, c_line, c_lseg, c_box, c_path, c_polygon, c_circle ) VALUES (@c_point, @c_line, @c_lseg, @c_box, @c_path, @c_polygon, @c_circle)";
         public class InsertPostgresGeoTypesArgs
         {
             public NpgsqlPoint? CPoint { get; set; }

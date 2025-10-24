@@ -191,6 +191,44 @@ namespace SqliteLegacyExampleGen
             }
         }
 
+        private const string CreateAuthorIncludingCommentSql = "INSERT INTO authors ( id, name, bio ) VALUES (@id, @name, @bio)";
+        public class CreateAuthorIncludingCommentArgs
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+            public string Bio { get; set; }
+        };
+        public async Task CreateAuthorIncludingComment(CreateAuthorIncludingCommentArgs args)
+        {
+            if (this.Transaction == null)
+            {
+                using (var connection = new SqliteConnection(ConnectionString))
+                {
+                    await connection.OpenAsync();
+                    using (var command = new SqliteCommand(CreateAuthorIncludingCommentSql, connection))
+                    {
+                        command.Parameters.AddWithValue("@id", args.Id);
+                        command.Parameters.AddWithValue("@name", args.Name);
+                        command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
+                        await command.ExecuteNonQueryAsync();
+                        return;
+                    }
+                }
+            }
+
+            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+                throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+            using (var command = this.Transaction.Connection.CreateCommand())
+            {
+                command.CommandText = CreateAuthorIncludingCommentSql;
+                command.Transaction = this.Transaction;
+                command.Parameters.AddWithValue("@id", args.Id);
+                command.Parameters.AddWithValue("@name", args.Name);
+                command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
+                await command.ExecuteNonQueryAsync();
+            }
+        }
+
         private const string CreateAuthorReturnIdSql = "INSERT INTO authors (name, bio) VALUES (@name, @bio) RETURNING id";
         public class CreateAuthorReturnIdRow
         {

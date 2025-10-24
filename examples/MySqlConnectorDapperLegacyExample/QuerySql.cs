@@ -132,6 +132,31 @@ namespace MySqlConnectorDapperLegacyExampleGen
             await this.Transaction.Connection.ExecuteAsync(CreateAuthorSql, queryParams, transaction: this.Transaction);
         }
 
+        private const string CreateAuthorIncludingCommentSql = "INSERT INTO authors ( id, name, bio ) VALUES (@id, @name, @bio)";
+        public class CreateAuthorIncludingCommentArgs
+        {
+            public long Id { get; set; }
+            public string Name { get; set; }
+            public string Bio { get; set; }
+        };
+        public async Task CreateAuthorIncludingComment(CreateAuthorIncludingCommentArgs args)
+        {
+            var queryParams = new Dictionary<string, object>();
+            queryParams.Add("id", args.Id);
+            queryParams.Add("name", args.Name);
+            queryParams.Add("bio", args.Bio);
+            if (this.Transaction == null)
+            {
+                using (var connection = new MySqlConnection(ConnectionString))
+                    await connection.ExecuteAsync(CreateAuthorIncludingCommentSql, queryParams);
+                return;
+            }
+
+            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+                throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+            await this.Transaction.Connection.ExecuteAsync(CreateAuthorIncludingCommentSql, queryParams, transaction: this.Transaction);
+        }
+
         private const string CreateAuthorReturnIdSql = "INSERT INTO authors (name, bio) VALUES (@name, @bio); SELECT LAST_INSERT_ID()";
         public class CreateAuthorReturnIdArgs
         {
@@ -595,7 +620,7 @@ namespace MySqlConnectorDapperLegacyExampleGen
             return (await this.Transaction.Connection.QueryAsync<GetAuthorsWithDuplicateParamsRow>(GetAuthorsWithDuplicateParamsSql, queryParams, transaction: this.Transaction)).AsList();
         }
 
-        private const string InsertMysqlNumericTypesSql = " INSERT INTO mysql_numeric_types ( c_bool, c_boolean, c_tinyint, c_smallint, c_mediumint, c_int, c_integer, c_bigint, c_decimal, c_dec, c_numeric, c_fixed, c_float, c_double, c_double_precision ) VALUES (@c_bool, @c_boolean, @c_tinyint, @c_smallint, @c_mediumint, @c_int, @c_integer, @c_bigint, @c_decimal, @c_dec, @c_numeric, @c_fixed, @c_float, @c_double, @c_double_precision)";
+        private const string InsertMysqlNumericTypesSql = "INSERT INTO mysql_numeric_types ( c_bool, c_boolean, c_tinyint, c_smallint, c_mediumint, c_int, c_integer, c_bigint, c_decimal, c_dec, c_numeric, c_fixed, c_float, c_double, c_double_precision ) VALUES (@c_bool, @c_boolean, @c_tinyint, @c_smallint, @c_mediumint, @c_int, @c_integer, @c_bigint, @c_decimal, @c_dec, @c_numeric, @c_fixed, @c_float, @c_double, @c_double_precision)";
         public class InsertMysqlNumericTypesArgs
         {
             public bool? CBool { get; set; }
@@ -799,7 +824,7 @@ namespace MySqlConnectorDapperLegacyExampleGen
             await this.Transaction.Connection.ExecuteAsync(TruncateMysqlNumericTypesSql, transaction: this.Transaction);
         }
 
-        private const string InsertMysqlStringTypesSql = " INSERT INTO mysql_string_types ( c_char, c_nchar, c_national_char, c_varchar, c_tinytext, c_mediumtext, c_text, c_longtext, c_json, c_json_string_override, c_enum, c_set ) VALUES (@c_char, @c_nchar, @c_national_char, @c_varchar, @c_tinytext, @c_mediumtext, @c_text, @c_longtext, @c_json, @c_json_string_override, @c_enum, @c_set)";
+        private const string InsertMysqlStringTypesSql = "INSERT INTO mysql_string_types ( c_char, c_nchar, c_national_char, c_varchar, c_tinytext, c_mediumtext, c_text, c_longtext, c_json, c_json_string_override, c_enum, c_set ) VALUES (@c_char, @c_nchar, @c_national_char, @c_varchar, @c_tinytext, @c_mediumtext, @c_text, @c_longtext, @c_json, @c_json_string_override, @c_enum, @c_set)";
         public class InsertMysqlStringTypesArgs
         {
             public string CChar { get; set; }
@@ -985,7 +1010,7 @@ namespace MySqlConnectorDapperLegacyExampleGen
             await this.Transaction.Connection.ExecuteAsync(TruncateMysqlStringTypesSql, transaction: this.Transaction);
         }
 
-        private const string InsertMysqlDatetimeTypesSql = " INSERT INTO mysql_datetime_types ( c_year, c_date, c_datetime, c_timestamp, c_time, c_timestamp_noda_instant_override ) VALUES (@c_year, @c_date, @c_datetime, @c_timestamp, @c_time, @c_timestamp_noda_instant_override)";
+        private const string InsertMysqlDatetimeTypesSql = "INSERT INTO mysql_datetime_types ( c_year, c_date, c_datetime, c_timestamp, c_time, c_timestamp_noda_instant_override ) VALUES (@c_year, @c_date, @c_datetime, @c_timestamp, @c_time, @c_timestamp_noda_instant_override)";
         public class InsertMysqlDatetimeTypesArgs
         {
             public short? CYear { get; set; }
@@ -1138,7 +1163,7 @@ namespace MySqlConnectorDapperLegacyExampleGen
             await this.Transaction.Connection.ExecuteAsync(TruncateMysqlDatetimeTypesSql, transaction: this.Transaction);
         }
 
-        private const string InsertMysqlBinaryTypesSql = " INSERT INTO mysql_binary_types ( c_bit, c_binary, c_varbinary, c_tinyblob, c_blob, c_mediumblob, c_longblob ) VALUES (@c_bit, @c_binary, @c_varbinary, @c_tinyblob, @c_blob, @c_mediumblob, @c_longblob)";
+        private const string InsertMysqlBinaryTypesSql = "INSERT INTO mysql_binary_types ( c_bit, c_binary, c_varbinary, c_tinyblob, c_blob, c_mediumblob, c_longblob ) VALUES (@c_bit, @c_binary, @c_varbinary, @c_tinyblob, @c_blob, @c_mediumblob, @c_longblob)";
         public class InsertMysqlBinaryTypesArgs
         {
             public byte? CBit { get; set; }
@@ -1298,7 +1323,7 @@ namespace MySqlConnectorDapperLegacyExampleGen
             await this.Transaction.Connection.ExecuteAsync(TruncateMysqlBinaryTypesSql, transaction: this.Transaction);
         }
 
-        private const string GetMysqlFunctionsSql = " SELECT MAX(c_int) AS max_int, MAX(c_varchar) AS max_varchar, MAX(c_timestamp) AS max_timestamp FROM mysql_numeric_types CROSS JOIN mysql_string_types CROSS JOIN mysql_datetime_types";
+        private const string GetMysqlFunctionsSql = "SELECT MAX(c_int) AS max_int, MAX(c_varchar) AS max_varchar, MAX(c_timestamp) AS max_timestamp FROM mysql_numeric_types CROSS JOIN mysql_string_types CROSS JOIN mysql_datetime_types";
         public class GetMysqlFunctionsRow
         {
             public int? MaxInt { get; set; }

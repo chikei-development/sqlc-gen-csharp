@@ -12,6 +12,13 @@ OFFSET sqlc.arg('offset');
 -- name: CreateAuthor :one
 INSERT INTO authors (id, name, bio) VALUES ($1, $2, $3) RETURNING *;
 
+-- name: CreateAuthorIncludingComment :one
+INSERT INTO authors (
+    id, -- this is an id
+    name, -- this is a name!@#$%,
+    bio -- comment?
+    ) VALUES ($1, $2, $3) RETURNING *;
+
 -- name: CreateAuthorReturnId :execlastid
 INSERT INTO authors (name, bio) VALUES ($1, $2) RETURNING id;
 

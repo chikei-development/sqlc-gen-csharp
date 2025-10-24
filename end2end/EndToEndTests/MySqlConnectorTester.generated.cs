@@ -426,6 +426,19 @@ namespace EndToEndTests
         }
 
         [Test]
+        public async Task TestMySqlInlineComments()
+        {
+            // This test verifies that queries with inline comments work correctly
+            // The bug has been fixed - inline comments are now properly removed during code generation
+            // Test the CreateAuthorIncludingComment method
+            await QuerySql.CreateAuthorIncludingComment(new QuerySql.CreateAuthorIncludingCommentArgs { Id = 9999, Name = "Test Author With Comments", Bio = "Biography with inline comments test" });
+            var author = await QuerySql.GetAuthorById(new QuerySql.GetAuthorByIdArgs { Id = 9999 });
+            Assert.That(author, Is.Not.Null);
+            Assert.That(author.Value.Name, Is.EqualTo("Test Author With Comments"));
+            Assert.That(author.Value.Bio, Is.EqualTo("Biography with inline comments test"));
+        }
+
+        [Test]
         [TestCase("&", "\u1857", "\u2649", "Sheena is a Punk Rocker", "Holiday in Cambodia", "London's Calling", "London's Burning", "Police & Thieves")]
         [TestCase(null, null, null, null, null, null, null, null)]
         public async Task TestMySqlStringTypes(string cChar, string cNchar, string cNationalChar, string cVarchar, string cTinytext, string cMediumtext, string cText, string cLongtext)

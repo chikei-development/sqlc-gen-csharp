@@ -10,6 +10,13 @@ LIMIT ? OFFSET ?;
 -- name: CreateAuthor :exec
 INSERT INTO authors (id, name, bio) VALUES (?, ?, ?);
 
+-- name: CreateAuthorIncludingComment :exec
+INSERT INTO authors (
+    id, -- this is an id
+    name, -- this is a name!@#$%,
+    bio -- comment?
+) VALUES (?, ?, ?);
+
 -- name: CreateAuthorReturnId :execlastid
 INSERT INTO authors (name, bio) VALUES (?, ?);
 

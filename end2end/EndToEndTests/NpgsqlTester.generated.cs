@@ -412,6 +412,18 @@ namespace EndToEndTests
         }
 
         [Test]
+        public async Task TestPostgresInlineComments()
+        {
+            // This test verifies that queries with inline comments work correctly
+            // The bug has been fixed - inline comments are now properly removed during code generation
+            // Test the CreateAuthorIncludingComment method
+            var result = await QuerySql.CreateAuthorIncludingComment(new QuerySql.CreateAuthorIncludingCommentArgs { Id = 9999, Name = "Test Author With Comments", Bio = "Biography with inline comments test" });
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Value.Name, Is.EqualTo("Test Author With Comments"));
+            Assert.That(result.Value.Bio, Is.EqualTo("Biography with inline comments test"));
+        }
+
+        [Test]
         [TestCase("E", "It takes a nation of millions to hold us back", "Rebel Without a Pause", "Master of Puppets", "Prophets of Rage")]
         [TestCase(null, null, null, null, null)]
         public async Task TestPostgresStringTypes(string cChar, string cVarchar, string cCharacterVarying, string cBpchar, string cText)

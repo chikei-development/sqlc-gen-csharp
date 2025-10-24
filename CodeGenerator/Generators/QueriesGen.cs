@@ -146,7 +146,7 @@ internal partial class QueriesGen(DbDriver dbDriver, string namespaceName)
         if (transformedQueryText == string.Empty)
             return null;
 
-        var singleLineQueryText = LongWhitespaceRegex().Replace(transformedQueryText, " ");
+        var singleLineQueryText = RemoveInlineCommentsAndCollapseWhitespace(transformedQueryText);
         return ParseMemberDeclaration(
                 $"""
                 private const string {ClassMember.Sql.Name(query.Name)} = "{singleLineQueryText}";
@@ -154,6 +154,25 @@ internal partial class QueriesGen(DbDriver dbDriver, string namespaceName)
             )!
             .AppendNewLine();
     }
+
+    /// <summary>
+    /// Removes inline comments (-- comment) and collapses whitespace to a single line,
+    /// while preserving the SQL statement structure.
+    /// </summary>
+    private static string RemoveInlineCommentsAndCollapseWhitespace(string sql)
+    {
+        // First, remove inline comments (-- comment) including the comment text
+        // This regex matches -- followed by any characters until end of line or end of string
+        var withoutInlineComments = InlineCommentRegex().Replace(sql, "");
+
+        // Then collapse remaining whitespace to single spaces
+        var singleLineText = LongWhitespaceRegex().Replace(withoutInlineComments, " ");
+
+        return singleLineText.Trim();
+    }
+
+    [GeneratedRegex(@"--[^\r\n]*")]
+    private static partial Regex InlineCommentRegex();
 
     [GeneratedRegex(@"\s{1,}")]
     private static partial Regex LongWhitespaceRegex();
