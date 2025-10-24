@@ -1648,6 +1648,91 @@
       "filename": "query.sql"
     },
     {
+      "text": "SELECT id, name, bio FROM authors \nWHERE name = ? \n   OR bio LIKE CONCAT('%', ?, '%')\n   OR CAST(id AS CHAR) LIKE CONCAT('%', ?, '%')\nLIMIT 1",
+      "name": "GetAuthorWithTripleNameParam",
+      "cmd": ":one",
+      "columns": [
+        {
+          "name": "id",
+          "notNull": true,
+          "length": -1,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "name": "bigint"
+          },
+          "originalName": "id"
+        },
+        {
+          "name": "name",
+          "notNull": true,
+          "length": -1,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "name": "text"
+          },
+          "originalName": "name"
+        },
+        {
+          "name": "bio",
+          "length": -1,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "name": "text"
+          },
+          "originalName": "bio"
+        }
+      ],
+      "parameters": [
+        {
+          "number": 1,
+          "column": {
+            "name": "author_name",
+            "length": -1,
+            "isNamedParam": true,
+            "table": {
+              "name": "authors"
+            },
+            "type": {
+              "name": "text"
+            },
+            "originalName": "name"
+          }
+        },
+        {
+          "number": 2,
+          "column": {
+            "name": "author_name",
+            "length": -1,
+            "isNamedParam": true,
+            "type": {
+              "name": "any"
+            }
+          }
+        },
+        {
+          "number": 3,
+          "column": {
+            "name": "author_name",
+            "length": -1,
+            "isNamedParam": true,
+            "type": {
+              "name": "any"
+            }
+          }
+        }
+      ],
+      "comments": [
+        " This query uses the same parameter three times to test extensive deduplication"
+      ],
+      "filename": "query.sql"
+    },
+    {
       "text": "\nINSERT INTO mysql_numeric_types \n(\n    c_bool,\n    c_boolean,\n    c_tinyint,\n    c_smallint,\n    c_mediumint,\n    c_int,\n    c_integer,\n    c_bigint, \n    c_decimal, \n    c_dec, \n    c_numeric, \n    c_fixed, \n    c_float, \n    c_double, \n    c_double_precision\n) \nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       "name": "InsertMysqlNumericTypes",
       "cmd": ":exec",

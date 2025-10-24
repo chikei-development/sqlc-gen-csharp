@@ -620,6 +620,35 @@ namespace MySqlConnectorDapperLegacyExampleGen
             return (await this.Transaction.Connection.QueryAsync<GetAuthorsWithDuplicateParamsRow>(GetAuthorsWithDuplicateParamsSql, queryParams, transaction: this.Transaction)).AsList();
         }
 
+        private const string GetAuthorWithTripleNameParamSql = "SELECT id, name, bio FROM authors WHERE name = @author_name OR bio LIKE CONCAT('%', @author_name, '%') OR CAST(id AS CHAR) LIKE CONCAT('%', @author_name, '%') LIMIT 1";
+        public class GetAuthorWithTripleNameParamRow
+        {
+            public long Id { get; set; }
+            public string Name { get; set; }
+            public string Bio { get; set; }
+        };
+        public class GetAuthorWithTripleNameParamArgs
+        {
+            public string AuthorName { get; set; }
+        };
+        public async Task<GetAuthorWithTripleNameParamRow> GetAuthorWithTripleNameParam(GetAuthorWithTripleNameParamArgs args)
+        {
+            var queryParams = new Dictionary<string, object>();
+            queryParams.Add("author_name", args.AuthorName);
+            if (this.Transaction == null)
+            {
+                using (var connection = new MySqlConnection(ConnectionString))
+                {
+                    var result = await connection.QueryFirstOrDefaultAsync<GetAuthorWithTripleNameParamRow>(GetAuthorWithTripleNameParamSql, queryParams);
+                    return result;
+                }
+            }
+
+            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+                throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+            return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetAuthorWithTripleNameParamRow>(GetAuthorWithTripleNameParamSql, queryParams, transaction: this.Transaction);
+        }
+
         private const string InsertMysqlNumericTypesSql = "INSERT INTO mysql_numeric_types ( c_bool, c_boolean, c_tinyint, c_smallint, c_mediumint, c_int, c_integer, c_bigint, c_decimal, c_dec, c_numeric, c_fixed, c_float, c_double, c_double_precision ) VALUES (@c_bool, @c_boolean, @c_tinyint, @c_smallint, @c_mediumint, @c_int, @c_integer, @c_bigint, @c_decimal, @c_dec, @c_numeric, @c_fixed, @c_float, @c_double, @c_double_precision)";
         public class InsertMysqlNumericTypesArgs
         {

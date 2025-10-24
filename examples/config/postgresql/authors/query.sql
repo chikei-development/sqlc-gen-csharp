@@ -93,3 +93,13 @@ WHERE (name = sqlc.narg('author_name') OR bio LIKE '%' || sqlc.narg('author_name
   AND (id > sqlc.narg('min_id') OR id < sqlc.narg('min_id') + 1000)
   AND created_at >= sqlc.narg('date_filter')
   AND updated_at >= sqlc.narg('date_filter');
+
+-- name: GetAuthorWithPentaParam :one
+-- This query uses the same parameter five times to test extensive deduplication
+SELECT * FROM authors 
+WHERE name = sqlc.narg('search_value') 
+   OR bio LIKE '%' || sqlc.narg('search_value') || '%'
+   OR CAST(id AS TEXT) = sqlc.narg('search_value')
+   OR created_at::TEXT LIKE '%' || sqlc.narg('search_value') || '%'
+   OR (LENGTH(sqlc.narg('search_value')) > 0 AND name IS NOT NULL)
+LIMIT 1;

@@ -10439,7 +10439,26 @@ updated_at*73
 author_name0ÿÿÿÿÿÿÿÿÿ8R	authorsbtextzname*51
 min_id0ÿÿÿÿÿÿÿÿÿ8R	authorsb	bigserialzid*MI
 date_filter0ÿÿÿÿÿÿÿÿÿ8R	authorsbpg_catalog.timestampz
-created_at2` This query demonstrates parameter deduplication where the same parameter is used multiple times:	query.sqlü
+created_at2` This query demonstrates parameter deduplication where the same parameter is used multiple times:	query.sql¸
+èSELECT id, name, bio, created_at, updated_at FROM authors 
+WHERE name = $1 
+   OR bio LIKE '%' || $1 || '%'
+   OR CAST(id AS TEXT) = $1
+   OR created_at::TEXT LIKE '%' || $1 || '%'
+   OR (LENGTH($1) > 0 AND name IS NOT NULL)
+LIMIT 1GetAuthorWithPentaParam:one"-
+id0ÿÿÿÿÿÿÿÿÿR	authorsb	bigserialzid",
+name0ÿÿÿÿÿÿÿÿÿR	authorsbtextzname"(
+bio0ÿÿÿÿÿÿÿÿÿR	authorsbtextzbio"G
+
+created_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestampz
+created_at"G
+
+updated_at0ÿÿÿÿÿÿÿÿÿR	authorsb
+pg_catalog	timestampz
+updated_at*84
+search_value0ÿÿÿÿÿÿÿÿÿ8R	authorsbtextzname2N This query uses the same parameter five times to test extensive deduplication:	query.sqlü
 ÒSELECT
     MAX(c_integer) AS max_integer,
     MAX(c_varchar) AS max_varchar,
