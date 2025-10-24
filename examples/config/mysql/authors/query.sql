@@ -77,3 +77,11 @@ TRUNCATE TABLE extended.bios;
 SELECT * FROM authors 
 WHERE (name = sqlc.narg('author_name') OR bio LIKE CONCAT('%', sqlc.narg('author_name'), '%'))
   AND (id > sqlc.narg('min_id') OR id < sqlc.narg('min_id') + 1000);
+
+-- name: GetAuthorWithTripleNameParam :one
+-- This query uses the same parameter three times to test extensive deduplication
+SELECT * FROM authors 
+WHERE name = sqlc.narg('author_name') 
+   OR bio LIKE CONCAT('%', sqlc.narg('author_name'), '%')
+   OR CAST(id AS CHAR) LIKE CONCAT('%', sqlc.narg('author_name'), '%')
+LIMIT 1;

@@ -823,6 +823,61 @@ public class QuerySql
         }
     }
 
+    private const string GetAuthorWithTripleNameParamSql = "SELECT id, name, bio FROM authors WHERE name = @author_name OR bio LIKE CONCAT('%', @author_name, '%') OR CAST(id AS CHAR) LIKE CONCAT('%', @author_name, '%') LIMIT 1";
+    public readonly record struct GetAuthorWithTripleNameParamRow(long Id, string Name, string? Bio);
+    public readonly record struct GetAuthorWithTripleNameParamArgs(string? AuthorName);
+    public async Task<GetAuthorWithTripleNameParamRow?> GetAuthorWithTripleNameParam(GetAuthorWithTripleNameParamArgs args)
+    {
+        if (this.Transaction == null)
+        {
+            using (var connection = new MySqlConnection(ConnectionString))
+            {
+                await connection.OpenAsync();
+                using (var command = new MySqlCommand(GetAuthorWithTripleNameParamSql, connection))
+                {
+                    command.Parameters.AddWithValue("@author_name", args.AuthorName ?? (object)DBNull.Value);
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            return new GetAuthorWithTripleNameParamRow
+                            {
+                                Id = reader.GetInt64(0),
+                                Name = reader.GetString(1),
+                                Bio = reader.IsDBNull(2) ? null : reader.GetString(2)
+                            };
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        using (var command = this.Transaction.Connection.CreateCommand())
+        {
+            command.CommandText = GetAuthorWithTripleNameParamSql;
+            command.Transaction = this.Transaction;
+            command.Parameters.AddWithValue("@author_name", args.AuthorName ?? (object)DBNull.Value);
+            using (var reader = await command.ExecuteReaderAsync())
+            {
+                if (await reader.ReadAsync())
+                {
+                    return new GetAuthorWithTripleNameParamRow
+                    {
+                        Id = reader.GetInt64(0),
+                        Name = reader.GetString(1),
+                        Bio = reader.IsDBNull(2) ? null : reader.GetString(2)
+                    };
+                }
+            }
+        }
+
+        return null;
+    }
+
     private const string InsertMysqlNumericTypesSql = "INSERT INTO mysql_numeric_types ( c_bool, c_boolean, c_tinyint, c_smallint, c_mediumint, c_int, c_integer, c_bigint, c_decimal, c_dec, c_numeric, c_fixed, c_float, c_double, c_double_precision ) VALUES (@c_bool, @c_boolean, @c_tinyint, @c_smallint, @c_mediumint, @c_int, @c_integer, @c_bigint, @c_decimal, @c_dec, @c_numeric, @c_fixed, @c_float, @c_double, @c_double_precision)";
     public readonly record struct InsertMysqlNumericTypesArgs(bool? CBool, bool? CBoolean, short? CTinyint, short? CSmallint, int? CMediumint, int? CInt, int? CInteger, long? CBigint, decimal? CDecimal, decimal? CDec, decimal? CNumeric, decimal? CFixed, double? CFloat, double? CDouble, double? CDoublePrecision);
     public async Task InsertMysqlNumericTypes(InsertMysqlNumericTypesArgs args)

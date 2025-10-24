@@ -25,6 +25,7 @@ public enum KnownTestType
     MultipleSlices,
     NargNull,
     NargNotNull,
+    DuplicateParams,
 
     // Sqlite
     SqliteDataTypes,
@@ -122,6 +123,7 @@ internal static class Config
         KnownTestType.MultipleSlices,
         KnownTestType.NargNull,
         KnownTestType.NargNotNull,
+        KnownTestType.DuplicateParams,
 
         // Data types
         KnownTestType.MySqlStringDataTypes,
@@ -163,6 +165,7 @@ internal static class Config
         KnownTestType.SelfJoinEmbed,
         KnownTestType.NargNull,
         KnownTestType.NargNotNull,
+        KnownTestType.DuplicateParams,
 
         // Data types
         KnownTestType.PostgresStringDataTypes,
@@ -204,6 +207,7 @@ internal static class Config
         KnownTestType.MultipleSlices,
         KnownTestType.NargNull,
         KnownTestType.NargNotNull,
+        KnownTestType.DuplicateParams,
         KnownTestType.SqliteTransaction,
         KnownTestType.SqliteTransactionRollback,
         KnownTestType.SqliteDataTypes,

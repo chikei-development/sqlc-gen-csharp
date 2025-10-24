@@ -316,6 +316,54 @@ namespace EndToEndTests
         }
 
         [Test]
+        public async Task TestDuplicateParams()
+        {
+            // Test parameter deduplication where the same parameter is used multiple times
+            var id1 = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs { Name = "Albert Einstein", Bio = "Quote that everyone always attribute to Einstein" });
+            // Create test args based on the database type (PostgreSQL has additional date parameters)
+            object duplicateArgs;
+            if (typeof(QuerySql.GetAuthorsWithDuplicateParamsArgs).GetProperty("DateFilter") != null)
+            {
+                // PostgreSQL version with date filter
+                var argsType = typeof(QuerySql.GetAuthorsWithDuplicateParamsArgs);
+                duplicateArgs = Activator.CreateInstance(argsType);
+                argsType.GetProperty("AuthorName").SetValue(duplicateArgs, "Albert Einstein");
+                argsType.GetProperty("MinId").SetValue(duplicateArgs, id1 - 1);
+                argsType.GetProperty("DateFilter").SetValue(duplicateArgs, DateTime.Now.AddYears(-10));
+            }
+            else
+            {
+                // MySQL/SQLite version without date filter
+                duplicateArgs = new QuerySql.GetAuthorsWithDuplicateParamsArgs
+                {
+                    AuthorName = "Albert Einstein",
+                    MinId = id1 - 1
+                };
+            }
+
+            // Test GetAuthorsWithDuplicateParams - parameter deduplication with complex conditions
+            var duplicateResults = await QuerySql.GetAuthorsWithDuplicateParams((dynamic)duplicateArgs);
+            Assert.That(duplicateResults, Is.Not.Null);
+            Assert.That(duplicateResults.Count, Is.GreaterThan(0));
+            // Find the expected author without using lambda expressions on dynamic results
+            bool foundExpectedAuthor = false;
+            dynamic foundAuthor = null;
+            foreach (var result in duplicateResults)
+            {
+                if (result.Name == "Albert Einstein")
+                {
+                    foundExpectedAuthor = true;
+                    foundAuthor = result;
+                    break;
+                }
+            }
+
+            Assert.That(foundExpectedAuthor, Is.True);
+            Assert.That(foundAuthor.Id, Is.EqualTo(id1));
+            Assert.That(foundAuthor.Bio.ToString(), Contains.Substring("Quote that everyone always attribute to Einstein"));
+        }
+
+        [Test]
         public async Task TestPostgresTransaction()
         {
             var connection = new Npgsql.NpgsqlConnection(Environment.GetEnvironmentVariable(EndToEndCommon.PostgresConnectionStringEnv));

@@ -956,6 +956,71 @@ namespace NpgsqlLegacyExampleGen
             }
         }
 
+        private const string GetAuthorWithPentaParamSql = "SELECT id, name, bio, created_at, updated_at FROM authors WHERE name = @search_value OR bio LIKE '%' || @search_value || '%' OR CAST(id AS TEXT) = @search_value OR created_at::TEXT LIKE '%' || @search_value || '%' OR (LENGTH(@search_value) > 0 AND name IS NOT NULL) LIMIT 1";
+        public class GetAuthorWithPentaParamRow
+        {
+            public long Id { get; set; }
+            public string Name { get; set; }
+            public string Bio { get; set; }
+            public DateTime? CreatedAt { get; set; }
+            public DateTime? UpdatedAt { get; set; }
+        };
+        public class GetAuthorWithPentaParamArgs
+        {
+            public string SearchValue { get; set; }
+        };
+        public async Task<GetAuthorWithPentaParamRow> GetAuthorWithPentaParam(GetAuthorWithPentaParamArgs args)
+        {
+            if (this.Transaction == null)
+            {
+                using (var command = DataSource.CreateCommand(GetAuthorWithPentaParamSql))
+                {
+                    command.Parameters.AddWithValue("@search_value", args.SearchValue ?? (object)DBNull.Value);
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            return new GetAuthorWithPentaParamRow
+                            {
+                                Id = reader.GetInt64(0),
+                                Name = reader.GetString(1),
+                                Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
+                                CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3),
+                                UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4)
+                            };
+                        }
+                    }
+                }
+
+                return null;
+            }
+
+            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+                throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+            using (var command = this.Transaction.Connection.CreateCommand())
+            {
+                command.CommandText = GetAuthorWithPentaParamSql;
+                command.Transaction = this.Transaction;
+                command.Parameters.AddWithValue("@search_value", args.SearchValue ?? (object)DBNull.Value);
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync())
+                    {
+                        return new GetAuthorWithPentaParamRow
+                        {
+                            Id = reader.GetInt64(0),
+                            Name = reader.GetString(1),
+                            Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
+                            CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3),
+                            UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4)
+                        };
+                    }
+                }
+            }
+
+            return null;
+        }
+
         private const string GetPostgresFunctionsSql = "SELECT MAX(c_integer) AS max_integer, MAX(c_varchar) AS max_varchar, MAX(c_timestamp) AS max_timestamp FROM postgres_datetime_types CROSS JOIN postgres_numeric_types CROSS JOIN postgres_string_types";
         public class GetPostgresFunctionsRow
         {

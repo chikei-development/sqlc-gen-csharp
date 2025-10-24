@@ -23,6 +23,40 @@ dotnet-publish-process:
 sync-sqlc-options:
 	./scripts/sync_sqlc_options.sh
 
+.PHONY: pre-commit
+pre-commit:
+	@echo "This script is intended to automate all of the garbage you need to do before committing. Please only run it if *all* files are currently staged for commit (i.e. git add . has already been run)."
+	@echo "If you have unstaged changes, please stash them first (git stash)."
+	@echo "This will run:"
+	@echo "  1) pre-commit run (dotnet format, yaml linting, etc.)"
+	@echo "  2) if there are any changes, git add ."
+	@echo "  3) the makefile targets: sqlc-generate, unit-tests, generate-end2end-tests, run-end2end-tests"
+	@echo "  4) if there are any changes, git add ."
+	@echo "This all sound good? (y/n)"
+	@read ans; \
+	if [ "$$ans" != "y" ]; then \
+		echo "Aborting."; \
+		exit 1; \
+	fi
+
+	@echo "Checking for unstaged changes..."
+	@if [ -n "$$(git diff --stat)" ]; then \
+		echo "You have unstaged changes. Please stash or stage them first."; \
+		exit 1; \
+	fi
+
+	pre-commit run || exit 1
+	@if [ -n "$$(git status --porcelain)" ]; then \
+		git add . || exit 1; \
+	fi
+	$(MAKE) sqlc-generate || exit 1
+	$(MAKE) unit-tests || exit 1
+	$(MAKE) generate-end2end-tests || exit 1
+	$(MAKE) run-end2end-tests || exit 1
+	@if [ -n "$$(git status --porcelain)" ]; then \
+		git add . || exit 1; \
+	fi
+
 sqlc-generate-requests: dotnet-publish-process
 	SQLCCACHE=./; sqlc -f sqlc.request.generated.yaml generate
 

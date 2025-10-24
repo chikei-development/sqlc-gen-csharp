@@ -647,6 +647,37 @@ public class QuerySql
         return (await this.Transaction.Connection.QueryAsync<GetAuthorsWithDuplicateParamsRow>(GetAuthorsWithDuplicateParamsSql, queryParams, transaction: this.Transaction)).AsList();
     }
 
+    private const string GetAuthorWithPentaParamSql = "SELECT id, name, bio, created_at, updated_at FROM authors WHERE name = @search_value OR bio LIKE '%' || @search_value || '%' OR CAST(id AS TEXT) = @search_value OR created_at::TEXT LIKE '%' || @search_value || '%' OR (LENGTH(@search_value) > 0 AND name IS NOT NULL) LIMIT 1";
+    public class GetAuthorWithPentaParamRow
+    {
+        public required long Id { get; init; }
+        public required string Name { get; init; }
+        public string? Bio { get; init; }
+        public DateTime? CreatedAt { get; init; }
+        public DateTime? UpdatedAt { get; init; }
+    };
+    public class GetAuthorWithPentaParamArgs
+    {
+        public string? SearchValue { get; init; }
+    };
+    public async Task<GetAuthorWithPentaParamRow?> GetAuthorWithPentaParam(GetAuthorWithPentaParamArgs args)
+    {
+        var queryParams = new Dictionary<string, object?>();
+        queryParams.Add("search_value", args.SearchValue);
+        if (this.Transaction == null)
+        {
+            using (var connection = new NpgsqlConnection(ConnectionString))
+            {
+                var result = await connection.QueryFirstOrDefaultAsync<GetAuthorWithPentaParamRow?>(GetAuthorWithPentaParamSql, queryParams);
+                return result;
+            }
+        }
+
+        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetAuthorWithPentaParamRow?>(GetAuthorWithPentaParamSql, queryParams, transaction: this.Transaction);
+    }
+
     private const string GetPostgresFunctionsSql = "SELECT MAX(c_integer) AS max_integer, MAX(c_varchar) AS max_varchar, MAX(c_timestamp) AS max_timestamp FROM postgres_datetime_types CROSS JOIN postgres_numeric_types CROSS JOIN postgres_string_types";
     public class GetPostgresFunctionsRow
     {

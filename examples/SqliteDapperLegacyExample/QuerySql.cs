@@ -79,14 +79,14 @@ namespace SqliteDapperLegacyExampleGen
         };
         public class ListAuthorsArgs
         {
-            public int Offset { get; set; }
             public int Limit { get; set; }
+            public int Offset { get; set; }
         };
         public async Task<List<ListAuthorsRow>> ListAuthors(ListAuthorsArgs args)
         {
             var queryParams = new Dictionary<string, object>();
-            queryParams.Add("offset", args.Offset);
             queryParams.Add("limit", args.Limit);
+            queryParams.Add("offset", args.Offset);
             if (this.Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
@@ -206,37 +206,6 @@ namespace SqliteDapperLegacyExampleGen
             return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetAuthorByIdRow>(GetAuthorByIdSql, queryParams, transaction: this.Transaction);
         }
 
-        private const string GetAuthorByIdWithMultipleNamedParamSql = "SELECT id, name, bio FROM authors WHERE id = @id_arg AND id = @id_arg LIMIT @take";
-        public class GetAuthorByIdWithMultipleNamedParamRow
-        {
-            public int Id { get; set; }
-            public string Name { get; set; }
-            public string Bio { get; set; }
-        };
-        public class GetAuthorByIdWithMultipleNamedParamArgs
-        {
-            public int IdArg { get; set; }
-            public int? Take { get; set; }
-        };
-        public async Task<GetAuthorByIdWithMultipleNamedParamRow> GetAuthorByIdWithMultipleNamedParam(GetAuthorByIdWithMultipleNamedParamArgs args)
-        {
-            var queryParams = new Dictionary<string, object>();
-            queryParams.Add("id_arg", args.IdArg);
-            queryParams.Add("take", args.Take);
-            if (this.Transaction == null)
-            {
-                using (var connection = new SqliteConnection(ConnectionString))
-                {
-                    var result = await connection.QueryFirstOrDefaultAsync<GetAuthorByIdWithMultipleNamedParamRow>(GetAuthorByIdWithMultipleNamedParamSql, queryParams);
-                    return result;
-                }
-            }
-
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
-                throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetAuthorByIdWithMultipleNamedParamRow>(GetAuthorByIdWithMultipleNamedParamSql, queryParams, transaction: this.Transaction);
-        }
-
         private const string GetAuthorByNamePatternSql = "SELECT id, name, bio FROM authors WHERE name LIKE COALESCE(@name_pattern, '%')";
         public class GetAuthorByNamePatternRow
         {
@@ -264,6 +233,42 @@ namespace SqliteDapperLegacyExampleGen
             if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
             return (await this.Transaction.Connection.QueryAsync<GetAuthorByNamePatternRow>(GetAuthorByNamePatternSql, queryParams, transaction: this.Transaction)).AsList();
+        }
+
+        private const string DeleteAuthorSql = "DELETE FROM authors WHERE name = @name";
+        public class DeleteAuthorArgs
+        {
+            public string Name { get; set; }
+        };
+        public async Task DeleteAuthor(DeleteAuthorArgs args)
+        {
+            var queryParams = new Dictionary<string, object>();
+            queryParams.Add("name", args.Name);
+            if (this.Transaction == null)
+            {
+                using (var connection = new SqliteConnection(ConnectionString))
+                    await connection.ExecuteAsync(DeleteAuthorSql, queryParams);
+                return;
+            }
+
+            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+                throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+            await this.Transaction.Connection.ExecuteAsync(DeleteAuthorSql, queryParams, transaction: this.Transaction);
+        }
+
+        private const string DeleteAllAuthorsSql = "DELETE FROM authors";
+        public async Task DeleteAllAuthors()
+        {
+            if (this.Transaction == null)
+            {
+                using (var connection = new SqliteConnection(ConnectionString))
+                    await connection.ExecuteAsync(DeleteAllAuthorsSql);
+                return;
+            }
+
+            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+                throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+            await this.Transaction.Connection.ExecuteAsync(DeleteAllAuthorsSql, transaction: this.Transaction);
         }
 
         private const string UpdateAuthorsSql = "UPDATE authors SET bio = @bio WHERE bio IS NOT NULL";
@@ -354,27 +359,6 @@ namespace SqliteDapperLegacyExampleGen
             return (await this.Transaction.Connection.QueryAsync<GetAuthorsByIdsAndNamesRow>(transformedSql, queryParams, transaction: this.Transaction)).AsList();
         }
 
-        private const string DeleteAuthorSql = "DELETE FROM authors WHERE name = @name";
-        public class DeleteAuthorArgs
-        {
-            public string Name { get; set; }
-        };
-        public async Task DeleteAuthor(DeleteAuthorArgs args)
-        {
-            var queryParams = new Dictionary<string, object>();
-            queryParams.Add("name", args.Name);
-            if (this.Transaction == null)
-            {
-                using (var connection = new SqliteConnection(ConnectionString))
-                    await connection.ExecuteAsync(DeleteAuthorSql, queryParams);
-                return;
-            }
-
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
-                throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            await this.Transaction.Connection.ExecuteAsync(DeleteAuthorSql, queryParams, transaction: this.Transaction);
-        }
-
         private const string CreateBookSql = "INSERT INTO books (name, author_id) VALUES (@name, @author_id) RETURNING id";
         public class CreateBookRow
         {
@@ -401,7 +385,7 @@ namespace SqliteDapperLegacyExampleGen
             return await this.Transaction.Connection.QuerySingleAsync<int>(CreateBookSql, queryParams, transaction: this.Transaction);
         }
 
-        private const string ListAllAuthorsBooksSql = "SELECT authors.id, authors.name, authors.bio, books.id, books.name, books.author_id, books.description FROM authors INNER JOIN books ON authors.id = books.author_id ORDER BY authors.name";
+        private const string ListAllAuthorsBooksSql = "SELECT authors.id, authors.name, authors.bio, books.id, books.name, books.author_id, books.description FROM authors JOIN books ON authors.id = books.author_id ORDER BY authors.name";
         public class ListAllAuthorsBooksRow
         {
             public Author Author { get; set; }
@@ -443,7 +427,7 @@ namespace SqliteDapperLegacyExampleGen
             }
         }
 
-        private const string GetDuplicateAuthorsSql = "SELECT authors1.id, authors1.name, authors1.bio, authors2.id, authors2.name, authors2.bio FROM authors AS authors1 INNER JOIN authors AS authors2 ON authors1.name = authors2.name WHERE authors1.id < authors2.id";
+        private const string GetDuplicateAuthorsSql = "SELECT authors1.id, authors1.name, authors1.bio, authors2.id, authors2.name, authors2.bio FROM authors authors1 JOIN authors authors2 ON authors1.name = authors2.name WHERE authors1.id < authors2.id";
         public class GetDuplicateAuthorsRow
         {
             public Author Author { get; set; }
@@ -485,7 +469,7 @@ namespace SqliteDapperLegacyExampleGen
             }
         }
 
-        private const string GetAuthorsByBookNameSql = "SELECT authors.id, authors.name, authors.bio, books.id, books.name, books.author_id, books.description FROM authors INNER JOIN books ON authors.id = books.author_id WHERE books.name = @name";
+        private const string GetAuthorsByBookNameSql = "SELECT authors.id, authors.name, authors.bio, books.id, books.name, books.author_id, books.description FROM authors JOIN books ON authors.id = books.author_id WHERE books.name = @name";
         public class GetAuthorsByBookNameRow
         {
             public int Id { get; set; }
@@ -535,19 +519,35 @@ namespace SqliteDapperLegacyExampleGen
             }
         }
 
-        private const string DeleteAllAuthorsSql = "DELETE FROM authors";
-        public async Task DeleteAllAuthors()
+        private const string GetAuthorByIdWithMultipleNamedParamSql = "SELECT id, name, bio FROM authors WHERE id = @id_arg AND id = @id_arg LIMIT @take";
+        public class GetAuthorByIdWithMultipleNamedParamRow
         {
+            public int Id { get; set; }
+            public string Name { get; set; }
+            public string Bio { get; set; }
+        };
+        public class GetAuthorByIdWithMultipleNamedParamArgs
+        {
+            public int IdArg { get; set; }
+            public int? Take { get; set; }
+        };
+        public async Task<GetAuthorByIdWithMultipleNamedParamRow> GetAuthorByIdWithMultipleNamedParam(GetAuthorByIdWithMultipleNamedParamArgs args)
+        {
+            var queryParams = new Dictionary<string, object>();
+            queryParams.Add("id_arg", args.IdArg);
+            queryParams.Add("take", args.Take);
             if (this.Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
-                    await connection.ExecuteAsync(DeleteAllAuthorsSql);
-                return;
+                {
+                    var result = await connection.QueryFirstOrDefaultAsync<GetAuthorByIdWithMultipleNamedParamRow>(GetAuthorByIdWithMultipleNamedParamSql, queryParams);
+                    return result;
+                }
             }
 
             if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            await this.Transaction.Connection.ExecuteAsync(DeleteAllAuthorsSql, transaction: this.Transaction);
+            return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetAuthorByIdWithMultipleNamedParamRow>(GetAuthorByIdWithMultipleNamedParamSql, queryParams, transaction: this.Transaction);
         }
 
         private const string GetAuthorsWithDuplicateParamsSql = "SELECT id, name, bio FROM authors WHERE (name = @author_name OR bio LIKE '%' || @author_name || '%') AND (id > @min_id OR id < @min_id + 1000)";
@@ -579,6 +579,64 @@ namespace SqliteDapperLegacyExampleGen
             if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
             return (await this.Transaction.Connection.QueryAsync<GetAuthorsWithDuplicateParamsRow>(GetAuthorsWithDuplicateParamsSql, queryParams, transaction: this.Transaction)).AsList();
+        }
+
+        private const string GetAuthorWithTripleNameParamSql = "SELECT id, name, bio FROM authors WHERE name = @author_name OR bio LIKE '%' || @author_name || '%' OR CAST(id AS TEXT) LIKE '%' || @author_name || '%' LIMIT 1";
+        public class GetAuthorWithTripleNameParamRow
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+            public string Bio { get; set; }
+        };
+        public class GetAuthorWithTripleNameParamArgs
+        {
+            public string AuthorName { get; set; }
+        };
+        public async Task<GetAuthorWithTripleNameParamRow> GetAuthorWithTripleNameParam(GetAuthorWithTripleNameParamArgs args)
+        {
+            var queryParams = new Dictionary<string, object>();
+            queryParams.Add("author_name", args.AuthorName);
+            if (this.Transaction == null)
+            {
+                using (var connection = new SqliteConnection(ConnectionString))
+                {
+                    var result = await connection.QueryFirstOrDefaultAsync<GetAuthorWithTripleNameParamRow>(GetAuthorWithTripleNameParamSql, queryParams);
+                    return result;
+                }
+            }
+
+            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+                throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+            return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetAuthorWithTripleNameParamRow>(GetAuthorWithTripleNameParamSql, queryParams, transaction: this.Transaction);
+        }
+
+        private const string GetAuthorWithQuadrupleParamSql = "SELECT id, name, bio FROM authors WHERE name = @search_term OR bio LIKE '%' || @search_term || '%' OR CAST(id AS TEXT) = @search_term OR (LENGTH(@search_term) > 0 AND name IS NOT NULL) LIMIT 1";
+        public class GetAuthorWithQuadrupleParamRow
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+            public string Bio { get; set; }
+        };
+        public class GetAuthorWithQuadrupleParamArgs
+        {
+            public string SearchTerm { get; set; }
+        };
+        public async Task<GetAuthorWithQuadrupleParamRow> GetAuthorWithQuadrupleParam(GetAuthorWithQuadrupleParamArgs args)
+        {
+            var queryParams = new Dictionary<string, object>();
+            queryParams.Add("search_term", args.SearchTerm);
+            if (this.Transaction == null)
+            {
+                using (var connection = new SqliteConnection(ConnectionString))
+                {
+                    var result = await connection.QueryFirstOrDefaultAsync<GetAuthorWithQuadrupleParamRow>(GetAuthorWithQuadrupleParamSql, queryParams);
+                    return result;
+                }
+            }
+
+            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+                throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+            return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetAuthorWithQuadrupleParamRow>(GetAuthorWithQuadrupleParamSql, queryParams, transaction: this.Transaction);
         }
 
         private const string InsertSqliteTypesSql = "INSERT INTO types_sqlite ( c_integer, c_real, c_text, c_blob, c_text_datetime_override, c_integer_datetime_override, c_text_noda_instant_override, c_integer_noda_instant_override, c_text_bool_override, c_integer_bool_override ) VALUES (@c_integer, @c_real, @c_text, @c_blob, @c_text_datetime_override, @c_integer_datetime_override, @c_text_noda_instant_override, @c_integer_noda_instant_override, @c_text_bool_override, @c_integer_bool_override)";
