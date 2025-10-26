@@ -6,16 +6,13 @@
 </p>
 
 sqlc-gen-csharp is a .Net plugin for [sqlc](https://github.com/sqlc-dev/sqlc).<br/> It leverages the SQLC plugin system to generate type-safe C# code for SQL queries, supporting  PostgresSQL, MySQL & SQLite via the corresponding driver or suitable Dapper abstraction.
-
-This is the BONX fork for rapid improvements to be upstreamed once tested.
-
 ## Quickstart
 ```yaml
 version: "2"
 plugins:
 - name: csharp
   wasm:
-    url: https://github.com/DaredevilOSS/sqlc-gen-csharp/releases/download/v0.21.5-bonx/sqlc-gen-csharp.wasm
+    url: https://github.com/DaredevilOSS/sqlc-gen-csharp/releases/download/v0.24.0/sqlc-gen-csharp.wasm
     sha256: 0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5
 sql:
   # For PostgresSQL
@@ -401,7 +398,7 @@ pre-commit install
 SQLC protobuf are defined in sqlc-dev/sqlc repository.
 Generating C# code from protocol buffer files:
 ```
-make generate-protobuf
+make protobuf-generate
 ```
 
 ### Generating code
@@ -478,6 +475,8 @@ overrides:
   csharp_type:
     type: "Instant"
     notNull: false
+```
+
 </details>
 <details>
 <summary>NpgsqlDapper</summary>
