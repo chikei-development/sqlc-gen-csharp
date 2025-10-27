@@ -90,7 +90,8 @@ public sealed class NpgsqlDriver
                 },
                 readerFn: (ordinal, _) => $"{Variable.Reader.AsVarName()}.GetDecimal({ordinal})",
                 readerArrayFn: (ordinal, _) =>
-                    $"{Variable.Reader.AsVarName()}.GetFieldValue<decimal[]>({ordinal})"
+                    $"{Variable.Reader.AsVarName()}.GetFieldValue<decimal[]>({ordinal})",
+                usingDirectives: ["NpgsqlTypes"]
             ),
             ["double"] = new(
                 new() { { "float8", new() } },
@@ -127,7 +128,8 @@ public sealed class NpgsqlDriver
                 readerFn: (ordinal, _) =>
                     $"{Variable.Reader.AsVarName()}.GetFieldValue<TimeSpan>({ordinal})",
                 readerArrayFn: (ordinal, _) =>
-                    $"{Variable.Reader.AsVarName()}.GetFieldValue<TimeSpan[]>({ordinal})"
+                    $"{Variable.Reader.AsVarName()}.GetFieldValue<TimeSpan[]>({ordinal})",
+                usingDirectives: ["NpgsqlTypes"]
             ),
             ["DateTime"] = new(
                 new()
@@ -138,7 +140,8 @@ public sealed class NpgsqlDriver
                 },
                 readerFn: (ordinal, _) => $"{Variable.Reader.AsVarName()}.GetDateTime({ordinal})",
                 readerArrayFn: (ordinal, _) =>
-                    $"{Variable.Reader.AsVarName()}.GetFieldValue<DateTime[]>({ordinal})"
+                    $"{Variable.Reader.AsVarName()}.GetFieldValue<DateTime[]>({ordinal})",
+                usingDirectives: ["NpgsqlTypes"]
             ),
             ["Instant"] = new(
                 [],
@@ -202,7 +205,7 @@ public sealed class NpgsqlDriver
                     var nullValue = isDapper ? "null" : "(object)DBNull.Value";
                     return $"{el} != null ? {el}.OuterXml : {nullValue}";
                 },
-                usingDirectives: ["System.Xml"],
+                usingDirectives: ["System.Xml", "NpgsqlTypes"],
                 sqlMapper: "SqlMapper.AddTypeHandler(typeof(XmlDocument), new XmlDocumentTypeHandler());",
                 sqlMapperImpl: XmlDocumentTypeHandler
             ),
