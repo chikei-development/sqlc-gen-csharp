@@ -1,3 +1,4 @@
+using Npgsql;
 using NpgsqlExampleGen;
 using NUnit.Framework;
 using System;
@@ -8,8 +9,16 @@ namespace EndToEndTests;
 
 public partial class NpgsqlTester
 {
-    private QuerySql QuerySql { get; } = new(
-        Environment.GetEnvironmentVariable(EndToEndCommon.PostgresConnectionStringEnv)!);
+    private QuerySql QuerySql { get; }
+
+    public NpgsqlTester()
+    {
+        var connString = Environment.GetEnvironmentVariable(EndToEndCommon.PostgresConnectionStringEnv);
+        NpgsqlDataSourceBuilder dataSourceBuilder = new NpgsqlDataSourceBuilder(connString);
+        QuerySql.ConfigureEnumMappings(dataSourceBuilder);
+        var dataSource = dataSourceBuilder.Build();
+        this.QuerySql = new QuerySql(dataSource);
+    }
 
     [TearDown]
     public async Task EmptyTestsTables()

@@ -28,13 +28,10 @@ public class QuerySql
         Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
     }
 
-    public QuerySql(string connectionString) : this()
+    public QuerySql(NpgsqlDataSource dataSource) : this()
     {
-        var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
-        dataSourceBuilder.MapEnum<CEnum>("c_enum");
-        dataSourceBuilder.MapEnum<ExtendedBioType>("bio_type");
-        this.DataSource = dataSourceBuilder.Build();
-        this.ConnectionString = connectionString;
+        this.DataSource = dataSource;
+        this.ConnectionString = dataSource.ConnectionString;
     }
 
     private QuerySql(NpgsqlTransaction transaction) : this()
@@ -45,6 +42,12 @@ public class QuerySql
     public static QuerySql WithTransaction(NpgsqlTransaction transaction)
     {
         return new QuerySql(transaction);
+    }
+
+    public static void ConfigureEnumMappings(NpgsqlDataSourceBuilder dataSourceBuilder)
+    {
+        dataSourceBuilder.MapEnum<CEnum>("c_enum");
+        dataSourceBuilder.MapEnum<ExtendedBioType>("bio_type");
     }
 
     private NpgsqlTransaction? Transaction { get; }
@@ -70,7 +73,7 @@ public class QuerySql
         queryParams.Add("name", args.Name);
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryFirstOrDefaultAsync<GetAuthorRow?>(GetAuthorSql, queryParams);
                 return result;
@@ -103,7 +106,7 @@ public class QuerySql
         queryParams.Add("limit", args.Limit);
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryAsync<ListAuthorsRow>(ListAuthorsSql, queryParams);
                 return result.AsList();
@@ -138,7 +141,7 @@ public class QuerySql
         queryParams.Add("bio", args.Bio);
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryFirstOrDefaultAsync<CreateAuthorRow?>(CreateAuthorSql, queryParams);
                 return result;
@@ -173,7 +176,7 @@ public class QuerySql
         queryParams.Add("bio", args.Bio);
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryFirstOrDefaultAsync<CreateAuthorIncludingCommentRow?>(CreateAuthorIncludingCommentSql, queryParams);
                 return result;
@@ -202,7 +205,7 @@ public class QuerySql
         queryParams.Add("bio", args.Bio);
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
                 return await connection.QuerySingleAsync<long>(CreateAuthorReturnIdSql, queryParams);
         }
 
@@ -230,7 +233,7 @@ public class QuerySql
         queryParams.Add("id", args.Id);
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryFirstOrDefaultAsync<GetAuthorByIdRow?>(GetAuthorByIdSql, queryParams);
                 return result;
@@ -261,7 +264,7 @@ public class QuerySql
         queryParams.Add("name_pattern", args.NamePattern);
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryAsync<GetAuthorByNamePatternRow>(GetAuthorByNamePatternSql, queryParams);
                 return result.AsList();
@@ -284,7 +287,7 @@ public class QuerySql
         queryParams.Add("name", args.Name);
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
                 await connection.ExecuteAsync(DeleteAuthorSql, queryParams);
             return;
         }
@@ -299,7 +302,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
                 await connection.ExecuteAsync(TruncateAuthorsSql);
             return;
         }
@@ -320,7 +323,7 @@ public class QuerySql
         queryParams.Add("bio", args.Bio);
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
                 return await connection.ExecuteAsync(UpdateAuthorsSql, queryParams);
         }
 
@@ -348,7 +351,7 @@ public class QuerySql
         queryParams.Add("longArr_1", args.LongArr1);
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryAsync<GetAuthorsByIdsRow>(GetAuthorsByIdsSql, queryParams);
                 return result.AsList();
@@ -381,7 +384,7 @@ public class QuerySql
         queryParams.Add("stringArr_2", args.StringArr2);
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryAsync<GetAuthorsByIdsAndNamesRow>(GetAuthorsByIdsAndNamesSql, queryParams);
                 return result.AsList();
@@ -410,7 +413,7 @@ public class QuerySql
         queryParams.Add("author_id", args.AuthorId);
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
                 return await connection.QuerySingleAsync<Guid>(CreateBookSql, queryParams);
         }
 
@@ -558,7 +561,7 @@ public class QuerySql
         queryParams.Add("bio_type", args.BioType.HasValue ? args.BioType.Value.Stringify() : null);
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
                 await connection.ExecuteAsync(CreateExtendedBioSql, queryParams);
             return;
         }
@@ -585,7 +588,7 @@ public class QuerySql
         queryParams.Add("bio_type", args.BioType.HasValue ? args.BioType.Value.Stringify() : null);
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryFirstOrDefaultAsync<GetFirstExtendedBioByTypeRow?>(GetFirstExtendedBioByTypeSql, queryParams);
                 return result;
@@ -602,7 +605,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
                 await connection.ExecuteAsync(TruncateExtendedBiosSql);
             return;
         }
@@ -635,7 +638,7 @@ public class QuerySql
         queryParams.Add("date_filter", args.DateFilter);
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryAsync<GetAuthorsWithDuplicateParamsRow>(GetAuthorsWithDuplicateParamsSql, queryParams);
                 return result.AsList();
@@ -666,7 +669,7 @@ public class QuerySql
         queryParams.Add("search_value", args.SearchValue);
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryFirstOrDefaultAsync<GetAuthorWithPentaParamRow?>(GetAuthorWithPentaParamSql, queryParams);
                 return result;
@@ -689,7 +692,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryFirstOrDefaultAsync<GetPostgresFunctionsRow?>(GetPostgresFunctionsSql);
                 return result;
@@ -730,7 +733,7 @@ public class QuerySql
         queryParams.Add("c_money", args.CMoney);
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
                 await connection.ExecuteAsync(InsertPostgresNumericTypesSql, queryParams);
             return;
         }
@@ -758,7 +761,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryFirstOrDefaultAsync<GetPostgresNumericTypesRow?>(GetPostgresNumericTypesSql);
                 return result;
@@ -775,7 +778,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
                 await connection.ExecuteAsync(TruncatePostgresNumericTypesSql);
             return;
         }
@@ -804,7 +807,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryFirstOrDefaultAsync<GetPostgresNumericTypesCntRow?>(GetPostgresNumericTypesCntSql);
                 return result;
@@ -832,7 +835,7 @@ public class QuerySql
     };
     public async Task InsertPostgresNumericTypesBatch(List<InsertPostgresNumericTypesBatchArgs> args)
     {
-        using (var connection = new NpgsqlConnection(ConnectionString))
+        using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
         {
             await connection.OpenAsync();
             using (var writer = await connection.BeginBinaryImportAsync(InsertPostgresNumericTypesBatchSql))
@@ -878,7 +881,7 @@ public class QuerySql
         queryParams.Add("c_text", args.CText);
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
                 await connection.ExecuteAsync(InsertPostgresStringTypesSql, queryParams);
             return;
         }
@@ -899,7 +902,7 @@ public class QuerySql
     };
     public async Task InsertPostgresStringTypesBatch(List<InsertPostgresStringTypesBatchArgs> args)
     {
-        using (var connection = new NpgsqlConnection(ConnectionString))
+        using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
         {
             await connection.OpenAsync();
             using (var writer = await connection.BeginBinaryImportAsync(InsertPostgresStringTypesBatchSql))
@@ -934,7 +937,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryFirstOrDefaultAsync<GetPostgresStringTypesRow?>(GetPostgresStringTypesSql);
                 return result;
@@ -951,7 +954,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
                 await connection.ExecuteAsync(TruncatePostgresStringTypesSql);
             return;
         }
@@ -975,7 +978,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryFirstOrDefaultAsync<GetPostgresStringTypesCntRow?>(GetPostgresStringTypesCntSql);
                 return result;
@@ -1005,7 +1008,7 @@ public class QuerySql
         queryParams.Add("to_tsquery", args.ToTsquery);
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryFirstOrDefaultAsync<GetPostgresStringTypesTextSearchRow?>(GetPostgresStringTypesTextSearchSql, queryParams);
                 return result;
@@ -1038,7 +1041,7 @@ public class QuerySql
         queryParams.Add("c_timestamp_noda_instant_override", args.CTimestampNodaInstantOverride is null ? null : (DateTime? )DateTime.SpecifyKind(args.CTimestampNodaInstantOverride.Value.ToDateTimeUtc(), DateTimeKind.Unspecified));
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
                 await connection.ExecuteAsync(InsertPostgresDateTimeTypesSql, queryParams);
             return;
         }
@@ -1062,7 +1065,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryFirstOrDefaultAsync<GetPostgresDateTimeTypesRow?>(GetPostgresDateTimeTypesSql);
                 return result;
@@ -1079,7 +1082,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
                 await connection.ExecuteAsync(TruncatePostgresDateTimeTypesSql);
             return;
         }
@@ -1103,7 +1106,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryFirstOrDefaultAsync<GetPostgresDateTimeTypesCntRow?>(GetPostgresDateTimeTypesCntSql);
                 return result;
@@ -1126,7 +1129,7 @@ public class QuerySql
     };
     public async Task InsertPostgresDateTimeTypesBatch(List<InsertPostgresDateTimeTypesBatchArgs> args)
     {
-        using (var connection = new NpgsqlConnection(ConnectionString))
+        using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
         {
             await connection.OpenAsync();
             using (var writer = await connection.BeginBinaryImportAsync(InsertPostgresDateTimeTypesBatchSql))
@@ -1165,7 +1168,7 @@ public class QuerySql
         queryParams.Add("c_macaddr8", args.CMacaddr8);
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
                 await connection.ExecuteAsync(InsertPostgresNetworkTypesSql, queryParams);
             return;
         }
@@ -1187,7 +1190,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryFirstOrDefaultAsync<GetPostgresNetworkTypesRow?>(GetPostgresNetworkTypesSql);
                 return result;
@@ -1204,7 +1207,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
                 await connection.ExecuteAsync(TruncatePostgresNetworkTypesSql);
             return;
         }
@@ -1226,7 +1229,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryFirstOrDefaultAsync<GetPostgresNetworkTypesCntRow?>(GetPostgresNetworkTypesCntSql);
                 return result;
@@ -1247,7 +1250,7 @@ public class QuerySql
     };
     public async Task InsertPostgresNetworkTypesBatch(List<InsertPostgresNetworkTypesBatchArgs> args)
     {
-        using (var connection = new NpgsqlConnection(ConnectionString))
+        using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
         {
             await connection.OpenAsync();
             using (var writer = await connection.BeginBinaryImportAsync(InsertPostgresNetworkTypesBatchSql))
@@ -1292,7 +1295,7 @@ public class QuerySql
         queryParams.Add("c_enum", args.CEnum.HasValue ? args.CEnum.Value.Stringify() : null);
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
                 await connection.ExecuteAsync(InsertPostgresSpecialTypesSql, queryParams);
             return;
         }
@@ -1313,7 +1316,7 @@ public class QuerySql
         queryParams.Add("c_enum_not_null", args.CEnumNotNull.Stringify());
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
                 await connection.ExecuteAsync(InsertPostgresNotNullTypesSql, queryParams);
             return;
         }
@@ -1332,7 +1335,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryFirstOrDefaultAsync<GetPostgresNotNullTypesRow?>(GetPostgresNotNullTypesSql);
                 return result;
@@ -1349,7 +1352,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
                 await connection.ExecuteAsync(TruncatePostgresNotNullTypesSql);
             return;
         }
@@ -1375,7 +1378,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryFirstOrDefaultAsync<GetPostgresSpecialTypesRow?>(GetPostgresSpecialTypesSql);
                 return result;
@@ -1392,7 +1395,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
                 await connection.ExecuteAsync(TruncatePostgresSpecialTypesSql);
             return;
         }
@@ -1411,7 +1414,7 @@ public class QuerySql
     };
     public async Task InsertPostgresSpecialTypesBatch(List<InsertPostgresSpecialTypesBatchArgs> args)
     {
-        using (var connection = new NpgsqlConnection(ConnectionString))
+        using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
         {
             await connection.OpenAsync();
             using (var writer = await connection.BeginBinaryImportAsync(InsertPostgresSpecialTypesBatchSql))
@@ -1443,7 +1446,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryFirstOrDefaultAsync<GetPostgresSpecialTypesCntRow?>(GetPostgresSpecialTypesCntSql);
                 return result;
@@ -1478,7 +1481,7 @@ public class QuerySql
         queryParams.Add("c_timestamp_array", args.CTimestampArray);
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
                 await connection.ExecuteAsync(InsertPostgresArrayTypesSql, queryParams);
             return;
         }
@@ -1503,7 +1506,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryFirstOrDefaultAsync<GetPostgresArrayTypesRow?>(GetPostgresArrayTypesSql);
                 return result;
@@ -1527,7 +1530,7 @@ public class QuerySql
     };
     public async Task InsertPostgresArrayTypesBatch(List<InsertPostgresArrayTypesBatchArgs> args)
     {
-        using (var connection = new NpgsqlConnection(ConnectionString))
+        using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
         {
             await connection.OpenAsync();
             using (var writer = await connection.BeginBinaryImportAsync(InsertPostgresArrayTypesBatchSql))
@@ -1565,7 +1568,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryFirstOrDefaultAsync<GetPostgresArrayTypesCntRow?>(GetPostgresArrayTypesCntSql);
                 return result;
@@ -1582,7 +1585,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
                 await connection.ExecuteAsync(TruncatePostgresArrayTypesSql);
             return;
         }
@@ -1615,7 +1618,7 @@ public class QuerySql
         queryParams.Add("c_circle", args.CCircle);
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
                 await connection.ExecuteAsync(InsertPostgresGeoTypesSql, queryParams);
             return;
         }
@@ -1638,7 +1641,7 @@ public class QuerySql
     };
     public async Task InsertPostgresGeoTypesBatch(List<InsertPostgresGeoTypesBatchArgs> args)
     {
-        using (var connection = new NpgsqlConnection(ConnectionString))
+        using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
         {
             await connection.OpenAsync();
             using (var writer = await connection.BeginBinaryImportAsync(InsertPostgresGeoTypesBatchSql))
@@ -1677,7 +1680,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 var result = await connection.QueryFirstOrDefaultAsync<GetPostgresGeoTypesRow?>(GetPostgresGeoTypesSql);
                 return result;
@@ -1694,7 +1697,7 @@ public class QuerySql
     {
         if (this.Transaction == null)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
                 await connection.ExecuteAsync(TruncatePostgresGeoTypesSql);
             return;
         }

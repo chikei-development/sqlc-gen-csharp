@@ -25,13 +25,10 @@ public class QuerySql
     {
     }
 
-    public QuerySql(string connectionString) : this()
+    public QuerySql(NpgsqlDataSource dataSource) : this()
     {
-        var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
-        dataSourceBuilder.MapEnum<CEnum>("c_enum");
-        dataSourceBuilder.MapEnum<ExtendedBioType>("bio_type");
-        this.DataSource = dataSourceBuilder.Build();
-        this.ConnectionString = connectionString;
+        this.DataSource = dataSource;
+        this.ConnectionString = dataSource.ConnectionString;
     }
 
     private QuerySql(NpgsqlTransaction transaction) : this()
@@ -42,6 +39,12 @@ public class QuerySql
     public static QuerySql WithTransaction(NpgsqlTransaction transaction)
     {
         return new QuerySql(transaction);
+    }
+
+    public static void ConfigureEnumMappings(NpgsqlDataSourceBuilder dataSourceBuilder)
+    {
+        dataSourceBuilder.MapEnum<CEnum>("c_enum");
+        dataSourceBuilder.MapEnum<ExtendedBioType>("bio_type");
     }
 
     private NpgsqlTransaction? Transaction { get; }
@@ -1103,7 +1106,7 @@ public class QuerySql
     public readonly record struct InsertPostgresNumericTypesBatchArgs(bool? CBoolean, byte[]? CBit, short? CSmallint, int? CInteger, long? CBigint, decimal? CDecimal, decimal? CNumeric, float? CReal, double? CDoublePrecision, decimal? CMoney);
     public async Task InsertPostgresNumericTypesBatch(List<InsertPostgresNumericTypesBatchArgs> args)
     {
-        using (var connection = new NpgsqlConnection(ConnectionString))
+        using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
         {
             await connection.OpenAsync();
             using (var writer = await connection.BeginBinaryImportAsync(InsertPostgresNumericTypesBatchSql))
@@ -1167,7 +1170,7 @@ public class QuerySql
     public readonly record struct InsertPostgresStringTypesBatchArgs(string? CChar, string? CVarchar, string? CCharacterVarying, string? CBpchar, string? CText);
     public async Task InsertPostgresStringTypesBatch(List<InsertPostgresStringTypesBatchArgs> args)
     {
-        using (var connection = new NpgsqlConnection(ConnectionString))
+        using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
         {
             await connection.OpenAsync();
             using (var writer = await connection.BeginBinaryImportAsync(InsertPostgresStringTypesBatchSql))
@@ -1551,7 +1554,7 @@ public class QuerySql
     public readonly record struct InsertPostgresDateTimeTypesBatchArgs(DateTime? CDate, TimeSpan? CTime, DateTime? CTimestamp, DateTime? CTimestampWithTz, TimeSpan? CInterval);
     public async Task InsertPostgresDateTimeTypesBatch(List<InsertPostgresDateTimeTypesBatchArgs> args)
     {
-        using (var connection = new NpgsqlConnection(ConnectionString))
+        using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
         {
             await connection.OpenAsync();
             using (var writer = await connection.BeginBinaryImportAsync(InsertPostgresDateTimeTypesBatchSql))
@@ -1730,7 +1733,7 @@ public class QuerySql
     public readonly record struct InsertPostgresNetworkTypesBatchArgs(NpgsqlCidr? CCidr, IPAddress? CInet, PhysicalAddress? CMacaddr);
     public async Task InsertPostgresNetworkTypesBatch(List<InsertPostgresNetworkTypesBatchArgs> args)
     {
-        using (var connection = new NpgsqlConnection(ConnectionString))
+        using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
         {
             await connection.OpenAsync();
             using (var writer = await connection.BeginBinaryImportAsync(InsertPostgresNetworkTypesBatchSql))
@@ -1974,7 +1977,7 @@ public class QuerySql
     public readonly record struct InsertPostgresSpecialTypesBatchArgs(Guid? CUuid, JsonElement? CJson, JsonElement? CJsonb);
     public async Task InsertPostgresSpecialTypesBatch(List<InsertPostgresSpecialTypesBatchArgs> args)
     {
-        using (var connection = new NpgsqlConnection(ConnectionString))
+        using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
         {
             await connection.OpenAsync();
             using (var writer = await connection.BeginBinaryImportAsync(InsertPostgresSpecialTypesBatchSql))
@@ -2141,7 +2144,7 @@ public class QuerySql
     public readonly record struct InsertPostgresArrayTypesBatchArgs(byte[]? CBytea, bool[]? CBooleanArray, string[]? CTextArray, int[]? CIntegerArray, decimal[]? CDecimalArray, DateTime[]? CTimestampArray);
     public async Task InsertPostgresArrayTypesBatch(List<InsertPostgresArrayTypesBatchArgs> args)
     {
-        using (var connection = new NpgsqlConnection(ConnectionString))
+        using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
         {
             await connection.OpenAsync();
             using (var writer = await connection.BeginBinaryImportAsync(InsertPostgresArrayTypesBatchSql))
@@ -2283,7 +2286,7 @@ public class QuerySql
     public readonly record struct InsertPostgresGeoTypesBatchArgs(NpgsqlPoint? CPoint, NpgsqlLine? CLine, NpgsqlLSeg? CLseg, NpgsqlBox? CBox, NpgsqlPath? CPath, NpgsqlPolygon? CPolygon, NpgsqlCircle? CCircle);
     public async Task InsertPostgresGeoTypesBatch(List<InsertPostgresGeoTypesBatchArgs> args)
     {
-        using (var connection = new NpgsqlConnection(ConnectionString))
+        using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
         {
             await connection.OpenAsync();
             using (var writer = await connection.BeginBinaryImportAsync(InsertPostgresGeoTypesBatchSql))

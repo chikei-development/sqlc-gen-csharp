@@ -228,7 +228,7 @@ public abstract class DbDriver
 
                     public {{className}}(string {{Variable.ConnectionString.AsVarName()}}) : this()
                     {
-                        {{GetConstructorStatements(enums).JoinByNewLine()}}
+                        {{GetConstructorStatements().JoinByNewLine()}}
                     }
 
                     private {{className}}({{TransactionClassName}} {{Variable.Transaction.AsVarName()}}) : this()
@@ -255,9 +255,7 @@ public abstract class DbDriver
         return classDeclaration.AddMembers(classMembers.ToArray());
     }
 
-    public virtual string[] GetConstructorStatements(
-        Dictionary<string, Dictionary<string, Plugin.Enum>> enums
-    )
+    public virtual string[] GetConstructorStatements()
     {
         return
         [
