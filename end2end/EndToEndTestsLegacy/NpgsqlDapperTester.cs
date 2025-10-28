@@ -1,3 +1,4 @@
+using Npgsql;
 using NpgsqlDapperLegacyExampleGen;
 using NUnit.Framework;
 using System;
@@ -7,8 +8,16 @@ namespace EndToEndTests
 {
     public partial class NpgsqlDapperTester
     {
-        private QuerySql QuerySql { get; } = new QuerySql(
-            Environment.GetEnvironmentVariable(EndToEndCommon.PostgresConnectionStringEnv));
+        private QuerySql QuerySql { get; }
+
+        public NpgsqlDapperTester()
+        {
+            var connString = Environment.GetEnvironmentVariable(EndToEndCommon.PostgresConnectionStringEnv);
+            NpgsqlDataSourceBuilder dataSourceBuilder = new NpgsqlDataSourceBuilder(connString);
+            QuerySql.ConfigureEnumMappings(dataSourceBuilder);
+            var dataSource = dataSourceBuilder.Build();
+            this.QuerySql = new QuerySql(dataSource);
+        }
 
         [TearDown]
         public async Task EmptyTestsTable()

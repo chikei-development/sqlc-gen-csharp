@@ -358,6 +358,9 @@ public sealed class NpgsqlDriver
 
     public override string TransactionClassName => "NpgsqlTransaction";
 
+    public string DataSourceBuilderClassName => "NpgsqlDataSourceBuilder";
+    public string DataSourceClassName => "NpgsqlDataSource";
+
     private static readonly SqlMapperImplFunc JsonElementTypeHandler = _ =>
         $$"""
             private class JsonElementTypeHandler : SqlMapper.TypeHandler<JsonElement>
@@ -562,9 +565,9 @@ public sealed class NpgsqlDriver
                         {{dapperStatements}}
                     }
 
-                    public {{className}}(string {{Variable.ConnectionString.AsVarName()}}) : this()
+                    public {{className}}({{DataSourceClassName}} {{Variable.DataSource.AsVarName()}}) : this()
                     {
-                        {{GetConstructorStatements(enums).JoinByNewLine()}}
+                        {{GetConstructorStatements().JoinByNewLine()}}
                     }
 
                     private {{className}}({{TransactionClassName}} {{Variable.Transaction.AsVarName()}}) : this()
@@ -575,6 +578,11 @@ public sealed class NpgsqlDriver
                     public static {{className}} WithTransaction({{TransactionClassName}} {{Variable.Transaction.AsVarName()}})
                     {
                         return new {{className}}({{Variable.Transaction.AsVarName()}});
+                    }
+
+                    public static void ConfigureEnumMappings({{DataSourceBuilderClassName}} dataSourceBuilder)
+                    {
+                        {{GetEnumMappingStatements("dataSourceBuilder", enums).JoinByNewLine()}}
                     }
 
                     private {{AddNullableSuffixIfNeeded(
@@ -595,7 +603,17 @@ public sealed class NpgsqlDriver
         return classDeclaration.AddMembers(classMembers.ToArray());
     }
 
-    public override string[] GetConstructorStatements(
+    public override string[] GetConstructorStatements()
+    {
+        return
+        [
+            $"this.{Variable.DataSource.AsPropertyName()} = {Variable.DataSource.AsVarName()};",
+            $"this.{Variable.ConnectionString.AsPropertyName()} = {Variable.DataSource.AsVarName()}.ConnectionString;",
+        ];
+    }
+
+    public string[] GetEnumMappingStatements(
+        string dataSourceBuilderVar,
         Dictionary<string, Dictionary<string, Plugin.Enum>> enums
     )
     {
@@ -609,20 +627,14 @@ public sealed class NpgsqlDriver
                     var enumName = enumDbDriver.EnumToModelName(enumGroup.Key, enumType.Value);
                     enumMappings.Add(
                         $"""
-                        dataSourceBuilder.MapEnum<{enumName}>("{enumType.Key}");
+                        {dataSourceBuilderVar}.MapEnum<{enumName}>("{enumType.Key}");
                         """
                     );
                 }
             }
         }
 
-        return
-        [
-            $"var dataSourceBuilder = new NpgsqlDataSourceBuilder({Variable.ConnectionString.AsVarName()});",
-            enumMappings.JoinByNewLine(),
-            $"this.{Variable.DataSource.AsPropertyName()} = dataSourceBuilder.Build();",
-            $"this.{Variable.ConnectionString.AsPropertyName()} = {Variable.ConnectionString.AsVarName()};",
-        ];
+        return enumMappings.ToArray();
     }
 
     public override MemberDeclarationSyntax[] GetEnumExtensionsMembers(
@@ -662,6 +674,7 @@ public sealed class NpgsqlDriver
     public override ConnectionGenCommands EstablishConnection(Query query)
     {
         var connectionStringVar = Variable.ConnectionString.AsPropertyName();
+        var dataSourceVar = Variable.DataSource.AsPropertyName();
         var connectionVar = Variable.Connection.AsVarName();
         var embedTableExists = query.Columns.Any(c => c.EmbedTable is not null);
         var useOpenConnection =
@@ -670,8 +683,10 @@ public sealed class NpgsqlDriver
 
         return useOpenConnection
             ? new ConnectionGenCommands(
-                $"var {connectionVar} = new NpgsqlConnection({connectionStringVar})",
+                // Check if DataSource is available, use it instead of ConnectionString
+                $"var {connectionVar} = {dataSourceVar} != null ? {dataSourceVar}.CreateConnection() : new NpgsqlConnection({connectionStringVar})",
                 string.Empty
+
             )
             : new ConnectionGenCommands(
                 $"var {connectionVar} = NpgsqlDataSource.Create({connectionStringVar}{optionalNotNullVerify})",

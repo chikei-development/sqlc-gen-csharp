@@ -26,13 +26,10 @@ namespace NpgsqlLegacyExampleGen
         {
         }
 
-        public QuerySql(string connectionString) : this()
+        public QuerySql(NpgsqlDataSource dataSource) : this()
         {
-            var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
-            dataSourceBuilder.MapEnum<CEnum>("c_enum");
-            dataSourceBuilder.MapEnum<ExtendedBioType>("bio_type");
-            this.DataSource = dataSourceBuilder.Build();
-            this.ConnectionString = connectionString;
+            this.DataSource = dataSource;
+            this.ConnectionString = dataSource.ConnectionString;
         }
 
         private QuerySql(NpgsqlTransaction transaction) : this()
@@ -43,6 +40,12 @@ namespace NpgsqlLegacyExampleGen
         public static QuerySql WithTransaction(NpgsqlTransaction transaction)
         {
             return new QuerySql(transaction);
+        }
+
+        public static void ConfigureEnumMappings(NpgsqlDataSourceBuilder dataSourceBuilder)
+        {
+            dataSourceBuilder.MapEnum<CEnum>("c_enum");
+            dataSourceBuilder.MapEnum<ExtendedBioType>("bio_type");
         }
 
         private NpgsqlTransaction Transaction { get; }
@@ -1318,7 +1321,7 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task InsertPostgresNumericTypesBatch(List<InsertPostgresNumericTypesBatchArgs> args)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 await connection.OpenAsync();
                 using (var writer = await connection.BeginBinaryImportAsync(InsertPostgresNumericTypesBatchSql))
@@ -1396,7 +1399,7 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task InsertPostgresStringTypesBatch(List<InsertPostgresStringTypesBatchArgs> args)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 await connection.OpenAsync();
                 using (var writer = await connection.BeginBinaryImportAsync(InsertPostgresStringTypesBatchSql))
@@ -1835,7 +1838,7 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task InsertPostgresDateTimeTypesBatch(List<InsertPostgresDateTimeTypesBatchArgs> args)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 await connection.OpenAsync();
                 using (var writer = await connection.BeginBinaryImportAsync(InsertPostgresDateTimeTypesBatchSql))
@@ -2037,7 +2040,7 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task InsertPostgresNetworkTypesBatch(List<InsertPostgresNetworkTypesBatchArgs> args)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 await connection.OpenAsync();
                 using (var writer = await connection.BeginBinaryImportAsync(InsertPostgresNetworkTypesBatchSql))
@@ -2312,7 +2315,7 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task InsertPostgresSpecialTypesBatch(List<InsertPostgresSpecialTypesBatchArgs> args)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 await connection.OpenAsync();
                 using (var writer = await connection.BeginBinaryImportAsync(InsertPostgresSpecialTypesBatchSql))
@@ -2511,7 +2514,7 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task InsertPostgresArrayTypesBatch(List<InsertPostgresArrayTypesBatchArgs> args)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 await connection.OpenAsync();
                 using (var writer = await connection.BeginBinaryImportAsync(InsertPostgresArrayTypesBatchSql))
@@ -2680,7 +2683,7 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task InsertPostgresGeoTypesBatch(List<InsertPostgresGeoTypesBatchArgs> args)
         {
-            using (var connection = new NpgsqlConnection(ConnectionString))
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
             {
                 await connection.OpenAsync();
                 using (var writer = await connection.BeginBinaryImportAsync(InsertPostgresGeoTypesBatchSql))
