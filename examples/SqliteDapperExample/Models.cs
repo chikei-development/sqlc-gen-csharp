@@ -18,6 +18,11 @@ public class Book
     public required int AuthorId { get; init; }
     public string? Description { get; init; }
 };
+public class User
+{
+    public required int Id { get; init; }
+    public string? UpdatedAt { get; init; }
+};
 public class TypesSqlite
 {
     public int? CInteger { get; init; }

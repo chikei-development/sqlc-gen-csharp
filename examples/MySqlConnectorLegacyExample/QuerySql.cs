@@ -1002,6 +1002,101 @@ namespace MySqlConnectorLegacyExampleGen
             return null;
         }
 
+        private const string UpdateUserSql = "UPDATE `user` SET `updated_at` = @updated_at WHERE `id` = @id";
+        public class UpdateUserArgs
+        {
+            public DateTime? UpdatedAt { get; set; }
+            public int Id { get; set; }
+        };
+        public async Task UpdateUser(UpdateUserArgs args)
+        {
+            if (this.Transaction == null)
+            {
+                using (var connection = new MySqlConnection(ConnectionString))
+                {
+                    await connection.OpenAsync();
+                    using (var command = new MySqlCommand(UpdateUserSql, connection))
+                    {
+                        command.Parameters.AddWithValue("@updated_at", args.UpdatedAt ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@id", args.Id);
+                        await command.ExecuteNonQueryAsync();
+                        return;
+                    }
+                }
+            }
+
+            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+                throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+            using (var command = this.Transaction.Connection.CreateCommand())
+            {
+                command.CommandText = UpdateUserSql;
+                command.Transaction = this.Transaction;
+                command.Parameters.AddWithValue("@updated_at", args.UpdatedAt ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@id", args.Id);
+                await command.ExecuteNonQueryAsync();
+            }
+        }
+
+        private const string GetUserByIdSql = "SELECT id, updated_at FROM `user` WHERE `id` = @id LIMIT 1";
+        public class GetUserByIdRow
+        {
+            public int Id { get; set; }
+            public DateTime? UpdatedAt { get; set; }
+        };
+        public class GetUserByIdArgs
+        {
+            public int Id { get; set; }
+        };
+        public async Task<GetUserByIdRow> GetUserById(GetUserByIdArgs args)
+        {
+            if (this.Transaction == null)
+            {
+                using (var connection = new MySqlConnection(ConnectionString))
+                {
+                    await connection.OpenAsync();
+                    using (var command = new MySqlCommand(GetUserByIdSql, connection))
+                    {
+                        command.Parameters.AddWithValue("@id", args.Id);
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync())
+                            {
+                                return new GetUserByIdRow
+                                {
+                                    Id = reader.GetInt32(0),
+                                    UpdatedAt = reader.IsDBNull(1) ? (DateTime? )null : reader.GetDateTime(1)
+                                };
+                            }
+                        }
+                    }
+                }
+
+                return null;
+            }
+
+            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+                throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+            using (var command = this.Transaction.Connection.CreateCommand())
+            {
+                command.CommandText = GetUserByIdSql;
+                command.Transaction = this.Transaction;
+                command.Parameters.AddWithValue("@id", args.Id);
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync())
+                    {
+                        return new GetUserByIdRow
+                        {
+                            Id = reader.GetInt32(0),
+                            UpdatedAt = reader.IsDBNull(1) ? (DateTime? )null : reader.GetDateTime(1)
+                        };
+                    }
+                }
+            }
+
+            return null;
+        }
+
         private const string InsertMysqlNumericTypesSql = "INSERT INTO mysql_numeric_types ( c_bool, c_boolean, c_tinyint, c_smallint, c_mediumint, c_int, c_integer, c_bigint, c_decimal, c_dec, c_numeric, c_fixed, c_float, c_double, c_double_precision ) VALUES (@c_bool, @c_boolean, @c_tinyint, @c_smallint, @c_mediumint, @c_int, @c_integer, @c_bigint, @c_decimal, @c_dec, @c_numeric, @c_fixed, @c_float, @c_double, @c_double_precision)";
         public class InsertMysqlNumericTypesArgs
         {

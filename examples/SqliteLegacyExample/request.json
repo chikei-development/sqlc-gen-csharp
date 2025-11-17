@@ -116,6 +116,34 @@
           },
           {
             "rel": {
+              "name": "user"
+            },
+            "columns": [
+              {
+                "name": "id",
+                "notNull": true,
+                "length": -1,
+                "table": {
+                  "name": "user"
+                },
+                "type": {
+                  "name": "INTEGER"
+                }
+              },
+              {
+                "name": "updated_at",
+                "length": -1,
+                "table": {
+                  "name": "user"
+                },
+                "type": {
+                  "name": "TEXT"
+                }
+              }
+            ]
+          },
+          {
+            "rel": {
               "name": "types_sqlite"
             },
             "columns": [
@@ -1285,6 +1313,95 @@
       ],
       "comments": [
         " This query uses the same parameter four times to test extensive deduplication"
+      ],
+      "filename": "query.sql"
+    },
+    {
+      "text": "UPDATE \"user\"\nSET\n    \"updated_at\" = ?1\nWHERE\n    \"id\" = ?2",
+      "name": "UpdateUser",
+      "cmd": ":exec",
+      "parameters": [
+        {
+          "number": 1,
+          "column": {
+            "name": "updated_at",
+            "length": -1,
+            "isNamedParam": true,
+            "table": {
+              "schema": "main",
+              "name": "user"
+            },
+            "type": {
+              "name": "TEXT"
+            },
+            "originalName": "updated_at"
+          }
+        },
+        {
+          "number": 2,
+          "column": {
+            "name": "id",
+            "notNull": true,
+            "length": -1,
+            "isNamedParam": true,
+            "table": {
+              "name": "user"
+            },
+            "type": {
+              "name": "INTEGER"
+            },
+            "originalName": "id"
+          }
+        }
+      ],
+      "filename": "query.sql"
+    },
+    {
+      "text": "SELECT id, updated_at FROM \"user\" WHERE \"id\" = ?1 LIMIT 1",
+      "name": "GetUserById",
+      "cmd": ":one",
+      "columns": [
+        {
+          "name": "id",
+          "notNull": true,
+          "length": -1,
+          "table": {
+            "name": "user"
+          },
+          "type": {
+            "name": "INTEGER"
+          },
+          "originalName": "id"
+        },
+        {
+          "name": "updated_at",
+          "length": -1,
+          "table": {
+            "name": "user"
+          },
+          "type": {
+            "name": "TEXT"
+          },
+          "originalName": "updated_at"
+        }
+      ],
+      "parameters": [
+        {
+          "number": 1,
+          "column": {
+            "name": "id",
+            "notNull": true,
+            "length": -1,
+            "isNamedParam": true,
+            "table": {
+              "name": "user"
+            },
+            "type": {
+              "name": "INTEGER"
+            },
+            "originalName": "id"
+          }
+        }
       ],
       "filename": "query.sql"
     },

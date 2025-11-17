@@ -85,3 +85,13 @@ WHERE name = sqlc.narg('author_name')
    OR bio LIKE CONCAT('%', sqlc.narg('author_name'), '%')
    OR CAST(id AS CHAR) LIKE CONCAT('%', sqlc.narg('author_name'), '%')
 LIMIT 1;
+
+-- name: UpdateUser :exec
+UPDATE `user`
+SET
+    `updated_at` = sqlc.arg(updated_at)
+WHERE
+    `id` = sqlc.arg(id);
+
+-- name: GetUserById :one
+SELECT * FROM `user` WHERE `id` = sqlc.arg(id) LIMIT 1;

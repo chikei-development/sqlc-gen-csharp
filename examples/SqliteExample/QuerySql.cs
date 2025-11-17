@@ -868,6 +868,90 @@ public class QuerySql
         return null;
     }
 
+    private const string UpdateUserSql = "UPDATE \"user\" SET \"updated_at\" = @updated_at WHERE \"id\" = @id";
+    public readonly record struct UpdateUserArgs(string? UpdatedAt, int Id);
+    public async Task UpdateUser(UpdateUserArgs args)
+    {
+        if (this.Transaction == null)
+        {
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                await connection.OpenAsync();
+                using (var command = new SqliteCommand(UpdateUserSql, connection))
+                {
+                    command.Parameters.AddWithValue("@updated_at", args.UpdatedAt ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@id", args.Id);
+                    await command.ExecuteNonQueryAsync();
+                    return;
+                }
+            }
+        }
+
+        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        using (var command = this.Transaction.Connection.CreateCommand())
+        {
+            command.CommandText = UpdateUserSql;
+            command.Transaction = this.Transaction;
+            command.Parameters.AddWithValue("@updated_at", args.UpdatedAt ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@id", args.Id);
+            await command.ExecuteNonQueryAsync();
+        }
+    }
+
+    private const string GetUserByIdSql = "SELECT id, updated_at FROM \"user\" WHERE \"id\" = @id LIMIT 1";
+    public readonly record struct GetUserByIdRow(int Id, string? UpdatedAt);
+    public readonly record struct GetUserByIdArgs(int Id);
+    public async Task<GetUserByIdRow?> GetUserById(GetUserByIdArgs args)
+    {
+        if (this.Transaction == null)
+        {
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                await connection.OpenAsync();
+                using (var command = new SqliteCommand(GetUserByIdSql, connection))
+                {
+                    command.Parameters.AddWithValue("@id", args.Id);
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            return new GetUserByIdRow
+                            {
+                                Id = reader.GetInt32(0),
+                                UpdatedAt = reader.IsDBNull(1) ? null : reader.GetString(1)
+                            };
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        using (var command = this.Transaction.Connection.CreateCommand())
+        {
+            command.CommandText = GetUserByIdSql;
+            command.Transaction = this.Transaction;
+            command.Parameters.AddWithValue("@id", args.Id);
+            using (var reader = await command.ExecuteReaderAsync())
+            {
+                if (await reader.ReadAsync())
+                {
+                    return new GetUserByIdRow
+                    {
+                        Id = reader.GetInt32(0),
+                        UpdatedAt = reader.IsDBNull(1) ? null : reader.GetString(1)
+                    };
+                }
+            }
+        }
+
+        return null;
+    }
+
     private const string InsertSqliteTypesSql = "INSERT INTO types_sqlite ( c_integer, c_real, c_text, c_blob, c_text_datetime_override, c_integer_datetime_override, c_text_noda_instant_override, c_integer_noda_instant_override, c_text_bool_override, c_integer_bool_override ) VALUES (@c_integer, @c_real, @c_text, @c_blob, @c_text_datetime_override, @c_integer_datetime_override, @c_text_noda_instant_override, @c_integer_noda_instant_override, @c_text_bool_override, @c_integer_bool_override)";
     public readonly record struct InsertSqliteTypesArgs(int? CInteger, decimal? CReal, string? CText, byte[]? CBlob, DateTime? CTextDatetimeOverride, DateTime? CIntegerDatetimeOverride, Instant? CTextNodaInstantOverride, Instant? CIntegerNodaInstantOverride, bool? CTextBoolOverride, bool? CIntegerBoolOverride);
     public async Task InsertSqliteTypes(InsertSqliteTypesArgs args)

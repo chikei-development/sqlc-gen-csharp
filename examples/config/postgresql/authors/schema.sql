@@ -14,6 +14,11 @@ CREATE TABLE books (
     FOREIGN KEY (author_id) REFERENCES authors (id) ON DELETE CASCADE
 );
 
+CREATE TABLE "user" (
+    "id" SERIAL PRIMARY KEY,
+    "updated_at" TIMESTAMP WITH TIME ZONE
+);
+
 CREATE SCHEMA extended;
 
 CREATE TYPE extended.bio_type AS ENUM ('Autobiography', 'Biography', 'Memoir');

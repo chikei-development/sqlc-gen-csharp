@@ -12,6 +12,11 @@ CREATE TABLE books (
     FOREIGN KEY (author_id) REFERENCES authors (id) ON DELETE CASCADE
 );
 
+CREATE TABLE `user` (
+    `id` INT PRIMARY KEY AUTO_INCREMENT,
+    `updated_at` TIMESTAMP
+);
+
 CREATE SCHEMA extended;
 
 CREATE TABLE extended.bios (

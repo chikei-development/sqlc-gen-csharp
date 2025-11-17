@@ -1024,6 +1024,65 @@ namespace NpgsqlLegacyExampleGen
             return null;
         }
 
+        private const string UpdateUserSql = "UPDATE \"user\" SET \"updated_at\" = @updated_at WHERE \"id\" = @id RETURNING id, updated_at";
+        public class UpdateUserRow
+        {
+            public int Id { get; set; }
+            public DateTime? UpdatedAt { get; set; }
+        };
+        public class UpdateUserArgs
+        {
+            public DateTime? UpdatedAt { get; set; }
+            public int Id { get; set; }
+        };
+        public async Task<UpdateUserRow> UpdateUser(UpdateUserArgs args)
+        {
+            if (this.Transaction == null)
+            {
+                using (var command = DataSource.CreateCommand(UpdateUserSql))
+                {
+                    command.Parameters.AddWithValue("@updated_at", NpgsqlDbType.TimestampTz, args.UpdatedAt ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@id", args.Id);
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            return new UpdateUserRow
+                            {
+                                Id = reader.GetInt32(0),
+                                UpdatedAt = reader.IsDBNull(1) ? (DateTime? )null : reader.GetDateTime(1)
+                            };
+                        }
+                    }
+                }
+
+                return null;
+            }
+
+            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+                throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+            using (var command = this.Transaction.Connection.CreateCommand())
+            {
+                command.CommandText = UpdateUserSql;
+                command.Transaction = this.Transaction;
+                command.Parameters.AddWithValue("@updated_at", NpgsqlDbType.TimestampTz, args.UpdatedAt ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@id", args.Id);
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync())
+                    {
+                        return new UpdateUserRow
+                        {
+                            Id = reader.GetInt32(0),
+                            UpdatedAt = reader.IsDBNull(1) ? (DateTime? )null : reader.GetDateTime(1)
+                        };
+                    }
+                }
+            }
+
+            return null;
+        }
+
         private const string GetPostgresFunctionsSql = "SELECT MAX(c_integer) AS max_integer, MAX(c_varchar) AS max_varchar, MAX(c_timestamp) AS max_timestamp FROM postgres_datetime_types CROSS JOIN postgres_numeric_types CROSS JOIN postgres_string_types";
         public class GetPostgresFunctionsRow
         {

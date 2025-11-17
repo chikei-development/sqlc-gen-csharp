@@ -19,6 +19,11 @@ namespace SqliteLegacyExampleGen
         public int AuthorId { get; set; }
         public string Description { get; set; }
     };
+    public class User
+    {
+        public int Id { get; set; }
+        public string UpdatedAt { get; set; }
+    };
     public class TypesSqlite
     {
         public int? CInteger { get; set; }

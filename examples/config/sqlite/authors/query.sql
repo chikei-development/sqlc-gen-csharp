@@ -88,3 +88,13 @@ WHERE name = sqlc.narg('search_term')
    OR CAST(id AS TEXT) = sqlc.narg('search_term')
    OR (LENGTH(sqlc.narg('search_term')) > 0 AND name IS NOT NULL)
 LIMIT 1;
+
+-- name: UpdateUser :exec
+UPDATE "user"
+SET
+    "updated_at" = sqlc.arg(updated_at)
+WHERE
+    "id" = sqlc.arg(id);
+
+-- name: GetUserById :one
+SELECT * FROM "user" WHERE "id" = sqlc.arg(id) LIMIT 1;
