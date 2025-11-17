@@ -648,6 +648,57 @@ public class QuerySql
         return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetAuthorWithTripleNameParamRow?>(GetAuthorWithTripleNameParamSql, queryParams, transaction: this.Transaction);
     }
 
+    private const string UpdateUserSql = "UPDATE `user` SET `updated_at` = @updated_at WHERE `id` = @id";
+    public class UpdateUserArgs
+    {
+        public DateTime? UpdatedAt { get; init; }
+        public required int Id { get; init; }
+    };
+    public async Task UpdateUser(UpdateUserArgs args)
+    {
+        var queryParams = new Dictionary<string, object?>();
+        queryParams.Add("updated_at", args.UpdatedAt);
+        queryParams.Add("id", args.Id);
+        if (this.Transaction == null)
+        {
+            using (var connection = new MySqlConnection(ConnectionString))
+                await connection.ExecuteAsync(UpdateUserSql, queryParams);
+            return;
+        }
+
+        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        await this.Transaction.Connection.ExecuteAsync(UpdateUserSql, queryParams, transaction: this.Transaction);
+    }
+
+    private const string GetUserByIdSql = "SELECT id, updated_at FROM `user` WHERE `id` = @id LIMIT 1";
+    public class GetUserByIdRow
+    {
+        public required int Id { get; init; }
+        public DateTime? UpdatedAt { get; init; }
+    };
+    public class GetUserByIdArgs
+    {
+        public required int Id { get; init; }
+    };
+    public async Task<GetUserByIdRow?> GetUserById(GetUserByIdArgs args)
+    {
+        var queryParams = new Dictionary<string, object?>();
+        queryParams.Add("id", args.Id);
+        if (this.Transaction == null)
+        {
+            using (var connection = new MySqlConnection(ConnectionString))
+            {
+                var result = await connection.QueryFirstOrDefaultAsync<GetUserByIdRow?>(GetUserByIdSql, queryParams);
+                return result;
+            }
+        }
+
+        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetUserByIdRow?>(GetUserByIdSql, queryParams, transaction: this.Transaction);
+    }
+
     private const string InsertMysqlNumericTypesSql = "INSERT INTO mysql_numeric_types ( c_bool, c_boolean, c_tinyint, c_smallint, c_mediumint, c_int, c_integer, c_bigint, c_decimal, c_dec, c_numeric, c_fixed, c_float, c_double, c_double_precision ) VALUES (@c_bool, @c_boolean, @c_tinyint, @c_smallint, @c_mediumint, @c_int, @c_integer, @c_bigint, @c_decimal, @c_dec, @c_numeric, @c_fixed, @c_float, @c_double, @c_double_precision)";
     public class InsertMysqlNumericTypesArgs
     {

@@ -638,6 +638,57 @@ public class QuerySql
         return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetAuthorWithQuadrupleParamRow?>(GetAuthorWithQuadrupleParamSql, queryParams, transaction: this.Transaction);
     }
 
+    private const string UpdateUserSql = "UPDATE \"user\" SET \"updated_at\" = @updated_at WHERE \"id\" = @id";
+    public class UpdateUserArgs
+    {
+        public string? UpdatedAt { get; init; }
+        public required int Id { get; init; }
+    };
+    public async Task UpdateUser(UpdateUserArgs args)
+    {
+        var queryParams = new Dictionary<string, object?>();
+        queryParams.Add("updated_at", args.UpdatedAt);
+        queryParams.Add("id", args.Id);
+        if (this.Transaction == null)
+        {
+            using (var connection = new SqliteConnection(ConnectionString))
+                await connection.ExecuteAsync(UpdateUserSql, queryParams);
+            return;
+        }
+
+        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        await this.Transaction.Connection.ExecuteAsync(UpdateUserSql, queryParams, transaction: this.Transaction);
+    }
+
+    private const string GetUserByIdSql = "SELECT id, updated_at FROM \"user\" WHERE \"id\" = @id LIMIT 1";
+    public class GetUserByIdRow
+    {
+        public required int Id { get; init; }
+        public string? UpdatedAt { get; init; }
+    };
+    public class GetUserByIdArgs
+    {
+        public required int Id { get; init; }
+    };
+    public async Task<GetUserByIdRow?> GetUserById(GetUserByIdArgs args)
+    {
+        var queryParams = new Dictionary<string, object?>();
+        queryParams.Add("id", args.Id);
+        if (this.Transaction == null)
+        {
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                var result = await connection.QueryFirstOrDefaultAsync<GetUserByIdRow?>(GetUserByIdSql, queryParams);
+                return result;
+            }
+        }
+
+        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetUserByIdRow?>(GetUserByIdSql, queryParams, transaction: this.Transaction);
+    }
+
     private const string InsertSqliteTypesSql = "INSERT INTO types_sqlite ( c_integer, c_real, c_text, c_blob, c_text_datetime_override, c_integer_datetime_override, c_text_noda_instant_override, c_integer_noda_instant_override, c_text_bool_override, c_integer_bool_override ) VALUES (@c_integer, @c_real, @c_text, @c_blob, @c_text_datetime_override, @c_integer_datetime_override, @c_text_noda_instant_override, @c_integer_noda_instant_override, @c_text_bool_override, @c_integer_bool_override)";
     public class InsertSqliteTypesArgs
     {

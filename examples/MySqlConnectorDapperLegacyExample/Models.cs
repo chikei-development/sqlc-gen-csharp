@@ -21,6 +21,11 @@ namespace MySqlConnectorDapperLegacyExampleGen
         public long AuthorId { get; set; }
         public string Description { get; set; }
     };
+    public class User
+    {
+        public int Id { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+    };
     public class MysqlNumericType
     {
         public bool? CBool { get; set; }

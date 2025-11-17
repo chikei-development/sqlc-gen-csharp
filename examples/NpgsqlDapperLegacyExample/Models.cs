@@ -27,6 +27,11 @@ namespace NpgsqlDapperLegacyExampleGen
         public long AuthorId { get; set; }
         public string Description { get; set; }
     };
+    public class User
+    {
+        public int Id { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+    };
     public class PostgresNumericType
     {
         public bool? CBoolean { get; set; }

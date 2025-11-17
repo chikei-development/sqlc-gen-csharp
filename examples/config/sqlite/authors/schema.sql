@@ -11,3 +11,8 @@ CREATE TABLE books (
     description TEXT,
     FOREIGN KEY (author_id) REFERENCES authors (id) ON DELETE CASCADE
 );
+
+CREATE TABLE "user" (
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "updated_at" TEXT
+);

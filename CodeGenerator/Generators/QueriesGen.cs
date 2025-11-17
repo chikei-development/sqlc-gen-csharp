@@ -147,9 +147,11 @@ internal partial class QueriesGen(DbDriver dbDriver, string namespaceName)
             return null;
 
         var singleLineQueryText = RemoveInlineCommentsAndCollapseWhitespace(transformedQueryText);
+        // reserved keywords will be passed through with double quotes, so we need to escape them
+        var escapedQueryText = singleLineQueryText.Replace("\"", "\\\"");
         return ParseMemberDeclaration(
                 $"""
-                private const string {ClassMember.Sql.Name(query.Name)} = "{singleLineQueryText}";
+                private const string {ClassMember.Sql.Name(query.Name)} = "{escapedQueryText}";
                 """
             )!
             .AppendNewLine();

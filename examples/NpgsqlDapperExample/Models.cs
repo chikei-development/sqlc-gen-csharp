@@ -26,6 +26,11 @@ public class Book
     public required long AuthorId { get; init; }
     public string? Description { get; init; }
 };
+public class User
+{
+    public required int Id { get; init; }
+    public DateTime? UpdatedAt { get; init; }
+};
 public class PostgresNumericType
 {
     public bool? CBoolean { get; init; }

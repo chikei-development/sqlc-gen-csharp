@@ -103,3 +103,12 @@ WHERE name = sqlc.narg('search_value')
    OR created_at::TEXT LIKE '%' || sqlc.narg('search_value') || '%'
    OR (LENGTH(sqlc.narg('search_value')) > 0 AND name IS NOT NULL)
 LIMIT 1;
+
+-- name: UpdateUser :one
+UPDATE "user"
+SET
+    "updated_at" = sqlc.arg(updated_at)
+WHERE
+    "id" = sqlc.arg(id)
+RETURNING
+    *;
