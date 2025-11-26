@@ -162,15 +162,24 @@ public abstract class DbDriver
             // Check return columns
             foreach (var column in query.Columns)
             {
-                var csharpType = GetCsharpTypeWithoutNullableSuffix(column, query);
-                if (!ColumnMappings.ContainsKey(csharpType))
-                    continue;
-
-                var columnMapping = ColumnMappings[csharpType];
-                usingDirectives.AddRangeIf(
-                    columnMapping.UsingDirectives!,
-                    columnMapping.UsingDirectives is not null
-                );
+                // Check if this is an embedded table
+                if (column.EmbedTable != null)
+                {
+                    // Get the embedded table and check its columns for JSON types
+                    AddUsingDirectivesForEmbeddedTable(usingDirectives, column.EmbedTable);
+                }
+                else
+                {
+                    var csharpType = GetCsharpTypeWithoutNullableSuffix(column, query);
+                    if (ColumnMappings.ContainsKey(csharpType))
+                    {
+                        var columnMapping = ColumnMappings[csharpType];
+                        usingDirectives.AddRangeIf(
+                            columnMapping.UsingDirectives!,
+                            columnMapping.UsingDirectives is not null
+                        );
+                    }
+                }
             }
 
             // Check parameters
@@ -188,6 +197,50 @@ public abstract class DbDriver
             }
         }
         return usingDirectives;
+    }
+
+    private void AddUsingDirectivesForEmbeddedTable(HashSet<string> usingDirectives, Plugin.Identifier embedTable)
+    {
+        // Find the table in the catalog
+        var schemaName = string.IsNullOrEmpty(embedTable.Schema) ? string.Empty : embedTable.Schema;
+        if (!Tables.TryGetValue(schemaName, out var schemaDict))
+            return;
+
+        if (!schemaDict.TryGetValue(embedTable.Name, out var table))
+            return;
+
+        // Check each column of the embedded table for JSON types that need System.Text.Json
+        foreach (var tableColumn in table.Columns)
+        {
+            var csharpType = GetCsharpTypeForTableColumn(tableColumn);
+            if (ColumnMappings.ContainsKey(csharpType))
+            {
+                var columnMapping = ColumnMappings[csharpType];
+                usingDirectives.AddRangeIf(
+                    columnMapping.UsingDirectives!,
+                    columnMapping.UsingDirectives is not null
+                );
+            }
+        }
+    }
+
+    private string GetCsharpTypeForTableColumn(Plugin.Column tableColumn)
+    {
+        if (string.IsNullOrEmpty(tableColumn.Type.Name))
+            return "object";
+
+        // Check overrides first (though unlikely for table columns)
+        foreach (var columnMapping in ColumnMappings.Where(cm =>
+            DoesColumnMappingApply(cm.Value, tableColumn)))
+        {
+            if (tableColumn.IsArray || tableColumn.IsSqlcSlice)
+                return $"{columnMapping.Key}[]";
+            return columnMapping.Key;
+        }
+
+        throw new NotSupportedException(
+            $"Column {tableColumn.Name} has unsupported column type: {tableColumn.Type.Name} in {GetType().Name}"
+        );
     }
 
     public virtual ISet<string> GetUsingDirectivesForUtils()

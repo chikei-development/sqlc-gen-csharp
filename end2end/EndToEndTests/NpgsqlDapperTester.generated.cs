@@ -472,6 +472,41 @@ namespace EndToEndTests
         }
 
         [Test]
+        public async Task TestPostgresJsonEmbedMissingImports()
+        {
+            // This test replicates the issue where sqlc.embed(authors) with JSON columns
+            // fails to build due to missing System.Text.Json imports.
+            // The issue occurs when JsonElement is used in embedded structs but the necessary
+            // imports (System.Text.Json.JsonElement, System.Text.Json.JsonSerializer, JsonDocument)
+            // are not automatically included in the generated code.
+            //
+            // Expected build failures in generated code:
+            // - CS0246: The type or namespace name 'JsonElement' could not be found
+            // - Missing imports for JsonDocument.Parse(), JsonSerializer.Deserialize()
+            // First, create an author with JSON metadata
+            var testMetadata = JsonDocument.Parse("{\"tags\": [\"fiction\", \"mystery\"], \"rating\": 4.5}").RootElement;
+            await QuerySql.CreateAuthorWithMetadata(new QuerySql.CreateAuthorWithMetadataArgs { Id = 12345, Name = "JSON Test Author", Bio = "Author with JSON metadata", Metadata = testMetadata });
+            // Create a book for this author
+            await QuerySql.CreateBook(new QuerySql.CreateBookArgs { Name = "JSON Test Book", AuthorId = 12345 });
+            // This query uses sqlc.embed(authors) which includes the JSON metadata field
+            // The generated GetAuthorsWithJsonMetadataRow struct contains an embedded Author struct
+            // with JsonElement? Metadata field, but may be missing required imports
+            var result = await QuerySql.GetAuthorsWithJsonMetadata();
+            Assert.That(result, Is.Not.Empty);
+            var firstAuthor = result.First();
+            // Verify the embedded Author struct has the expected properties (handling nullability)
+            Assert.That(firstAuthor.Author, Is.Not.Null);
+            var authorData = firstAuthor.Author;
+            Assert.That(authorData.Name, Is.EqualTo("JSON Test Author"));
+            Assert.That(authorData.Metadata.HasValue, Is.True);
+            Assert.That(firstAuthor.BookName, Is.EqualTo("JSON Test Book"));
+            // Verify the JSON metadata can be properly deserialized
+            var metadataText = authorData.Metadata.Value.GetRawText();
+            Assert.That(metadataText, Does.Contain("fiction"));
+            Assert.That(metadataText, Does.Contain("4.5"));
+        }
+
+        [Test]
         [TestCase("E", "It takes a nation of millions to hold us back", "Rebel Without a Pause", "Master of Puppets", "Prophets of Rage")]
         [TestCase(null, null, null, null, null)]
         public async Task TestPostgresStringTypes(string cChar, string cVarchar, string cCharacterVarying, string cBpchar, string cText)

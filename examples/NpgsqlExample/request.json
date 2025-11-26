@@ -83,6 +83,17 @@
                   "schema": "pg_catalog",
                   "name": "timestamp"
                 }
+              },
+              {
+                "name": "metadata",
+                "length": -1,
+                "table": {
+                  "name": "authors"
+                },
+                "type": {
+                  "schema": "pg_catalog",
+                  "name": "json"
+                }
               }
             ]
           },
@@ -32657,7 +32668,7 @@
   },
   "queries": [
     {
-      "text": "SELECT id, name, bio, created_at, updated_at FROM authors\nWHERE name = $1 LIMIT 1",
+      "text": "SELECT id, name, bio, created_at, updated_at, metadata FROM authors\nWHERE name = $1 LIMIT 1",
       "name": "GetAuthor",
       "cmd": ":one",
       "columns": [
@@ -32719,6 +32730,18 @@
             "name": "timestamp"
           },
           "originalName": "updated_at"
+        },
+        {
+          "name": "metadata",
+          "length": -1,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "schema": "pg_catalog",
+            "name": "json"
+          },
+          "originalName": "metadata"
         }
       ],
       "parameters": [
@@ -32741,7 +32764,7 @@
       "filename": "query.sql"
     },
     {
-      "text": "SELECT id, name, bio, created_at, updated_at \nFROM authors\nORDER BY name\nLIMIT $2\nOFFSET $1",
+      "text": "SELECT id, name, bio, created_at, updated_at, metadata \nFROM authors\nORDER BY name\nLIMIT $2\nOFFSET $1",
       "name": "ListAuthors",
       "cmd": ":many",
       "columns": [
@@ -32803,6 +32826,18 @@
             "name": "timestamp"
           },
           "originalName": "updated_at"
+        },
+        {
+          "name": "metadata",
+          "length": -1,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "schema": "pg_catalog",
+            "name": "json"
+          },
+          "originalName": "metadata"
         }
       ],
       "parameters": [
@@ -32834,7 +32869,7 @@
       "filename": "query.sql"
     },
     {
-      "text": "INSERT INTO authors (id, name, bio) VALUES ($1, $2, $3) RETURNING id, name, bio, created_at, updated_at",
+      "text": "INSERT INTO authors (id, name, bio) VALUES ($1, $2, $3) RETURNING id, name, bio, created_at, updated_at, metadata",
       "name": "CreateAuthor",
       "cmd": ":one",
       "columns": [
@@ -32896,6 +32931,18 @@
             "name": "timestamp"
           },
           "originalName": "updated_at"
+        },
+        {
+          "name": "metadata",
+          "length": -1,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "schema": "pg_catalog",
+            "name": "json"
+          },
+          "originalName": "metadata"
         }
       ],
       "parameters": [
@@ -32953,7 +33000,7 @@
       }
     },
     {
-      "text": "INSERT INTO authors (\n    id, -- this is an id\n    name, -- this is a name!@#$%,\n    bio -- comment?\n    ) VALUES ($1, $2, $3) RETURNING id, name, bio, created_at, updated_at",
+      "text": "INSERT INTO authors (\n    id, -- this is an id\n    name, -- this is a name!@#$%,\n    bio -- comment?\n    ) VALUES ($1, $2, $3) RETURNING id, name, bio, created_at, updated_at, metadata",
       "name": "CreateAuthorIncludingComment",
       "cmd": ":one",
       "columns": [
@@ -33015,6 +33062,18 @@
             "name": "timestamp"
           },
           "originalName": "updated_at"
+        },
+        {
+          "name": "metadata",
+          "length": -1,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "schema": "pg_catalog",
+            "name": "json"
+          },
+          "originalName": "metadata"
         }
       ],
       "parameters": [
@@ -33128,7 +33187,7 @@
       }
     },
     {
-      "text": "SELECT id, name, bio, created_at, updated_at FROM authors\nWHERE id = $1 LIMIT 1",
+      "text": "SELECT id, name, bio, created_at, updated_at, metadata FROM authors\nWHERE id = $1 LIMIT 1",
       "name": "GetAuthorById",
       "cmd": ":one",
       "columns": [
@@ -33190,6 +33249,18 @@
             "name": "timestamp"
           },
           "originalName": "updated_at"
+        },
+        {
+          "name": "metadata",
+          "length": -1,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "schema": "pg_catalog",
+            "name": "json"
+          },
+          "originalName": "metadata"
         }
       ],
       "parameters": [
@@ -33212,7 +33283,7 @@
       "filename": "query.sql"
     },
     {
-      "text": "SELECT id, name, bio, created_at, updated_at FROM authors\nWHERE name LIKE COALESCE($1, '%')",
+      "text": "SELECT id, name, bio, created_at, updated_at, metadata FROM authors\nWHERE name LIKE COALESCE($1, '%')",
       "name": "GetAuthorByNamePattern",
       "cmd": ":many",
       "columns": [
@@ -33274,6 +33345,18 @@
             "name": "timestamp"
           },
           "originalName": "updated_at"
+        },
+        {
+          "name": "metadata",
+          "length": -1,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "schema": "pg_catalog",
+            "name": "json"
+          },
+          "originalName": "metadata"
         }
       ],
       "parameters": [
@@ -33348,7 +33431,7 @@
       "filename": "query.sql"
     },
     {
-      "text": "SELECT id, name, bio, created_at, updated_at FROM authors\nWHERE id = ANY($1::BIGINT [])",
+      "text": "SELECT id, name, bio, created_at, updated_at, metadata FROM authors\nWHERE id = ANY($1::BIGINT [])",
       "name": "GetAuthorsByIds",
       "cmd": ":many",
       "columns": [
@@ -33410,6 +33493,18 @@
             "name": "timestamp"
           },
           "originalName": "updated_at"
+        },
+        {
+          "name": "metadata",
+          "length": -1,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "schema": "pg_catalog",
+            "name": "json"
+          },
+          "originalName": "metadata"
         }
       ],
       "parameters": [
@@ -33430,7 +33525,7 @@
       "filename": "query.sql"
     },
     {
-      "text": "SELECT id, name, bio, created_at, updated_at\nFROM authors\nWHERE id = ANY($1::BIGINT []) AND name = ANY($2::TEXT [])",
+      "text": "SELECT id, name, bio, created_at, updated_at, metadata\nFROM authors\nWHERE id = ANY($1::BIGINT []) AND name = ANY($2::TEXT [])",
       "name": "GetAuthorsByIdsAndNames",
       "cmd": ":many",
       "columns": [
@@ -33492,6 +33587,18 @@
             "name": "timestamp"
           },
           "originalName": "updated_at"
+        },
+        {
+          "name": "metadata",
+          "length": -1,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "schema": "pg_catalog",
+            "name": "json"
+          },
+          "originalName": "metadata"
         }
       ],
       "parameters": [
@@ -33581,7 +33688,7 @@
       }
     },
     {
-      "text": "SELECT\n    authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at,\n    books.id, books.name, books.author_id, books.description\nFROM authors\nINNER JOIN books ON authors.id = books.author_id\nORDER BY authors.name",
+      "text": "SELECT\n    authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at, authors.metadata,\n    books.id, books.name, books.author_id, books.description\nFROM authors\nINNER JOIN books ON authors.id = books.author_id\nORDER BY authors.name",
       "name": "ListAllAuthorsBooks",
       "cmd": ":many",
       "columns": [
@@ -33605,7 +33712,7 @@
       "filename": "query.sql"
     },
     {
-      "text": "SELECT\n    authors1.id, authors1.name, authors1.bio, authors1.created_at, authors1.updated_at,\n    authors2.id, authors2.name, authors2.bio, authors2.created_at, authors2.updated_at\nFROM authors AS authors1\nINNER JOIN authors AS authors2 ON authors1.name = authors2.name\nWHERE authors1.id \u003c authors2.id",
+      "text": "SELECT\n    authors1.id, authors1.name, authors1.bio, authors1.created_at, authors1.updated_at, authors1.metadata,\n    authors2.id, authors2.name, authors2.bio, authors2.created_at, authors2.updated_at, authors2.metadata\nFROM authors AS authors1\nINNER JOIN authors AS authors2 ON authors1.name = authors2.name\nWHERE authors1.id \u003c authors2.id",
       "name": "GetDuplicateAuthors",
       "cmd": ":many",
       "columns": [
@@ -33629,7 +33736,7 @@
       "filename": "query.sql"
     },
     {
-      "text": "SELECT\n    authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at,\n    books.id, books.name, books.author_id, books.description\nFROM authors INNER JOIN books ON authors.id = books.author_id\nWHERE books.name = $1",
+      "text": "SELECT\n    authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at, authors.metadata,\n    books.id, books.name, books.author_id, books.description\nFROM authors INNER JOIN books ON authors.id = books.author_id\nWHERE books.name = $1",
       "name": "GetAuthorsByBookName",
       "cmd": ":many",
       "columns": [
@@ -33691,6 +33798,18 @@
             "name": "timestamp"
           },
           "originalName": "updated_at"
+        },
+        {
+          "name": "metadata",
+          "length": -1,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "schema": "pg_catalog",
+            "name": "json"
+          },
+          "originalName": "metadata"
         },
         {
           "name": "books",
@@ -33852,7 +33971,7 @@
       "filename": "query.sql"
     },
     {
-      "text": "SELECT id, name, bio, created_at, updated_at FROM authors \nWHERE (name = $1 OR bio LIKE '%' || $1 || '%')\n  AND (id \u003e $2 OR id \u003c $2 + 1000)\n  AND created_at \u003e= $3\n  AND updated_at \u003e= $3",
+      "text": "SELECT id, name, bio, created_at, updated_at, metadata FROM authors \nWHERE (name = $1 OR bio LIKE '%' || $1 || '%')\n  AND (id \u003e $2 OR id \u003c $2 + 1000)\n  AND created_at \u003e= $3\n  AND updated_at \u003e= $3",
       "name": "GetAuthorsWithDuplicateParams",
       "cmd": ":many",
       "columns": [
@@ -33914,6 +34033,18 @@
             "name": "timestamp"
           },
           "originalName": "updated_at"
+        },
+        {
+          "name": "metadata",
+          "length": -1,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "schema": "pg_catalog",
+            "name": "json"
+          },
+          "originalName": "metadata"
         }
       ],
       "parameters": [
@@ -33969,7 +34100,7 @@
       "filename": "query.sql"
     },
     {
-      "text": "SELECT id, name, bio, created_at, updated_at FROM authors \nWHERE name = $1 \n   OR bio LIKE '%' || $1 || '%'\n   OR CAST(id AS TEXT) = $1\n   OR created_at::TEXT LIKE '%' || $1 || '%'\n   OR (LENGTH($1) \u003e 0 AND name IS NOT NULL)\nLIMIT 1",
+      "text": "SELECT id, name, bio, created_at, updated_at, metadata FROM authors \nWHERE name = $1 \n   OR bio LIKE '%' || $1 || '%'\n   OR CAST(id AS TEXT) = $1\n   OR created_at::TEXT LIKE '%' || $1 || '%'\n   OR (LENGTH($1) \u003e 0 AND name IS NOT NULL)\nLIMIT 1",
       "name": "GetAuthorWithPentaParam",
       "cmd": ":one",
       "columns": [
@@ -34031,6 +34162,18 @@
             "name": "timestamp"
           },
           "originalName": "updated_at"
+        },
+        {
+          "name": "metadata",
+          "length": -1,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "schema": "pg_catalog",
+            "name": "json"
+          },
+          "originalName": "metadata"
         }
       ],
       "parameters": [
@@ -34052,6 +34195,179 @@
       ],
       "comments": [
         " This query uses the same parameter five times to test extensive deduplication"
+      ],
+      "filename": "query.sql"
+    },
+    {
+      "text": "INSERT INTO authors (id, name, bio, metadata) VALUES ($1, $2, $3, $4) RETURNING id, name, bio, created_at, updated_at, metadata",
+      "name": "CreateAuthorWithMetadata",
+      "cmd": ":one",
+      "columns": [
+        {
+          "name": "id",
+          "notNull": true,
+          "length": -1,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "name": "bigserial"
+          },
+          "originalName": "id"
+        },
+        {
+          "name": "name",
+          "notNull": true,
+          "length": -1,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "name": "text"
+          },
+          "originalName": "name"
+        },
+        {
+          "name": "bio",
+          "length": -1,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "name": "text"
+          },
+          "originalName": "bio"
+        },
+        {
+          "name": "created_at",
+          "length": -1,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "schema": "pg_catalog",
+            "name": "timestamp"
+          },
+          "originalName": "created_at"
+        },
+        {
+          "name": "updated_at",
+          "length": -1,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "schema": "pg_catalog",
+            "name": "timestamp"
+          },
+          "originalName": "updated_at"
+        },
+        {
+          "name": "metadata",
+          "length": -1,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "schema": "pg_catalog",
+            "name": "json"
+          },
+          "originalName": "metadata"
+        }
+      ],
+      "parameters": [
+        {
+          "number": 1,
+          "column": {
+            "name": "id",
+            "notNull": true,
+            "length": -1,
+            "table": {
+              "schema": "public",
+              "name": "authors"
+            },
+            "type": {
+              "name": "bigserial"
+            },
+            "originalName": "id"
+          }
+        },
+        {
+          "number": 2,
+          "column": {
+            "name": "name",
+            "notNull": true,
+            "length": -1,
+            "table": {
+              "schema": "public",
+              "name": "authors"
+            },
+            "type": {
+              "name": "text"
+            },
+            "originalName": "name"
+          }
+        },
+        {
+          "number": 3,
+          "column": {
+            "name": "bio",
+            "length": -1,
+            "table": {
+              "schema": "public",
+              "name": "authors"
+            },
+            "type": {
+              "name": "text"
+            },
+            "originalName": "bio"
+          }
+        },
+        {
+          "number": 4,
+          "column": {
+            "name": "metadata",
+            "length": -1,
+            "table": {
+              "schema": "public",
+              "name": "authors"
+            },
+            "type": {
+              "name": "pg_catalog.json"
+            },
+            "originalName": "metadata"
+          }
+        }
+      ],
+      "filename": "query.sql",
+      "insert_into_table": {
+        "name": "authors"
+      }
+    },
+    {
+      "text": "SELECT\n    authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at, authors.metadata,\n    books.name as book_name\nFROM authors\nLEFT JOIN books ON authors.id = books.author_id\nWHERE authors.metadata IS NOT NULL\nORDER BY authors.name",
+      "name": "GetAuthorsWithJsonMetadata",
+      "cmd": ":many",
+      "columns": [
+        {
+          "name": "authors",
+          "length": -1,
+          "type": {},
+          "embedTable": {
+            "name": "authors"
+          }
+        },
+        {
+          "name": "book_name",
+          "length": -1,
+          "table": {
+            "name": "books"
+          },
+          "type": {
+            "name": "text"
+          },
+          "originalName": "name"
+        }
       ],
       "filename": "query.sql"
     },

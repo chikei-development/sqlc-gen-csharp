@@ -45,6 +45,7 @@ public enum KnownTestType
     PostgresInvalidJson,
     PostgresInvalidXml,
     PostgresInlineComments,
+    PostgresJsonEmbedMissingImports,
 
     // Data types
     PostgresStringDataTypes,
@@ -152,6 +153,7 @@ internal static class Config
         KnownTestType.PostgresInvalidJson,
         KnownTestType.PostgresInvalidXml,
         KnownTestType.PostgresInlineComments,
+        KnownTestType.PostgresJsonEmbedMissingImports,
 
         // query annotations
         KnownTestType.One,

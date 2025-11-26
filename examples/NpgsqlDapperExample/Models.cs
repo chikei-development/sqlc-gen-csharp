@@ -18,6 +18,7 @@ public class Author
     public string? Bio { get; init; }
     public DateTime? CreatedAt { get; init; }
     public DateTime? UpdatedAt { get; init; }
+    public JsonElement? Metadata { get; init; }
 };
 public class Book
 {
