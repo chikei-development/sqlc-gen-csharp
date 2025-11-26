@@ -115,6 +115,10 @@ public static class Program
             .Replace(
                 Consts.UnknownNullableIndicatorPlaceholder,
                 isLegacyDotnet ? string.Empty : "?"
+            )
+            .Replace(
+                Consts.UnknownNullForgivingOperatorPlaceholder,
+                isLegacyDotnet ? string.Empty : "!"
             );
         return impl;
     }

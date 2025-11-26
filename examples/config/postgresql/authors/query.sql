@@ -104,6 +104,18 @@ WHERE name = sqlc.narg('search_value')
    OR (LENGTH(sqlc.narg('search_value')) > 0 AND name IS NOT NULL)
 LIMIT 1;
 
+-- name: CreateAuthorWithMetadata :one
+INSERT INTO authors (id, name, bio, metadata) VALUES ($1, $2, $3, $4) RETURNING *;
+
+-- name: GetAuthorsWithJsonMetadata :many
+SELECT
+    sqlc.embed(authors),
+    books.name as book_name
+FROM authors
+LEFT JOIN books ON authors.id = books.author_id
+WHERE authors.metadata IS NOT NULL
+ORDER BY authors.name;
+
 -- name: UpdateUser :one
 UPDATE "user"
 SET

@@ -3,7 +3,8 @@ CREATE TABLE authors (
     name TEXT NOT NULL,
     bio TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+    metadata JSON
 );
 
 CREATE TABLE books (
