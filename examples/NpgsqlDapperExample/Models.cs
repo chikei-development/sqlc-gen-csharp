@@ -19,6 +19,7 @@ public class Author
     public DateTime? CreatedAt { get; init; }
     public DateTime? UpdatedAt { get; init; }
     public JsonElement? Metadata { get; init; }
+    public AuthorStatus? Status { get; init; }
 };
 public class Book
 {
@@ -110,6 +111,41 @@ public class ExtendedBio
     public required string Name { get; init; }
     public ExtendedBioType? BioType { get; init; }
 };
+public enum AuthorStatus
+{
+    Invalid = 0, // reserved for invalid enum value
+    Active = 1,
+    Inactive = 2,
+    Pending = 3
+}
+
+public static class AuthorStatusExtensions
+{
+    private static readonly Dictionary<string, AuthorStatus> StringToEnum = new Dictionary<string, AuthorStatus>()
+    {
+        [string.Empty] = AuthorStatus.Invalid,
+        ["active"] = AuthorStatus.Active,
+        ["inactive"] = AuthorStatus.Inactive,
+        ["pending"] = AuthorStatus.Pending
+    };
+    public static AuthorStatus ToAuthorStatus(this string me)
+    {
+        return StringToEnum[me];
+    }
+
+    private static readonly Dictionary<AuthorStatus, string> EnumToString = new Dictionary<AuthorStatus, string>()
+    {
+        [AuthorStatus.Invalid] = string.Empty,
+        [AuthorStatus.Active] = "active",
+        [AuthorStatus.Inactive] = "inactive",
+        [AuthorStatus.Pending] = "pending"
+    };
+    public static string Stringify(this AuthorStatus me)
+    {
+        return EnumToString[me];
+    }
+}
+
 public enum CEnum
 {
     Invalid = 0, // reserved for invalid enum value
@@ -127,6 +163,11 @@ public static class CEnumExtensions
         ["medium"] = CEnum.Medium,
         ["big"] = CEnum.Big
     };
+    public static CEnum ToCEnum(this string me)
+    {
+        return StringToEnum[me];
+    }
+
     private static readonly Dictionary<CEnum, string> EnumToString = new Dictionary<CEnum, string>()
     {
         [CEnum.Invalid] = string.Empty,
@@ -157,6 +198,11 @@ public static class ExtendedBioTypeExtensions
         ["Biography"] = ExtendedBioType.Biography,
         ["Memoir"] = ExtendedBioType.Memoir
     };
+    public static ExtendedBioType ToExtendedBioType(this string me)
+    {
+        return StringToEnum[me];
+    }
+
     private static readonly Dictionary<ExtendedBioType, string> EnumToString = new Dictionary<ExtendedBioType, string>()
     {
         [ExtendedBioType.Invalid] = string.Empty,

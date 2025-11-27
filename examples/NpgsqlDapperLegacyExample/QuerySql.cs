@@ -47,6 +47,7 @@ namespace NpgsqlDapperLegacyExampleGen
 
         public static void ConfigureEnumMappings(NpgsqlDataSourceBuilder dataSourceBuilder)
         {
+            dataSourceBuilder.MapEnum<AuthorStatus>("author_status");
             dataSourceBuilder.MapEnum<CEnum>("c_enum");
             dataSourceBuilder.MapEnum<ExtendedBioType>("bio_type");
         }
@@ -55,7 +56,7 @@ namespace NpgsqlDapperLegacyExampleGen
         private NpgsqlDataSource DataSource { get; }
         private string ConnectionString { get; }
 
-        private const string GetAuthorSql = "SELECT id, name, bio, created_at, updated_at, metadata FROM authors WHERE name = @name LIMIT 1";
+        private const string GetAuthorSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors WHERE name = @name LIMIT 1";
         public class GetAuthorRow
         {
             public long Id { get; set; }
@@ -64,6 +65,7 @@ namespace NpgsqlDapperLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
+            public AuthorStatus? Status { get; set; }
         };
         public class GetAuthorArgs
         {
@@ -87,7 +89,7 @@ namespace NpgsqlDapperLegacyExampleGen
             return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetAuthorRow>(GetAuthorSql, queryParams, transaction: this.Transaction);
         }
 
-        private const string ListAuthorsSql = "SELECT id, name, bio, created_at, updated_at, metadata FROM authors ORDER BY name LIMIT @limit OFFSET @offset";
+        private const string ListAuthorsSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors ORDER BY name LIMIT @limit OFFSET @offset";
         public class ListAuthorsRow
         {
             public long Id { get; set; }
@@ -96,6 +98,7 @@ namespace NpgsqlDapperLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
+            public AuthorStatus? Status { get; set; }
         };
         public class ListAuthorsArgs
         {
@@ -121,7 +124,7 @@ namespace NpgsqlDapperLegacyExampleGen
             return (await this.Transaction.Connection.QueryAsync<ListAuthorsRow>(ListAuthorsSql, queryParams, transaction: this.Transaction)).AsList();
         }
 
-        private const string CreateAuthorSql = "INSERT INTO authors (id, name, bio) VALUES (@id, @name, @bio) RETURNING id, name, bio, created_at, updated_at, metadata";
+        private const string CreateAuthorSql = "INSERT INTO authors (id, name, bio) VALUES (@id, @name, @bio) RETURNING id, name, bio, created_at, updated_at, metadata, status";
         public class CreateAuthorRow
         {
             public long Id { get; set; }
@@ -130,6 +133,7 @@ namespace NpgsqlDapperLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
+            public AuthorStatus? Status { get; set; }
         };
         public class CreateAuthorArgs
         {
@@ -157,7 +161,7 @@ namespace NpgsqlDapperLegacyExampleGen
             return await this.Transaction.Connection.QueryFirstOrDefaultAsync<CreateAuthorRow>(CreateAuthorSql, queryParams, transaction: this.Transaction);
         }
 
-        private const string CreateAuthorIncludingCommentSql = "INSERT INTO authors ( id, name, bio ) VALUES (@id, @name, @bio) RETURNING id, name, bio, created_at, updated_at, metadata";
+        private const string CreateAuthorIncludingCommentSql = "INSERT INTO authors ( id, name, bio ) VALUES (@id, @name, @bio) RETURNING id, name, bio, created_at, updated_at, metadata, status";
         public class CreateAuthorIncludingCommentRow
         {
             public long Id { get; set; }
@@ -166,6 +170,7 @@ namespace NpgsqlDapperLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
+            public AuthorStatus? Status { get; set; }
         };
         public class CreateAuthorIncludingCommentArgs
         {
@@ -219,7 +224,7 @@ namespace NpgsqlDapperLegacyExampleGen
             return await this.Transaction.Connection.QuerySingleAsync<long>(CreateAuthorReturnIdSql, queryParams, transaction: this.Transaction);
         }
 
-        private const string GetAuthorByIdSql = "SELECT id, name, bio, created_at, updated_at, metadata FROM authors WHERE id = @id LIMIT 1";
+        private const string GetAuthorByIdSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors WHERE id = @id LIMIT 1";
         public class GetAuthorByIdRow
         {
             public long Id { get; set; }
@@ -228,6 +233,7 @@ namespace NpgsqlDapperLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
+            public AuthorStatus? Status { get; set; }
         };
         public class GetAuthorByIdArgs
         {
@@ -251,7 +257,7 @@ namespace NpgsqlDapperLegacyExampleGen
             return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetAuthorByIdRow>(GetAuthorByIdSql, queryParams, transaction: this.Transaction);
         }
 
-        private const string GetAuthorByNamePatternSql = "SELECT id, name, bio, created_at, updated_at, metadata FROM authors WHERE name LIKE COALESCE(@name_pattern, '%')";
+        private const string GetAuthorByNamePatternSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors WHERE name LIKE COALESCE(@name_pattern, '%')";
         public class GetAuthorByNamePatternRow
         {
             public long Id { get; set; }
@@ -260,6 +266,7 @@ namespace NpgsqlDapperLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
+            public AuthorStatus? Status { get; set; }
         };
         public class GetAuthorByNamePatternArgs
         {
@@ -339,7 +346,7 @@ namespace NpgsqlDapperLegacyExampleGen
             return await this.Transaction.Connection.ExecuteAsync(UpdateAuthorsSql, queryParams, transaction: this.Transaction);
         }
 
-        private const string GetAuthorsByIdsSql = "SELECT id, name, bio, created_at, updated_at, metadata FROM authors WHERE id = ANY(@longArr_1::BIGINT [])";
+        private const string GetAuthorsByIdsSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors WHERE id = ANY(@longArr_1::BIGINT [])";
         public class GetAuthorsByIdsRow
         {
             public long Id { get; set; }
@@ -348,6 +355,7 @@ namespace NpgsqlDapperLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
+            public AuthorStatus? Status { get; set; }
         };
         public class GetAuthorsByIdsArgs
         {
@@ -371,7 +379,7 @@ namespace NpgsqlDapperLegacyExampleGen
             return (await this.Transaction.Connection.QueryAsync<GetAuthorsByIdsRow>(GetAuthorsByIdsSql, queryParams, transaction: this.Transaction)).AsList();
         }
 
-        private const string GetAuthorsByIdsAndNamesSql = "SELECT id, name, bio, created_at, updated_at, metadata FROM authors WHERE id = ANY(@longArr_1::BIGINT []) AND name = ANY(@stringArr_2::TEXT [])";
+        private const string GetAuthorsByIdsAndNamesSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors WHERE id = ANY(@longArr_1::BIGINT []) AND name = ANY(@stringArr_2::TEXT [])";
         public class GetAuthorsByIdsAndNamesRow
         {
             public long Id { get; set; }
@@ -380,6 +388,7 @@ namespace NpgsqlDapperLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
+            public AuthorStatus? Status { get; set; }
         };
         public class GetAuthorsByIdsAndNamesArgs
         {
@@ -431,7 +440,7 @@ namespace NpgsqlDapperLegacyExampleGen
             return await this.Transaction.Connection.QuerySingleAsync<Guid>(CreateBookSql, queryParams, transaction: this.Transaction);
         }
 
-        private const string ListAllAuthorsBooksSql = "SELECT authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at, authors.metadata, books.id, books.name, books.author_id, books.description FROM authors INNER JOIN books ON authors.id = books.author_id ORDER BY authors.name";
+        private const string ListAllAuthorsBooksSql = "SELECT authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at, authors.metadata, authors.status, books.id, books.name, books.author_id, books.description FROM authors INNER JOIN books ON authors.id = books.author_id ORDER BY authors.name";
         public class ListAllAuthorsBooksRow
         {
             public Author Author { get; set; }
@@ -447,7 +456,7 @@ namespace NpgsqlDapperLegacyExampleGen
                     {
                         var result = new List<ListAllAuthorsBooksRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)) }, Book = new Book { Id = reader.GetFieldValue<Guid>(6), Name = reader.GetString(7), AuthorId = reader.GetInt64(8), Description = reader.IsDBNull(9) ? null : reader.GetString(9) } });
+                            result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? (AuthorStatus? )null : reader.GetString(6).ToAuthorStatus() }, Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
                         return result;
                     }
                 }
@@ -463,13 +472,13 @@ namespace NpgsqlDapperLegacyExampleGen
                 {
                     var result = new List<ListAllAuthorsBooksRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)) }, Book = new Book { Id = reader.GetFieldValue<Guid>(6), Name = reader.GetString(7), AuthorId = reader.GetInt64(8), Description = reader.IsDBNull(9) ? null : reader.GetString(9) } });
+                        result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? (AuthorStatus? )null : reader.GetString(6).ToAuthorStatus() }, Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
                     return result;
                 }
             }
         }
 
-        private const string GetDuplicateAuthorsSql = "SELECT authors1.id, authors1.name, authors1.bio, authors1.created_at, authors1.updated_at, authors1.metadata, authors2.id, authors2.name, authors2.bio, authors2.created_at, authors2.updated_at, authors2.metadata FROM authors AS authors1 INNER JOIN authors AS authors2 ON authors1.name = authors2.name WHERE authors1.id < authors2.id";
+        private const string GetDuplicateAuthorsSql = "SELECT authors1.id, authors1.name, authors1.bio, authors1.created_at, authors1.updated_at, authors1.metadata, authors1.status, authors2.id, authors2.name, authors2.bio, authors2.created_at, authors2.updated_at, authors2.metadata, authors2.status FROM authors AS authors1 INNER JOIN authors AS authors2 ON authors1.name = authors2.name WHERE authors1.id < authors2.id";
         public class GetDuplicateAuthorsRow
         {
             public Author Author { get; set; }
@@ -485,7 +494,7 @@ namespace NpgsqlDapperLegacyExampleGen
                     {
                         var result = new List<GetDuplicateAuthorsRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)) }, Author2 = new Author { Id = reader.GetInt64(6), Name = reader.GetString(7), Bio = reader.IsDBNull(8) ? null : reader.GetString(8), CreatedAt = reader.IsDBNull(9) ? (DateTime? )null : reader.GetDateTime(9), UpdatedAt = reader.IsDBNull(10) ? (DateTime? )null : reader.GetDateTime(10), Metadata = reader.IsDBNull(11) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(11)) } });
+                            result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? (AuthorStatus? )null : reader.GetString(6).ToAuthorStatus() }, Author2 = new Author { Id = reader.GetInt64(7), Name = reader.GetString(8), Bio = reader.IsDBNull(9) ? null : reader.GetString(9), CreatedAt = reader.IsDBNull(10) ? (DateTime? )null : reader.GetDateTime(10), UpdatedAt = reader.IsDBNull(11) ? (DateTime? )null : reader.GetDateTime(11), Metadata = reader.IsDBNull(12) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(12)), Status = reader.IsDBNull(13) ? (AuthorStatus? )null : reader.GetString(13).ToAuthorStatus() } });
                         return result;
                     }
                 }
@@ -501,13 +510,13 @@ namespace NpgsqlDapperLegacyExampleGen
                 {
                     var result = new List<GetDuplicateAuthorsRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)) }, Author2 = new Author { Id = reader.GetInt64(6), Name = reader.GetString(7), Bio = reader.IsDBNull(8) ? null : reader.GetString(8), CreatedAt = reader.IsDBNull(9) ? (DateTime? )null : reader.GetDateTime(9), UpdatedAt = reader.IsDBNull(10) ? (DateTime? )null : reader.GetDateTime(10), Metadata = reader.IsDBNull(11) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(11)) } });
+                        result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? (AuthorStatus? )null : reader.GetString(6).ToAuthorStatus() }, Author2 = new Author { Id = reader.GetInt64(7), Name = reader.GetString(8), Bio = reader.IsDBNull(9) ? null : reader.GetString(9), CreatedAt = reader.IsDBNull(10) ? (DateTime? )null : reader.GetDateTime(10), UpdatedAt = reader.IsDBNull(11) ? (DateTime? )null : reader.GetDateTime(11), Metadata = reader.IsDBNull(12) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(12)), Status = reader.IsDBNull(13) ? (AuthorStatus? )null : reader.GetString(13).ToAuthorStatus() } });
                     return result;
                 }
             }
         }
 
-        private const string GetAuthorsByBookNameSql = "SELECT authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at, authors.metadata, books.id, books.name, books.author_id, books.description FROM authors INNER JOIN books ON authors.id = books.author_id WHERE books.name = @name";
+        private const string GetAuthorsByBookNameSql = "SELECT authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at, authors.metadata, authors.status, books.id, books.name, books.author_id, books.description FROM authors INNER JOIN books ON authors.id = books.author_id WHERE books.name = @name";
         public class GetAuthorsByBookNameRow
         {
             public long Id { get; set; }
@@ -516,6 +525,7 @@ namespace NpgsqlDapperLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
+            public AuthorStatus? Status { get; set; }
             public Book Book { get; set; }
         };
         public class GetAuthorsByBookNameArgs
@@ -533,7 +543,7 @@ namespace NpgsqlDapperLegacyExampleGen
                     {
                         var result = new List<GetAuthorsByBookNameRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Book = new Book { Id = reader.GetFieldValue<Guid>(6), Name = reader.GetString(7), AuthorId = reader.GetInt64(8), Description = reader.IsDBNull(9) ? null : reader.GetString(9) } });
+                            result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? (AuthorStatus? )null : reader.GetString(6).ToAuthorStatus(), Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
                         return result;
                     }
                 }
@@ -550,7 +560,7 @@ namespace NpgsqlDapperLegacyExampleGen
                 {
                     var result = new List<GetAuthorsByBookNameRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Book = new Book { Id = reader.GetFieldValue<Guid>(6), Name = reader.GetString(7), AuthorId = reader.GetInt64(8), Description = reader.IsDBNull(9) ? null : reader.GetString(9) } });
+                        result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? (AuthorStatus? )null : reader.GetString(6).ToAuthorStatus(), Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
                     return result;
                 }
             }
@@ -625,7 +635,7 @@ namespace NpgsqlDapperLegacyExampleGen
             await this.Transaction.Connection.ExecuteAsync(TruncateExtendedBiosSql, transaction: this.Transaction);
         }
 
-        private const string GetAuthorsWithDuplicateParamsSql = "SELECT id, name, bio, created_at, updated_at, metadata FROM authors WHERE (name = @author_name OR bio LIKE '%' || @author_name || '%') AND (id > @min_id OR id < @min_id + 1000) AND created_at >= @date_filter AND updated_at >= @date_filter";
+        private const string GetAuthorsWithDuplicateParamsSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors WHERE (name = @author_name OR bio LIKE '%' || @author_name || '%') AND (id > @min_id OR id < @min_id + 1000) AND created_at >= @date_filter AND updated_at >= @date_filter";
         public class GetAuthorsWithDuplicateParamsRow
         {
             public long Id { get; set; }
@@ -634,6 +644,7 @@ namespace NpgsqlDapperLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
+            public AuthorStatus? Status { get; set; }
         };
         public class GetAuthorsWithDuplicateParamsArgs
         {
@@ -661,7 +672,7 @@ namespace NpgsqlDapperLegacyExampleGen
             return (await this.Transaction.Connection.QueryAsync<GetAuthorsWithDuplicateParamsRow>(GetAuthorsWithDuplicateParamsSql, queryParams, transaction: this.Transaction)).AsList();
         }
 
-        private const string GetAuthorWithPentaParamSql = "SELECT id, name, bio, created_at, updated_at, metadata FROM authors WHERE name = @search_value OR bio LIKE '%' || @search_value || '%' OR CAST(id AS TEXT) = @search_value OR created_at::TEXT LIKE '%' || @search_value || '%' OR (LENGTH(@search_value) > 0 AND name IS NOT NULL) LIMIT 1";
+        private const string GetAuthorWithPentaParamSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors WHERE name = @search_value OR bio LIKE '%' || @search_value || '%' OR CAST(id AS TEXT) = @search_value OR created_at::TEXT LIKE '%' || @search_value || '%' OR (LENGTH(@search_value) > 0 AND name IS NOT NULL) LIMIT 1";
         public class GetAuthorWithPentaParamRow
         {
             public long Id { get; set; }
@@ -670,6 +681,7 @@ namespace NpgsqlDapperLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
+            public AuthorStatus? Status { get; set; }
         };
         public class GetAuthorWithPentaParamArgs
         {
@@ -693,7 +705,7 @@ namespace NpgsqlDapperLegacyExampleGen
             return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetAuthorWithPentaParamRow>(GetAuthorWithPentaParamSql, queryParams, transaction: this.Transaction);
         }
 
-        private const string CreateAuthorWithMetadataSql = "INSERT INTO authors (id, name, bio, metadata) VALUES (@id, @name, @bio, @metadata) RETURNING id, name, bio, created_at, updated_at, metadata";
+        private const string CreateAuthorWithMetadataSql = "INSERT INTO authors (id, name, bio, metadata) VALUES (@id, @name, @bio, @metadata) RETURNING id, name, bio, created_at, updated_at, metadata, status";
         public class CreateAuthorWithMetadataRow
         {
             public long Id { get; set; }
@@ -702,6 +714,7 @@ namespace NpgsqlDapperLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
+            public AuthorStatus? Status { get; set; }
         };
         public class CreateAuthorWithMetadataArgs
         {
@@ -731,7 +744,7 @@ namespace NpgsqlDapperLegacyExampleGen
             return await this.Transaction.Connection.QueryFirstOrDefaultAsync<CreateAuthorWithMetadataRow>(CreateAuthorWithMetadataSql, queryParams, transaction: this.Transaction);
         }
 
-        private const string GetAuthorsWithJsonMetadataSql = "SELECT authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at, authors.metadata, books.name as book_name FROM authors LEFT JOIN books ON authors.id = books.author_id WHERE authors.metadata IS NOT NULL ORDER BY authors.name";
+        private const string GetAuthorsWithJsonMetadataSql = "SELECT authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at, authors.metadata, authors.status, books.name as book_name FROM authors LEFT JOIN books ON authors.id = books.author_id WHERE authors.metadata IS NOT NULL ORDER BY authors.name";
         public class GetAuthorsWithJsonMetadataRow
         {
             public Author Author { get; set; }
@@ -747,7 +760,7 @@ namespace NpgsqlDapperLegacyExampleGen
                     {
                         var result = new List<GetAuthorsWithJsonMetadataRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new GetAuthorsWithJsonMetadataRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)) }, BookName = reader.IsDBNull(6) ? null : reader.GetString(6) });
+                            result.Add(new GetAuthorsWithJsonMetadataRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? (AuthorStatus? )null : reader.GetString(6).ToAuthorStatus() }, BookName = reader.IsDBNull(7) ? null : reader.GetString(7) });
                         return result;
                     }
                 }
@@ -763,7 +776,7 @@ namespace NpgsqlDapperLegacyExampleGen
                 {
                     var result = new List<GetAuthorsWithJsonMetadataRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetAuthorsWithJsonMetadataRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)) }, BookName = reader.IsDBNull(6) ? null : reader.GetString(6) });
+                        result.Add(new GetAuthorsWithJsonMetadataRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? (AuthorStatus? )null : reader.GetString(6).ToAuthorStatus() }, BookName = reader.IsDBNull(7) ? null : reader.GetString(7) });
                     return result;
                 }
             }
