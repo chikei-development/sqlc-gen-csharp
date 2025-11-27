@@ -1,10 +1,13 @@
+CREATE TYPE author_status AS ENUM ('active', 'inactive', 'pending');
+
 CREATE TABLE authors (
     id BIGSERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     bio TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
-    metadata JSON
+    metadata JSON,
+    status author_status DEFAULT 'pending'
 );
 
 CREATE TABLE books (

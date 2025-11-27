@@ -224,7 +224,7 @@ public abstract class DbDriver
         }
     }
 
-    private string GetCsharpTypeForTableColumn(Plugin.Column tableColumn)
+    protected virtual string GetCsharpTypeForTableColumn(Plugin.Column tableColumn)
     {
         if (string.IsNullOrEmpty(tableColumn.Type.Name))
             return "object";

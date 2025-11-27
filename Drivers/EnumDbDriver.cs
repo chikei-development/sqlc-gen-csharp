@@ -17,7 +17,7 @@ public abstract class EnumDbDriver : DbDriver
 
         foreach (var schemaEnums in Enums)
             foreach (var e in schemaEnums.Value)
-                NullableTypes.Add(e.Key.ToModelName(schemaEnums.Key, DefaultSchema));
+                NullableTypes.Add(EnumToModelName(schemaEnums.Key, e.Value));
     }
 
     public virtual MemberDeclarationSyntax[] GetEnumExtensionsMembers(
@@ -40,19 +40,16 @@ public abstract class EnumDbDriver : DbDriver
                 };
                 """
                 )!,
-            }.AddRangeIf(
-                [
-                    ParseMemberDeclaration(
-                        $$"""
-                            public static {{name}} To{{name}}(this string me)
-                            {
-                                return StringToEnum[me];
-                            }
-                        """
-                    )!,
-                ],
-                !Options.UseDapper
-            ),
+            },
+            // Always generate extension method even with Dapper, as it's needed for embedded tables with enums
+            ParseMemberDeclaration(
+                $$"""
+                    public static {{name}} To{{name}}(this string me)
+                    {
+                        return StringToEnum[me];
+                    }
+                """
+            )!,
         ];
     }
 
@@ -78,6 +75,13 @@ public abstract class EnumDbDriver : DbDriver
         if (GetEnumType(column) is not null)
             return EnumToCsharpDataType(column);
         return base.GetCsharpTypeWithoutNullableSuffix(column, query);
+    }
+
+    protected override string GetCsharpTypeForTableColumn(Plugin.Column tableColumn)
+    {
+        if (GetEnumType(tableColumn) is not null)
+            return EnumToCsharpDataType(tableColumn);
+        return base.GetCsharpTypeForTableColumn(tableColumn);
     }
 
     private static Dictionary<string, Dictionary<string, Enum>> ConstructEnumsLookup(

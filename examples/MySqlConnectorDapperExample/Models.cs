@@ -101,6 +101,11 @@ public static class BiosBioTypeExtensions
         ["Biography"] = BiosBioType.Biography,
         ["Memoir"] = BiosBioType.Memoir
     };
+    public static BiosBioType ToBiosBioType(this string me)
+    {
+        return StringToEnum[me];
+    }
+
     public static HashSet<BiosBioType> ToBiosBioTypeSet(this string me)
     {
         return new HashSet<BiosBioType>(me.Split(',').ToList().Select(v => StringToEnum[v]));
@@ -124,6 +129,11 @@ public static class BiosAuthorTypeExtensions
         ["Editor"] = BiosAuthorType.Editor,
         ["Translator"] = BiosAuthorType.Translator
     };
+    public static BiosAuthorType ToBiosAuthorType(this string me)
+    {
+        return StringToEnum[me];
+    }
+
     public static HashSet<BiosAuthorType> ToBiosAuthorTypeSet(this string me)
     {
         return new HashSet<BiosAuthorType>(me.Split(',').ToList().Select(v => StringToEnum[v]));
@@ -147,6 +157,11 @@ public static class MysqlStringTypesCEnumExtensions
         ["medium"] = MysqlStringTypesCEnum.Medium,
         ["big"] = MysqlStringTypesCEnum.Big
     };
+    public static MysqlStringTypesCEnum ToMysqlStringTypesCEnum(this string me)
+    {
+        return StringToEnum[me];
+    }
+
     public static HashSet<MysqlStringTypesCEnum> ToMysqlStringTypesCEnumSet(this string me)
     {
         return new HashSet<MysqlStringTypesCEnum>(me.Split(',').ToList().Select(v => StringToEnum[v]));
@@ -170,6 +185,11 @@ public static class MysqlStringTypesCSetExtensions
         ["coffee"] = MysqlStringTypesCSet.Coffee,
         ["milk"] = MysqlStringTypesCSet.Milk
     };
+    public static MysqlStringTypesCSet ToMysqlStringTypesCSet(this string me)
+    {
+        return StringToEnum[me];
+    }
+
     public static HashSet<MysqlStringTypesCSet> ToMysqlStringTypesCSetSet(this string me)
     {
         return new HashSet<MysqlStringTypesCSet>(me.Split(',').ToList().Select(v => StringToEnum[v]));
