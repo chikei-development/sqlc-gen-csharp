@@ -585,18 +585,10 @@ public sealed class NpgsqlDriver
                         {{GetEnumMappingStatements("dataSourceBuilder", enums).JoinByNewLine()}}
                     }
 
-                    private {{AddNullableSuffixIfNeeded(
-                    TransactionClassName,
-                    false
-                )}} {{Variable.Transaction.AsPropertyName()}} { get; }
-                    private {{AddNullableSuffixIfNeeded(
-                    "NpgsqlDataSource",
-                    false
-                )}} {{Variable.DataSource.AsPropertyName()}} { get; }
-                    private {{AddNullableSuffixIfNeeded(
-                    "string",
-                    false
-                )}} {{Variable.ConnectionString.AsPropertyName()}} { get; }
+                    // This being generated code, we can suppress the warning about non-nullable fields not being initialized
+                    private {{TransactionClassName}} {{Variable.Transaction.AsPropertyName()}} { get; } = null!;
+                    private {{DataSourceClassName}} {{Variable.DataSource.AsPropertyName()}} { get; } = null!;
+                    private {{AddNullableSuffixIfNeeded("string", false)}} {{Variable.ConnectionString.AsPropertyName()}} { get; }
                 }
                 """
             )!;
@@ -722,10 +714,10 @@ public sealed class NpgsqlDriver
         var transactionProperty = Variable.Transaction.AsPropertyName();
         var commandVar = Variable.Command.AsVarName();
         return $$"""
-            using (var {{commandVar}} = this.{{transactionProperty}}.Connection.CreateCommand())
+            using (var {{commandVar}} = {{transactionProperty}}.Connection.CreateCommand())
             {
                 {{commandVar}}.CommandText = {{sqlVar}};
-                {{commandVar}}.Transaction = this.{{transactionProperty}};
+                {{commandVar}}.Transaction = {{transactionProperty}};
             """;
     }
 

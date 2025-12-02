@@ -97,13 +97,12 @@
               },
               {
                 "name": "status",
-                "notNull": true,
                 "length": -1,
                 "table": {
                   "name": "authors"
                 },
                 "type": {
-                  "name": "author_status"
+                  "name": "authors_status"
                 }
               }
             ]
@@ -763,7 +762,7 @@
         ],
         "enums": [
           {
-            "name": "author_status",
+            "name": "authors_status",
             "vals": [
               "active",
               "inactive",
@@ -32764,13 +32763,12 @@
         },
         {
           "name": "status",
-          "notNull": true,
           "length": -1,
           "table": {
             "name": "authors"
           },
           "type": {
-            "name": "author_status"
+            "name": "authors_status"
           },
           "originalName": "status"
         }
@@ -32828,7 +32826,7 @@
       "filename": "query.sql"
     },
     {
-      "text": "SELECT id, name, bio, created_at, updated_at, metadata, status \nFROM authors\nORDER BY name\nLIMIT $2\nOFFSET $1",
+      "text": "SELECT id, name, bio, created_at, updated_at, metadata, status\nFROM authors\nORDER BY name\nLIMIT\n    $2\n    OFFSET $1",
       "name": "ListAuthors",
       "cmd": ":many",
       "columns": [
@@ -32905,13 +32903,12 @@
         },
         {
           "name": "status",
-          "notNull": true,
           "length": -1,
           "table": {
             "name": "authors"
           },
           "type": {
-            "name": "author_status"
+            "name": "authors_status"
           },
           "originalName": "status"
         }
@@ -32945,7 +32942,7 @@
       "filename": "query.sql"
     },
     {
-      "text": "UPDATE authors\nSET status = $1\nWHERE id = $2",
+      "text": "UPDATE authors\nSET status = $1::authors_status\nWHERE id = $2",
       "name": "UpdateAuthorStatus",
       "cmd": ":exec",
       "parameters": [
@@ -32955,14 +32952,9 @@
             "name": "status",
             "notNull": true,
             "length": -1,
-            "table": {
-              "schema": "public",
-              "name": "authors"
-            },
             "type": {
-              "name": "author_status"
-            },
-            "originalName": "status"
+              "name": "authors_status"
+            }
           }
         },
         {
@@ -32971,6 +32963,7 @@
             "name": "id",
             "notNull": true,
             "length": -1,
+            "isNamedParam": true,
             "table": {
               "name": "authors"
             },
@@ -33061,13 +33054,12 @@
         },
         {
           "name": "status",
-          "notNull": true,
           "length": -1,
           "table": {
             "name": "authors"
           },
           "type": {
-            "name": "author_status"
+            "name": "authors_status"
           },
           "originalName": "status"
         }
@@ -33204,13 +33196,12 @@
         },
         {
           "name": "status",
-          "notNull": true,
           "length": -1,
           "table": {
             "name": "authors"
           },
           "type": {
-            "name": "author_status"
+            "name": "authors_status"
           },
           "originalName": "status"
         }
@@ -33471,13 +33462,12 @@
         },
         {
           "name": "status",
-          "notNull": true,
           "length": -1,
           "table": {
             "name": "authors"
           },
           "type": {
-            "name": "author_status"
+            "name": "authors_status"
           },
           "originalName": "status"
         }
@@ -33579,13 +33569,12 @@
         },
         {
           "name": "status",
-          "notNull": true,
           "length": -1,
           "table": {
             "name": "authors"
           },
           "type": {
-            "name": "author_status"
+            "name": "authors_status"
           },
           "originalName": "status"
         }
@@ -33739,13 +33728,12 @@
         },
         {
           "name": "status",
-          "notNull": true,
           "length": -1,
           "table": {
             "name": "authors"
           },
           "type": {
-            "name": "author_status"
+            "name": "authors_status"
           },
           "originalName": "status"
         }
@@ -33845,13 +33833,12 @@
         },
         {
           "name": "status",
-          "notNull": true,
           "length": -1,
           "table": {
             "name": "authors"
           },
           "type": {
-            "name": "author_status"
+            "name": "authors_status"
           },
           "originalName": "status"
         }
@@ -34068,13 +34055,12 @@
         },
         {
           "name": "status",
-          "notNull": true,
           "length": -1,
           "table": {
             "name": "authors"
           },
           "type": {
-            "name": "author_status"
+            "name": "authors_status"
           },
           "originalName": "status"
         },
@@ -34315,13 +34301,12 @@
         },
         {
           "name": "status",
-          "notNull": true,
           "length": -1,
           "table": {
             "name": "authors"
           },
           "type": {
-            "name": "author_status"
+            "name": "authors_status"
           },
           "originalName": "status"
         }
@@ -34456,13 +34441,12 @@
         },
         {
           "name": "status",
-          "notNull": true,
           "length": -1,
           "table": {
             "name": "authors"
           },
           "type": {
-            "name": "author_status"
+            "name": "authors_status"
           },
           "originalName": "status"
         }
@@ -34567,13 +34551,12 @@
         },
         {
           "name": "status",
-          "notNull": true,
           "length": -1,
           "table": {
             "name": "authors"
           },
           "type": {
-            "name": "author_status"
+            "name": "authors_status"
           },
           "originalName": "status"
         }

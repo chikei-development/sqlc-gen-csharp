@@ -2,7 +2,7 @@ CREATE TABLE authors (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     name TEXT NOT NULL,
     bio TEXT,
-    status ENUM('active', 'inactive', 'pending') NOT NULL DEFAULT 'pending'
+    status ENUM('active', 'inactive', 'pending') DEFAULT 'pending'
 );
 
 CREATE TABLE books (

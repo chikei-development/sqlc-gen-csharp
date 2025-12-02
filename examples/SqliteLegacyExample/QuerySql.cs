@@ -12,6 +12,7 @@ namespace SqliteLegacyExampleGen
     using NodaTime.Text;
     using System;
     using System.Collections.Generic;
+    using System.Data;
     using System.Threading.Tasks;
 
     public class QuerySql
@@ -52,7 +53,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task<GetAuthorRow> GetAuthor(GetAuthorArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -69,7 +70,7 @@ namespace SqliteLegacyExampleGen
                                     Id = reader.GetInt32(0),
                                     Name = reader.GetString(1),
                                     Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
-                                    Status = reader.GetString(3)
+                                    Status = reader.IsDBNull(3) ? null : reader.GetString(3)
                                 };
                             }
                         }
@@ -79,9 +80,9 @@ namespace SqliteLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetAuthorSql;
                 command.Transaction = this.Transaction;
@@ -95,7 +96,7 @@ namespace SqliteLegacyExampleGen
                             Id = reader.GetInt32(0),
                             Name = reader.GetString(1),
                             Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
-                            Status = reader.GetString(3)
+                            Status = reader.IsDBNull(3) ? null : reader.GetString(3)
                         };
                     }
                 }
@@ -115,7 +116,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task<GetAuthorEmbedRow> GetAuthorEmbed(GetAuthorEmbedArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -134,7 +135,7 @@ namespace SqliteLegacyExampleGen
                                         Id = reader.GetInt32(0),
                                         Name = reader.GetString(1),
                                         Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
-                                        Status = reader.GetString(3)
+                                        Status = reader.IsDBNull(3) ? null : reader.GetString(3)
                                     }
                                 };
                             }
@@ -145,9 +146,9 @@ namespace SqliteLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetAuthorEmbedSql;
                 command.Transaction = this.Transaction;
@@ -163,7 +164,7 @@ namespace SqliteLegacyExampleGen
                                 Id = reader.GetInt32(0),
                                 Name = reader.GetString(1),
                                 Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
-                                Status = reader.GetString(3)
+                                Status = reader.IsDBNull(3) ? null : reader.GetString(3)
                             }
                         };
                     }
@@ -188,7 +189,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task<List<ListAuthorsRow>> ListAuthors(ListAuthorsArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -201,16 +202,16 @@ namespace SqliteLegacyExampleGen
                         {
                             var result = new List<ListAuthorsRow>();
                             while (await reader.ReadAsync())
-                                result.Add(new ListAuthorsRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3) });
+                                result.Add(new ListAuthorsRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.IsDBNull(3) ? null : reader.GetString(3) });
                             return result;
                         }
                     }
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = ListAuthorsSql;
                 command.Transaction = this.Transaction;
@@ -220,7 +221,7 @@ namespace SqliteLegacyExampleGen
                 {
                     var result = new List<ListAuthorsRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new ListAuthorsRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3) });
+                        result.Add(new ListAuthorsRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.IsDBNull(3) ? null : reader.GetString(3) });
                     return result;
                 }
             }
@@ -234,14 +235,14 @@ namespace SqliteLegacyExampleGen
         };
         public async Task UpdateAuthorStatus(UpdateAuthorStatusArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
                     await connection.OpenAsync();
                     using (var command = new SqliteCommand(UpdateAuthorStatusSql, connection))
                     {
-                        command.Parameters.AddWithValue("@status", args.Status);
+                        command.Parameters.AddWithValue("@status", args.Status ?? (object)DBNull.Value);
                         command.Parameters.AddWithValue("@id", args.Id);
                         await command.ExecuteNonQueryAsync();
                         return;
@@ -249,13 +250,13 @@ namespace SqliteLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = UpdateAuthorStatusSql;
                 command.Transaction = this.Transaction;
-                command.Parameters.AddWithValue("@status", args.Status);
+                command.Parameters.AddWithValue("@status", args.Status ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@id", args.Id);
                 await command.ExecuteNonQueryAsync();
             }
@@ -270,7 +271,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task CreateAuthor(CreateAuthorArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -286,9 +287,9 @@ namespace SqliteLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = CreateAuthorSql;
                 command.Transaction = this.Transaction;
@@ -308,7 +309,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task CreateAuthorIncludingComment(CreateAuthorIncludingCommentArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -324,9 +325,9 @@ namespace SqliteLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = CreateAuthorIncludingCommentSql;
                 command.Transaction = this.Transaction;
@@ -349,7 +350,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task<int> CreateAuthorReturnId(CreateAuthorReturnIdArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -364,9 +365,9 @@ namespace SqliteLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = CreateAuthorReturnIdSql;
                 command.Transaction = this.Transaction;
@@ -391,7 +392,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task<GetAuthorByIdRow> GetAuthorById(GetAuthorByIdArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -408,7 +409,7 @@ namespace SqliteLegacyExampleGen
                                     Id = reader.GetInt32(0),
                                     Name = reader.GetString(1),
                                     Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
-                                    Status = reader.GetString(3)
+                                    Status = reader.IsDBNull(3) ? null : reader.GetString(3)
                                 };
                             }
                         }
@@ -418,9 +419,9 @@ namespace SqliteLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetAuthorByIdSql;
                 command.Transaction = this.Transaction;
@@ -434,7 +435,7 @@ namespace SqliteLegacyExampleGen
                             Id = reader.GetInt32(0),
                             Name = reader.GetString(1),
                             Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
-                            Status = reader.GetString(3)
+                            Status = reader.IsDBNull(3) ? null : reader.GetString(3)
                         };
                     }
                 }
@@ -457,7 +458,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task<List<GetAuthorByNamePatternRow>> GetAuthorByNamePattern(GetAuthorByNamePatternArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -469,16 +470,16 @@ namespace SqliteLegacyExampleGen
                         {
                             var result = new List<GetAuthorByNamePatternRow>();
                             while (await reader.ReadAsync())
-                                result.Add(new GetAuthorByNamePatternRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3) });
+                                result.Add(new GetAuthorByNamePatternRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.IsDBNull(3) ? null : reader.GetString(3) });
                             return result;
                         }
                     }
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetAuthorByNamePatternSql;
                 command.Transaction = this.Transaction;
@@ -487,7 +488,7 @@ namespace SqliteLegacyExampleGen
                 {
                     var result = new List<GetAuthorByNamePatternRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetAuthorByNamePatternRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3) });
+                        result.Add(new GetAuthorByNamePatternRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.IsDBNull(3) ? null : reader.GetString(3) });
                     return result;
                 }
             }
@@ -500,7 +501,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task DeleteAuthor(DeleteAuthorArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -514,9 +515,9 @@ namespace SqliteLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = DeleteAuthorSql;
                 command.Transaction = this.Transaction;
@@ -528,7 +529,7 @@ namespace SqliteLegacyExampleGen
         private const string DeleteAllAuthorsSql = "DELETE FROM authors";
         public async Task DeleteAllAuthors()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -541,9 +542,9 @@ namespace SqliteLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = DeleteAllAuthorsSql;
                 command.Transaction = this.Transaction;
@@ -558,7 +559,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task<long> UpdateAuthors(UpdateAuthorsArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -571,9 +572,9 @@ namespace SqliteLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = UpdateAuthorsSql;
                 command.Transaction = this.Transaction;
@@ -598,7 +599,7 @@ namespace SqliteLegacyExampleGen
         {
             var transformedSql = GetAuthorsByIdsSql;
             transformedSql = Utils.TransformQueryForSliceArgs(transformedSql, args.Ids.Length, "ids");
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -611,16 +612,16 @@ namespace SqliteLegacyExampleGen
                         {
                             var result = new List<GetAuthorsByIdsRow>();
                             while (await reader.ReadAsync())
-                                result.Add(new GetAuthorsByIdsRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3) });
+                                result.Add(new GetAuthorsByIdsRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.IsDBNull(3) ? null : reader.GetString(3) });
                             return result;
                         }
                     }
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = transformedSql;
                 command.Transaction = this.Transaction;
@@ -630,7 +631,7 @@ namespace SqliteLegacyExampleGen
                 {
                     var result = new List<GetAuthorsByIdsRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetAuthorsByIdsRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3) });
+                        result.Add(new GetAuthorsByIdsRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.IsDBNull(3) ? null : reader.GetString(3) });
                     return result;
                 }
             }
@@ -654,7 +655,7 @@ namespace SqliteLegacyExampleGen
             var transformedSql = GetAuthorsByIdsAndNamesSql;
             transformedSql = Utils.TransformQueryForSliceArgs(transformedSql, args.Ids.Length, "ids");
             transformedSql = Utils.TransformQueryForSliceArgs(transformedSql, args.Names.Length, "names");
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -669,16 +670,16 @@ namespace SqliteLegacyExampleGen
                         {
                             var result = new List<GetAuthorsByIdsAndNamesRow>();
                             while (await reader.ReadAsync())
-                                result.Add(new GetAuthorsByIdsAndNamesRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3) });
+                                result.Add(new GetAuthorsByIdsAndNamesRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.IsDBNull(3) ? null : reader.GetString(3) });
                             return result;
                         }
                     }
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = transformedSql;
                 command.Transaction = this.Transaction;
@@ -690,7 +691,7 @@ namespace SqliteLegacyExampleGen
                 {
                     var result = new List<GetAuthorsByIdsAndNamesRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetAuthorsByIdsAndNamesRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3) });
+                        result.Add(new GetAuthorsByIdsAndNamesRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.IsDBNull(3) ? null : reader.GetString(3) });
                     return result;
                 }
             }
@@ -708,7 +709,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task<int> CreateBook(CreateBookArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -723,9 +724,9 @@ namespace SqliteLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = CreateBookSql;
                 command.Transaction = this.Transaction;
@@ -744,7 +745,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task<List<ListAllAuthorsBooksRow>> ListAllAuthorsBooks()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -755,16 +756,16 @@ namespace SqliteLegacyExampleGen
                         {
                             var result = new List<ListAllAuthorsBooksRow>();
                             while (await reader.ReadAsync())
-                                result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3) }, Book = new Book { Id = reader.GetInt32(4), Name = reader.GetString(5), AuthorId = reader.GetInt32(6), Description = reader.IsDBNull(7) ? null : reader.GetString(7) } });
+                                result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.IsDBNull(3) ? null : reader.GetString(3) }, Book = new Book { Id = reader.GetInt32(4), Name = reader.GetString(5), AuthorId = reader.GetInt32(6), Description = reader.IsDBNull(7) ? null : reader.GetString(7) } });
                             return result;
                         }
                     }
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = ListAllAuthorsBooksSql;
                 command.Transaction = this.Transaction;
@@ -772,7 +773,7 @@ namespace SqliteLegacyExampleGen
                 {
                     var result = new List<ListAllAuthorsBooksRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3) }, Book = new Book { Id = reader.GetInt32(4), Name = reader.GetString(5), AuthorId = reader.GetInt32(6), Description = reader.IsDBNull(7) ? null : reader.GetString(7) } });
+                        result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.IsDBNull(3) ? null : reader.GetString(3) }, Book = new Book { Id = reader.GetInt32(4), Name = reader.GetString(5), AuthorId = reader.GetInt32(6), Description = reader.IsDBNull(7) ? null : reader.GetString(7) } });
                     return result;
                 }
             }
@@ -786,7 +787,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task<List<GetDuplicateAuthorsRow>> GetDuplicateAuthors()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -797,16 +798,16 @@ namespace SqliteLegacyExampleGen
                         {
                             var result = new List<GetDuplicateAuthorsRow>();
                             while (await reader.ReadAsync())
-                                result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3) }, Author2 = new Author { Id = reader.GetInt32(4), Name = reader.GetString(5), Bio = reader.IsDBNull(6) ? null : reader.GetString(6), Status = reader.GetString(7) } });
+                                result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.IsDBNull(3) ? null : reader.GetString(3) }, Author2 = new Author { Id = reader.GetInt32(4), Name = reader.GetString(5), Bio = reader.IsDBNull(6) ? null : reader.GetString(6), Status = reader.IsDBNull(7) ? null : reader.GetString(7) } });
                             return result;
                         }
                     }
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetDuplicateAuthorsSql;
                 command.Transaction = this.Transaction;
@@ -814,7 +815,7 @@ namespace SqliteLegacyExampleGen
                 {
                     var result = new List<GetDuplicateAuthorsRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3) }, Author2 = new Author { Id = reader.GetInt32(4), Name = reader.GetString(5), Bio = reader.IsDBNull(6) ? null : reader.GetString(6), Status = reader.GetString(7) } });
+                        result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.IsDBNull(3) ? null : reader.GetString(3) }, Author2 = new Author { Id = reader.GetInt32(4), Name = reader.GetString(5), Bio = reader.IsDBNull(6) ? null : reader.GetString(6), Status = reader.IsDBNull(7) ? null : reader.GetString(7) } });
                     return result;
                 }
             }
@@ -835,7 +836,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task<List<GetAuthorsByBookNameRow>> GetAuthorsByBookName(GetAuthorsByBookNameArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -847,16 +848,16 @@ namespace SqliteLegacyExampleGen
                         {
                             var result = new List<GetAuthorsByBookNameRow>();
                             while (await reader.ReadAsync())
-                                result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3), Book = new Book { Id = reader.GetInt32(4), Name = reader.GetString(5), AuthorId = reader.GetInt32(6), Description = reader.IsDBNull(7) ? null : reader.GetString(7) } });
+                                result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.IsDBNull(3) ? null : reader.GetString(3), Book = new Book { Id = reader.GetInt32(4), Name = reader.GetString(5), AuthorId = reader.GetInt32(6), Description = reader.IsDBNull(7) ? null : reader.GetString(7) } });
                             return result;
                         }
                     }
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetAuthorsByBookNameSql;
                 command.Transaction = this.Transaction;
@@ -865,7 +866,7 @@ namespace SqliteLegacyExampleGen
                 {
                     var result = new List<GetAuthorsByBookNameRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3), Book = new Book { Id = reader.GetInt32(4), Name = reader.GetString(5), AuthorId = reader.GetInt32(6), Description = reader.IsDBNull(7) ? null : reader.GetString(7) } });
+                        result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.IsDBNull(3) ? null : reader.GetString(3), Book = new Book { Id = reader.GetInt32(4), Name = reader.GetString(5), AuthorId = reader.GetInt32(6), Description = reader.IsDBNull(7) ? null : reader.GetString(7) } });
                     return result;
                 }
             }
@@ -886,7 +887,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task<GetAuthorByIdWithMultipleNamedParamRow> GetAuthorByIdWithMultipleNamedParam(GetAuthorByIdWithMultipleNamedParamArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -904,7 +905,7 @@ namespace SqliteLegacyExampleGen
                                     Id = reader.GetInt32(0),
                                     Name = reader.GetString(1),
                                     Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
-                                    Status = reader.GetString(3)
+                                    Status = reader.IsDBNull(3) ? null : reader.GetString(3)
                                 };
                             }
                         }
@@ -914,9 +915,9 @@ namespace SqliteLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetAuthorByIdWithMultipleNamedParamSql;
                 command.Transaction = this.Transaction;
@@ -931,7 +932,7 @@ namespace SqliteLegacyExampleGen
                             Id = reader.GetInt32(0),
                             Name = reader.GetString(1),
                             Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
-                            Status = reader.GetString(3)
+                            Status = reader.IsDBNull(3) ? null : reader.GetString(3)
                         };
                     }
                 }
@@ -955,7 +956,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task<List<GetAuthorsWithDuplicateParamsRow>> GetAuthorsWithDuplicateParams(GetAuthorsWithDuplicateParamsArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -968,16 +969,16 @@ namespace SqliteLegacyExampleGen
                         {
                             var result = new List<GetAuthorsWithDuplicateParamsRow>();
                             while (await reader.ReadAsync())
-                                result.Add(new GetAuthorsWithDuplicateParamsRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3) });
+                                result.Add(new GetAuthorsWithDuplicateParamsRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.IsDBNull(3) ? null : reader.GetString(3) });
                             return result;
                         }
                     }
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetAuthorsWithDuplicateParamsSql;
                 command.Transaction = this.Transaction;
@@ -987,7 +988,7 @@ namespace SqliteLegacyExampleGen
                 {
                     var result = new List<GetAuthorsWithDuplicateParamsRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetAuthorsWithDuplicateParamsRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3) });
+                        result.Add(new GetAuthorsWithDuplicateParamsRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.IsDBNull(3) ? null : reader.GetString(3) });
                     return result;
                 }
             }
@@ -1007,7 +1008,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task<GetAuthorWithTripleNameParamRow> GetAuthorWithTripleNameParam(GetAuthorWithTripleNameParamArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -1024,7 +1025,7 @@ namespace SqliteLegacyExampleGen
                                     Id = reader.GetInt32(0),
                                     Name = reader.GetString(1),
                                     Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
-                                    Status = reader.GetString(3)
+                                    Status = reader.IsDBNull(3) ? null : reader.GetString(3)
                                 };
                             }
                         }
@@ -1034,9 +1035,9 @@ namespace SqliteLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetAuthorWithTripleNameParamSql;
                 command.Transaction = this.Transaction;
@@ -1050,7 +1051,7 @@ namespace SqliteLegacyExampleGen
                             Id = reader.GetInt32(0),
                             Name = reader.GetString(1),
                             Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
-                            Status = reader.GetString(3)
+                            Status = reader.IsDBNull(3) ? null : reader.GetString(3)
                         };
                     }
                 }
@@ -1073,7 +1074,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task<GetAuthorWithQuadrupleParamRow> GetAuthorWithQuadrupleParam(GetAuthorWithQuadrupleParamArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -1090,7 +1091,7 @@ namespace SqliteLegacyExampleGen
                                     Id = reader.GetInt32(0),
                                     Name = reader.GetString(1),
                                     Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
-                                    Status = reader.GetString(3)
+                                    Status = reader.IsDBNull(3) ? null : reader.GetString(3)
                                 };
                             }
                         }
@@ -1100,9 +1101,9 @@ namespace SqliteLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetAuthorWithQuadrupleParamSql;
                 command.Transaction = this.Transaction;
@@ -1116,7 +1117,7 @@ namespace SqliteLegacyExampleGen
                             Id = reader.GetInt32(0),
                             Name = reader.GetString(1),
                             Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
-                            Status = reader.GetString(3)
+                            Status = reader.IsDBNull(3) ? null : reader.GetString(3)
                         };
                     }
                 }
@@ -1133,7 +1134,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task UpdateUser(UpdateUserArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -1148,9 +1149,9 @@ namespace SqliteLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = UpdateUserSql;
                 command.Transaction = this.Transaction;
@@ -1172,7 +1173,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task<GetUserByIdRow> GetUserById(GetUserByIdArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -1197,9 +1198,9 @@ namespace SqliteLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetUserByIdSql;
                 command.Transaction = this.Transaction;
@@ -1236,7 +1237,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task InsertSqliteTypes(InsertSqliteTypesArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -1259,9 +1260,9 @@ namespace SqliteLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = InsertSqliteTypesSql;
                 command.Transaction = this.Transaction;
@@ -1322,7 +1323,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task<GetSqliteTypesRow> GetSqliteTypes()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -1354,9 +1355,9 @@ namespace SqliteLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetSqliteTypesSql;
                 command.Transaction = this.Transaction;
@@ -1395,7 +1396,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task<GetSqliteTypesCntRow> GetSqliteTypesCnt()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -1422,9 +1423,9 @@ namespace SqliteLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetSqliteTypesCntSql;
                 command.Transaction = this.Transaction;
@@ -1456,7 +1457,7 @@ namespace SqliteLegacyExampleGen
         };
         public async Task<GetSqliteFunctionsRow> GetSqliteFunctions()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -1481,9 +1482,9 @@ namespace SqliteLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetSqliteFunctionsSql;
                 command.Transaction = this.Transaction;
@@ -1507,7 +1508,7 @@ namespace SqliteLegacyExampleGen
         private const string DeleteAllSqliteTypesSql = "DELETE FROM types_sqlite";
         public async Task DeleteAllSqliteTypes()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
@@ -1520,9 +1521,9 @@ namespace SqliteLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = DeleteAllSqliteTypesSql;
                 command.Transaction = this.Transaction;

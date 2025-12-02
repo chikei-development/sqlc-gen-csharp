@@ -956,7 +956,7 @@ public static class PostgresTests
                              Id = {{Consts.BojackId}},
                              Name = {{Consts.BojackAuthor}},
                              Bio = {{Consts.BojackTheme}},
-                             Status = AuthorStatus.Active
+                             Status = AuthorsStatus.Pending
                          };
                          actual = await QuerySql.GetAuthor(new QuerySql.GetAuthorArgs { Name = {{Consts.BojackAuthor}} });
                          AssertSingularEquals(expected, actual{{Consts.UnknownRecordValuePlaceholder}});
@@ -1337,12 +1337,12 @@ public static class PostgresTests
         {
             Impl = $$"""
                      [Test]
-                     [TestCase(AuthorStatus.Active)]
-                     [TestCase(AuthorStatus.Inactive)]
-                     [TestCase(AuthorStatus.Pending)]
-                     public async Task TestPostgresAuthorStatusEnum(AuthorStatus status)
+                     [TestCase(AuthorsStatus.Active)]
+                     [TestCase(AuthorsStatus.Inactive)]
+                     [TestCase(AuthorsStatus.Pending)]
+                     public async Task TestPostgresAuthorStatusEnum(AuthorsStatus status)
                      {
-                         var result = (await QuerySql.CreateAuthorEmbed(new QuerySql.CreateAuthorEmbedArgs { Id = 88888, Name = "Status Test Author", Bio = "Testing author status enum" })).Value.Author.Value;
+                         var result = (await QuerySql.CreateAuthorEmbed(new QuerySql.CreateAuthorEmbedArgs { Id = 88888, Name = "Status Test Author", Bio = "Testing author status enum" }))?.Author;
                         // now update the status
                         await QuerySql.UpdateAuthorStatus(new QuerySql.UpdateAuthorStatusArgs { Status = status, Id = 88888 });
                         
@@ -1355,10 +1355,10 @@ public static class PostgresTests
                         };
 
                         // get the actual author to verify
-                        result = (await QuerySql.GetAuthorEmbed(new QuerySql.GetAuthorEmbedArgs { Name = "Status Test Author" })).Value.Author.Value;
+                        result = (await QuerySql.GetAuthorEmbed(new QuerySql.GetAuthorEmbedArgs { Name = "Status Test Author" }))?.Author;
                         Assert.That(result, Is.Not.Null);
-                        AssertSingularEquals(expected, result);
-                        void AssertSingularEquals(Author x, Author y, AuthorStatus? statusOverride = null)
+                        AssertSingularEquals(expected, result ?? throw new InvalidOperationException());
+                        void AssertSingularEquals(Author x, Author y, AuthorsStatus? statusOverride = null)
                         {
                             Assert.That(x.Id, Is.EqualTo(y.Id));
                             Assert.That(x.Name, Is.EqualTo(y.Name));

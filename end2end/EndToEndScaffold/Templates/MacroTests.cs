@@ -20,15 +20,13 @@ public static class MacroTests
                               {
                                   Id = {{Consts.BojackId}},
                                   Name = {{Consts.BojackAuthor}},
-                                  Bio = {{Consts.BojackTheme}},
-                                  Status = AuthorStatus.Active
+                                  Bio = {{Consts.BojackTheme}}
                               },
                               new QuerySql.GetAuthorByNamePatternRow
                               {
                                   Id = {{Consts.DrSeussId}},
                                   Name = {{Consts.DrSeussAuthor}},
-                                  Bio = {{Consts.DrSeussQuote}},
-                                  Status = AuthorStatus.Active
+                                  Bio = {{Consts.DrSeussQuote}}
                               }
                           };
                      
@@ -66,8 +64,7 @@ public static class MacroTests
                               {
                                   Id = {{Consts.BojackId}},
                                   Name = {{Consts.BojackAuthor}},
-                                  Bio = {{Consts.BojackTheme}},
-                                  Status = AuthorStatus.Active
+                                  Bio = {{Consts.BojackTheme}}
                               }
                           };
                      
@@ -86,7 +83,6 @@ public static class MacroTests
                               Assert.That(x.Id, Is.EqualTo(y.Id));
                               Assert.That(x.Name, Is.EqualTo(y.Name));
                               Assert.That(x.Bio, Is.EqualTo(y.Bio));
-                              Assert.That(x.Status, Is.EqualTo(y.Status));
                           }
                       }
                      """
@@ -109,7 +105,7 @@ public static class MacroTests
                                  { 
                                      Id = bojackId, 
                                      Name = {{Consts.BojackAuthor}}, 
-                                     Bio = {{Consts.BojackTheme}}
+                                     Bio = {{Consts.BojackTheme}} 
                                  },
                                  Book = new Book 
                                  { 
@@ -124,7 +120,7 @@ public static class MacroTests
                                  { 
                                      Id = drSeussId, 
                                      Name = {{Consts.DrSeussAuthor}}, 
-                                     Bio = {{Consts.DrSeussQuote}}
+                                     Bio = {{Consts.DrSeussQuote}},
                                  },
                                  Book = new Book 
                                  { 

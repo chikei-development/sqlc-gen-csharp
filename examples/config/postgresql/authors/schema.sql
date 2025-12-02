@@ -1,4 +1,4 @@
-CREATE TYPE author_status AS ENUM ('active', 'inactive', 'pending');
+CREATE TYPE authors_status AS ENUM ('active', 'inactive', 'pending');
 
 CREATE TABLE authors (
     id BIGSERIAL PRIMARY KEY,
@@ -7,7 +7,7 @@ CREATE TABLE authors (
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
     metadata JSON,
-    status author_status NOT NULL DEFAULT 'pending'
+    status authors_status DEFAULT 'pending'
 );
 
 CREATE TABLE books (

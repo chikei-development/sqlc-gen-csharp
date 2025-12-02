@@ -64,7 +64,7 @@ public abstract class DbDriver
         """;
 
     public readonly string TransactionConnectionNullExcetionThrow = $"""
-        if (this.{Variable.Transaction.AsPropertyName()}?.Connection == null || this.{Variable.Transaction.AsPropertyName()}?.Connection.State != System.Data.ConnectionState.Open)
+        if ({Variable.Transaction.AsPropertyName()}?.Connection == null || {Variable.Transaction.AsPropertyName()}?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
         """;
 
@@ -147,6 +147,7 @@ public abstract class DbDriver
         return new HashSet<string>
         {
             "System",
+            "System.Data",
             "System.Collections.Generic",
             "System.Threading.Tasks",
         }
@@ -385,7 +386,7 @@ public abstract class DbDriver
         var transactionProperty = Variable.Transaction.AsPropertyName();
         var commandVar = Variable.Command.AsVarName();
         return $$"""
-            using (var {{commandVar}} = this.{{transactionProperty}}.Connection.CreateCommand())
+            using (var {{commandVar}} = {{transactionProperty}}.Connection.CreateCommand())
             {
                 {{commandVar}}.CommandText = {{sqlVar}};
                 {{commandVar}}.Transaction = this.{{transactionProperty}};

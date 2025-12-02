@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text.Json;
 
 namespace MySqlConnectorExampleGen;
-public readonly record struct Author(long Id, string Name, string? Bio, AuthorsStatus Status);
+public readonly record struct Author(long Id, string Name, string? Bio, AuthorsStatus? Status);
 public readonly record struct Book(long Id, string Name, long AuthorId, string? Description);
 public readonly record struct User(int Id, DateTime? UpdatedAt);
 public readonly record struct MysqlNumericType(bool? CBool, bool? CBoolean, short? CTinyint, short? CSmallint, int? CMediumint, int? CInt, int? CInteger, long? CBigint, double? CFloat, decimal? CDecimal, decimal? CDec, decimal? CNumeric, decimal? CFixed, double? CDouble, double? CDoublePrecision);

@@ -11,7 +11,7 @@ using System.Text.Json;
 using System.Xml;
 
 namespace NpgsqlExampleGen;
-public readonly record struct Author(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorStatus Status);
+public readonly record struct Author(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorsStatus? Status);
 public readonly record struct Book(Guid Id, string Name, long AuthorId, string? Description);
 public readonly record struct User(int Id, DateTime? UpdatedAt);
 public readonly record struct PostgresNumericType(bool? CBoolean, byte[]? CBit, short? CSmallint, int? CInteger, long? CBigint, decimal? CDecimal, decimal? CNumeric, float? CReal, double? CDoublePrecision, decimal? CMoney);
@@ -23,7 +23,7 @@ public readonly record struct PostgresGeometricType(NpgsqlPoint? CPoint, NpgsqlL
 public readonly record struct PostgresSpecialType(Guid? CUuid, CEnum? CEnum, JsonElement? CJson, JsonElement? CJsonStringOverride, JsonElement? CJsonb, string? CJsonpath, XmlDocument? CXml, XmlDocument? CXmlStringOverride);
 public readonly record struct PostgresNotNullType(CEnum CEnumNotNull);
 public readonly record struct ExtendedBio(string AuthorName, string Name, ExtendedBioType? BioType);
-public enum AuthorStatus
+public enum AuthorsStatus
 {
     Invalid = 0, // reserved for invalid enum value
     Active = 1,
@@ -31,28 +31,28 @@ public enum AuthorStatus
     Pending = 3
 }
 
-public static class AuthorStatusExtensions
+public static class AuthorsStatusExtensions
 {
-    private static readonly Dictionary<string, AuthorStatus> StringToEnum = new Dictionary<string, AuthorStatus>()
+    private static readonly Dictionary<string, AuthorsStatus> StringToEnum = new Dictionary<string, AuthorsStatus>()
     {
-        [string.Empty] = AuthorStatus.Invalid,
-        ["active"] = AuthorStatus.Active,
-        ["inactive"] = AuthorStatus.Inactive,
-        ["pending"] = AuthorStatus.Pending
+        [string.Empty] = AuthorsStatus.Invalid,
+        ["active"] = AuthorsStatus.Active,
+        ["inactive"] = AuthorsStatus.Inactive,
+        ["pending"] = AuthorsStatus.Pending
     };
-    public static AuthorStatus ToAuthorStatus(this string me)
+    public static AuthorsStatus ToAuthorsStatus(this string me)
     {
         return StringToEnum[me];
     }
 
-    private static readonly Dictionary<AuthorStatus, string> EnumToString = new Dictionary<AuthorStatus, string>()
+    private static readonly Dictionary<AuthorsStatus, string> EnumToString = new Dictionary<AuthorsStatus, string>()
     {
-        [AuthorStatus.Invalid] = string.Empty,
-        [AuthorStatus.Active] = "active",
-        [AuthorStatus.Inactive] = "inactive",
-        [AuthorStatus.Pending] = "pending"
+        [AuthorsStatus.Invalid] = string.Empty,
+        [AuthorsStatus.Active] = "active",
+        [AuthorsStatus.Inactive] = "inactive",
+        [AuthorsStatus.Pending] = "pending"
     };
-    public static string Stringify(this AuthorStatus me)
+    public static string Stringify(this AuthorsStatus me)
     {
         return EnumToString[me];
     }

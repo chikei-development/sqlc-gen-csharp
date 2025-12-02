@@ -64,7 +64,6 @@
               },
               {
                 "name": "status",
-                "notNull": true,
                 "length": 8,
                 "table": {
                   "name": "authors"
@@ -727,7 +726,6 @@
         },
         {
           "name": "status",
-          "notNull": true,
           "length": 8,
           "table": {
             "name": "authors"
@@ -832,7 +830,6 @@
         },
         {
           "name": "status",
-          "notNull": true,
           "length": 8,
           "table": {
             "name": "authors"
@@ -878,7 +875,6 @@
           "number": 1,
           "column": {
             "name": "status",
-            "notNull": true,
             "length": 8,
             "table": {
               "schema": "public",
@@ -1108,7 +1104,6 @@
         },
         {
           "name": "status",
-          "notNull": true,
           "length": 8,
           "table": {
             "name": "authors"
@@ -1180,7 +1175,6 @@
         },
         {
           "name": "status",
-          "notNull": true,
           "length": 8,
           "table": {
             "name": "authors"
@@ -1305,7 +1299,6 @@
         },
         {
           "name": "status",
-          "notNull": true,
           "length": 8,
           "table": {
             "name": "authors"
@@ -1379,7 +1372,6 @@
         },
         {
           "name": "status",
-          "notNull": true,
           "length": 8,
           "table": {
             "name": "authors"
@@ -1561,7 +1553,6 @@
         },
         {
           "name": "status",
-          "notNull": true,
           "length": 8,
           "table": {
             "name": "authors"
@@ -1792,7 +1783,6 @@
         },
         {
           "name": "status",
-          "notNull": true,
           "length": 8,
           "table": {
             "name": "authors"
@@ -1904,7 +1894,6 @@
         },
         {
           "name": "status",
-          "notNull": true,
           "length": 8,
           "table": {
             "name": "authors"

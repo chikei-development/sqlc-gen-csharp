@@ -16,8 +16,8 @@ LIMIT
 
 -- name: UpdateAuthorStatus :exec
 UPDATE authors
-SET status = $1
-WHERE id = $2;
+SET status = sqlc.arg('status')::authors_status
+WHERE id = sqlc.arg('id');
 
 -- name: CreateAuthor :one
 INSERT INTO authors (id, name, bio) VALUES ($1, $2, $3) RETURNING *;

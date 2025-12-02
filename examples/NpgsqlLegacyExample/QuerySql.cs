@@ -44,13 +44,14 @@ namespace NpgsqlLegacyExampleGen
 
         public static void ConfigureEnumMappings(NpgsqlDataSourceBuilder dataSourceBuilder)
         {
-            dataSourceBuilder.MapEnum<AuthorStatus>("author_status");
+            dataSourceBuilder.MapEnum<AuthorsStatus>("authors_status");
             dataSourceBuilder.MapEnum<CEnum>("c_enum");
             dataSourceBuilder.MapEnum<ExtendedBioType>("bio_type");
         }
 
-        private NpgsqlTransaction Transaction { get; }
-        private NpgsqlDataSource DataSource { get; }
+        // This being generated code, we can suppress the warning about non-nullable fields not being initialized
+        private NpgsqlTransaction Transaction { get; } = null !;
+        private NpgsqlDataSource DataSource { get; } = null !;
         private string ConnectionString { get; }
 
         private const string GetAuthorSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors WHERE name = @name LIMIT 1";
@@ -62,7 +63,7 @@ namespace NpgsqlLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
-            public AuthorStatus Status { get; set; }
+            public AuthorsStatus Status { get; set; }
         };
         public class GetAuthorArgs
         {
@@ -70,8 +71,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<GetAuthorRow> GetAuthor(GetAuthorArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetAuthorSql))
                 {
                     command.Parameters.AddWithValue("@name", args.Name);
@@ -87,7 +90,7 @@ namespace NpgsqlLegacyExampleGen
                                 CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3),
                                 UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4),
                                 Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                                Status = reader.GetString(6).ToAuthorStatus()
+                                Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                             };
                         }
                     }
@@ -96,12 +99,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetAuthorSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@name", args.Name);
                 using (var reader = await command.ExecuteReaderAsync())
                 {
@@ -115,7 +118,7 @@ namespace NpgsqlLegacyExampleGen
                             CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3),
                             UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4),
                             Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                            Status = reader.GetString(6).ToAuthorStatus()
+                            Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                         };
                     }
                 }
@@ -135,8 +138,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<GetAuthorEmbedRow> GetAuthorEmbed(GetAuthorEmbedArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetAuthorEmbedSql))
                 {
                     command.Parameters.AddWithValue("@name", args.Name);
@@ -154,7 +159,7 @@ namespace NpgsqlLegacyExampleGen
                                     CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3),
                                     UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4),
                                     Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                                    Status = reader.GetString(6).ToAuthorStatus()
+                                    Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                                 }
                             };
                         }
@@ -164,12 +169,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetAuthorEmbedSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@name", args.Name);
                 using (var reader = await command.ExecuteReaderAsync())
                 {
@@ -185,7 +190,7 @@ namespace NpgsqlLegacyExampleGen
                                 CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3),
                                 UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4),
                                 Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                                Status = reader.GetString(6).ToAuthorStatus()
+                                Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                             }
                         };
                     }
@@ -204,7 +209,7 @@ namespace NpgsqlLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
-            public AuthorStatus Status { get; set; }
+            public AuthorsStatus Status { get; set; }
         };
         public class ListAuthorsArgs
         {
@@ -213,8 +218,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<List<ListAuthorsRow>> ListAuthors(ListAuthorsArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(ListAuthorsSql))
                 {
                     command.Parameters.AddWithValue("@offset", args.Offset);
@@ -223,40 +230,42 @@ namespace NpgsqlLegacyExampleGen
                     {
                         var result = new List<ListAuthorsRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new ListAuthorsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus() });
+                            result.Add(new ListAuthorsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() });
                         return result;
                     }
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = ListAuthorsSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@offset", args.Offset);
                 command.Parameters.AddWithValue("@limit", args.Limit);
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     var result = new List<ListAuthorsRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new ListAuthorsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus() });
+                        result.Add(new ListAuthorsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() });
                     return result;
                 }
             }
         }
 
-        private const string UpdateAuthorStatusSql = "UPDATE authors SET status = @status WHERE id = @id";
+        private const string UpdateAuthorStatusSql = "UPDATE authors SET status = @status::authors_status WHERE id = @id";
         public class UpdateAuthorStatusArgs
         {
-            public AuthorStatus Status { get; set; }
+            public AuthorsStatus Status { get; set; }
             public long Id { get; set; }
         };
         public async Task UpdateAuthorStatus(UpdateAuthorStatusArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(UpdateAuthorStatusSql))
                 {
                     command.Parameters.AddWithValue("@status", args.Status);
@@ -266,12 +275,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = UpdateAuthorStatusSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@status", args.Status);
                 command.Parameters.AddWithValue("@id", args.Id);
                 await command.ExecuteNonQueryAsync();
@@ -287,7 +296,7 @@ namespace NpgsqlLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
-            public AuthorStatus Status { get; set; }
+            public AuthorsStatus Status { get; set; }
         };
         public class CreateAuthorArgs
         {
@@ -297,8 +306,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<CreateAuthorRow> CreateAuthor(CreateAuthorArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(CreateAuthorSql))
                 {
                     command.Parameters.AddWithValue("@id", args.Id);
@@ -316,7 +327,7 @@ namespace NpgsqlLegacyExampleGen
                                 CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3),
                                 UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4),
                                 Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                                Status = reader.GetString(6).ToAuthorStatus()
+                                Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                             };
                         }
                     }
@@ -325,12 +336,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = CreateAuthorSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@id", args.Id);
                 command.Parameters.AddWithValue("@name", args.Name);
                 command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
@@ -346,7 +357,7 @@ namespace NpgsqlLegacyExampleGen
                             CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3),
                             UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4),
                             Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                            Status = reader.GetString(6).ToAuthorStatus()
+                            Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                         };
                     }
                 }
@@ -364,7 +375,7 @@ namespace NpgsqlLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
-            public AuthorStatus Status { get; set; }
+            public AuthorsStatus Status { get; set; }
         };
         public class CreateAuthorIncludingCommentArgs
         {
@@ -374,8 +385,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<CreateAuthorIncludingCommentRow> CreateAuthorIncludingComment(CreateAuthorIncludingCommentArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(CreateAuthorIncludingCommentSql))
                 {
                     command.Parameters.AddWithValue("@id", args.Id);
@@ -393,7 +406,7 @@ namespace NpgsqlLegacyExampleGen
                                 CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3),
                                 UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4),
                                 Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                                Status = reader.GetString(6).ToAuthorStatus()
+                                Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                             };
                         }
                     }
@@ -402,12 +415,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = CreateAuthorIncludingCommentSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@id", args.Id);
                 command.Parameters.AddWithValue("@name", args.Name);
                 command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
@@ -423,7 +436,7 @@ namespace NpgsqlLegacyExampleGen
                             CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3),
                             UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4),
                             Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                            Status = reader.GetString(6).ToAuthorStatus()
+                            Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                         };
                     }
                 }
@@ -444,8 +457,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<long> CreateAuthorReturnId(CreateAuthorReturnIdArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(CreateAuthorReturnIdSql))
                 {
                     command.Parameters.AddWithValue("@name", args.Name);
@@ -455,12 +470,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = CreateAuthorReturnIdSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@name", args.Name);
                 command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
                 var result = await command.ExecuteScalarAsync();
@@ -481,8 +496,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<CreateAuthorEmbedRow> CreateAuthorEmbed(CreateAuthorEmbedArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(CreateAuthorEmbedSql))
                 {
                     command.Parameters.AddWithValue("@id", args.Id);
@@ -502,7 +519,7 @@ namespace NpgsqlLegacyExampleGen
                                     CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3),
                                     UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4),
                                     Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                                    Status = reader.GetString(6).ToAuthorStatus()
+                                    Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                                 }
                             };
                         }
@@ -512,12 +529,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = CreateAuthorEmbedSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@id", args.Id);
                 command.Parameters.AddWithValue("@name", args.Name);
                 command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
@@ -535,7 +552,7 @@ namespace NpgsqlLegacyExampleGen
                                 CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3),
                                 UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4),
                                 Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                                Status = reader.GetString(6).ToAuthorStatus()
+                                Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                             }
                         };
                     }
@@ -554,7 +571,7 @@ namespace NpgsqlLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
-            public AuthorStatus Status { get; set; }
+            public AuthorsStatus Status { get; set; }
         };
         public class GetAuthorByIdArgs
         {
@@ -562,8 +579,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<GetAuthorByIdRow> GetAuthorById(GetAuthorByIdArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetAuthorByIdSql))
                 {
                     command.Parameters.AddWithValue("@id", args.Id);
@@ -579,7 +598,7 @@ namespace NpgsqlLegacyExampleGen
                                 CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3),
                                 UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4),
                                 Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                                Status = reader.GetString(6).ToAuthorStatus()
+                                Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                             };
                         }
                     }
@@ -588,12 +607,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetAuthorByIdSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@id", args.Id);
                 using (var reader = await command.ExecuteReaderAsync())
                 {
@@ -607,7 +626,7 @@ namespace NpgsqlLegacyExampleGen
                             CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3),
                             UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4),
                             Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                            Status = reader.GetString(6).ToAuthorStatus()
+                            Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                         };
                     }
                 }
@@ -625,7 +644,7 @@ namespace NpgsqlLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
-            public AuthorStatus Status { get; set; }
+            public AuthorsStatus Status { get; set; }
         };
         public class GetAuthorByNamePatternArgs
         {
@@ -633,8 +652,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<List<GetAuthorByNamePatternRow>> GetAuthorByNamePattern(GetAuthorByNamePatternArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetAuthorByNamePatternSql))
                 {
                     command.Parameters.AddWithValue("@name_pattern", args.NamePattern ?? (object)DBNull.Value);
@@ -642,24 +663,24 @@ namespace NpgsqlLegacyExampleGen
                     {
                         var result = new List<GetAuthorByNamePatternRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new GetAuthorByNamePatternRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus() });
+                            result.Add(new GetAuthorByNamePatternRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() });
                         return result;
                     }
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetAuthorByNamePatternSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@name_pattern", args.NamePattern ?? (object)DBNull.Value);
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     var result = new List<GetAuthorByNamePatternRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetAuthorByNamePatternRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus() });
+                        result.Add(new GetAuthorByNamePatternRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() });
                     return result;
                 }
             }
@@ -672,8 +693,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task DeleteAuthor(DeleteAuthorArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(DeleteAuthorSql))
                 {
                     command.Parameters.AddWithValue("@name", args.Name);
@@ -682,12 +705,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = DeleteAuthorSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@name", args.Name);
                 await command.ExecuteNonQueryAsync();
             }
@@ -696,8 +719,10 @@ namespace NpgsqlLegacyExampleGen
         private const string TruncateAuthorsSql = "TRUNCATE TABLE authors CASCADE";
         public async Task TruncateAuthors()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(TruncateAuthorsSql))
                 {
                     await command.ExecuteNonQueryAsync();
@@ -705,12 +730,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = TruncateAuthorsSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 await command.ExecuteNonQueryAsync();
             }
         }
@@ -722,8 +747,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<long> UpdateAuthors(UpdateAuthorsArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(UpdateAuthorsSql))
                 {
                     command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
@@ -731,12 +758,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = UpdateAuthorsSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
                 return await command.ExecuteNonQueryAsync();
             }
@@ -751,7 +778,7 @@ namespace NpgsqlLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
-            public AuthorStatus Status { get; set; }
+            public AuthorsStatus Status { get; set; }
         };
         public class GetAuthorsByIdsArgs
         {
@@ -759,8 +786,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<List<GetAuthorsByIdsRow>> GetAuthorsByIds(GetAuthorsByIdsArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetAuthorsByIdsSql))
                 {
                     command.Parameters.AddWithValue("@longArr_1", args.LongArr1);
@@ -768,24 +797,24 @@ namespace NpgsqlLegacyExampleGen
                     {
                         var result = new List<GetAuthorsByIdsRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new GetAuthorsByIdsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus() });
+                            result.Add(new GetAuthorsByIdsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() });
                         return result;
                     }
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetAuthorsByIdsSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@longArr_1", args.LongArr1);
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     var result = new List<GetAuthorsByIdsRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetAuthorsByIdsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus() });
+                        result.Add(new GetAuthorsByIdsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() });
                     return result;
                 }
             }
@@ -800,7 +829,7 @@ namespace NpgsqlLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
-            public AuthorStatus Status { get; set; }
+            public AuthorsStatus Status { get; set; }
         };
         public class GetAuthorsByIdsAndNamesArgs
         {
@@ -809,8 +838,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<List<GetAuthorsByIdsAndNamesRow>> GetAuthorsByIdsAndNames(GetAuthorsByIdsAndNamesArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetAuthorsByIdsAndNamesSql))
                 {
                     command.Parameters.AddWithValue("@longArr_1", args.LongArr1);
@@ -819,25 +850,25 @@ namespace NpgsqlLegacyExampleGen
                     {
                         var result = new List<GetAuthorsByIdsAndNamesRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new GetAuthorsByIdsAndNamesRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus() });
+                            result.Add(new GetAuthorsByIdsAndNamesRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() });
                         return result;
                     }
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetAuthorsByIdsAndNamesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@longArr_1", args.LongArr1);
                 command.Parameters.AddWithValue("@stringArr_2", args.StringArr2);
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     var result = new List<GetAuthorsByIdsAndNamesRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetAuthorsByIdsAndNamesRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus() });
+                        result.Add(new GetAuthorsByIdsAndNamesRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() });
                     return result;
                 }
             }
@@ -855,8 +886,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<Guid> CreateBook(CreateBookArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(CreateBookSql))
                 {
                     command.Parameters.AddWithValue("@name", args.Name);
@@ -866,12 +899,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = CreateBookSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@name", args.Name);
                 command.Parameters.AddWithValue("@author_id", args.AuthorId);
                 var result = await command.ExecuteScalarAsync();
@@ -887,31 +920,33 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<List<ListAllAuthorsBooksRow>> ListAllAuthorsBooks()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(ListAllAuthorsBooksSql))
                 {
                     using (var reader = await command.ExecuteReaderAsync())
                     {
                         var result = new List<ListAllAuthorsBooksRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus() }, Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
+                            result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() }, Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
                         return result;
                     }
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = ListAllAuthorsBooksSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     var result = new List<ListAllAuthorsBooksRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus() }, Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
+                        result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() }, Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
                     return result;
                 }
             }
@@ -925,31 +960,33 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<List<GetDuplicateAuthorsRow>> GetDuplicateAuthors()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetDuplicateAuthorsSql))
                 {
                     using (var reader = await command.ExecuteReaderAsync())
                     {
                         var result = new List<GetDuplicateAuthorsRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus() }, Author2 = new Author { Id = reader.GetInt64(7), Name = reader.GetString(8), Bio = reader.IsDBNull(9) ? null : reader.GetString(9), CreatedAt = reader.IsDBNull(10) ? (DateTime? )null : reader.GetDateTime(10), UpdatedAt = reader.IsDBNull(11) ? (DateTime? )null : reader.GetDateTime(11), Metadata = reader.IsDBNull(12) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(12)), Status = reader.GetString(13).ToAuthorStatus() } });
+                            result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() }, Author2 = new Author { Id = reader.GetInt64(7), Name = reader.GetString(8), Bio = reader.IsDBNull(9) ? null : reader.GetString(9), CreatedAt = reader.IsDBNull(10) ? (DateTime? )null : reader.GetDateTime(10), UpdatedAt = reader.IsDBNull(11) ? (DateTime? )null : reader.GetDateTime(11), Metadata = reader.IsDBNull(12) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(12)), Status = reader.IsDBNull(13) ? null : reader.GetString(13).ToAuthorsStatus() } });
                         return result;
                     }
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetDuplicateAuthorsSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     var result = new List<GetDuplicateAuthorsRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus() }, Author2 = new Author { Id = reader.GetInt64(7), Name = reader.GetString(8), Bio = reader.IsDBNull(9) ? null : reader.GetString(9), CreatedAt = reader.IsDBNull(10) ? (DateTime? )null : reader.GetDateTime(10), UpdatedAt = reader.IsDBNull(11) ? (DateTime? )null : reader.GetDateTime(11), Metadata = reader.IsDBNull(12) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(12)), Status = reader.GetString(13).ToAuthorStatus() } });
+                        result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() }, Author2 = new Author { Id = reader.GetInt64(7), Name = reader.GetString(8), Bio = reader.IsDBNull(9) ? null : reader.GetString(9), CreatedAt = reader.IsDBNull(10) ? (DateTime? )null : reader.GetDateTime(10), UpdatedAt = reader.IsDBNull(11) ? (DateTime? )null : reader.GetDateTime(11), Metadata = reader.IsDBNull(12) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(12)), Status = reader.IsDBNull(13) ? null : reader.GetString(13).ToAuthorsStatus() } });
                     return result;
                 }
             }
@@ -964,7 +1001,7 @@ namespace NpgsqlLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
-            public AuthorStatus Status { get; set; }
+            public AuthorsStatus Status { get; set; }
             public Book Book { get; set; }
         };
         public class GetAuthorsByBookNameArgs
@@ -973,8 +1010,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<List<GetAuthorsByBookNameRow>> GetAuthorsByBookName(GetAuthorsByBookNameArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetAuthorsByBookNameSql))
                 {
                     command.Parameters.AddWithValue("@name", args.Name);
@@ -982,24 +1021,24 @@ namespace NpgsqlLegacyExampleGen
                     {
                         var result = new List<GetAuthorsByBookNameRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus(), Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
+                            result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus(), Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
                         return result;
                     }
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetAuthorsByBookNameSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@name", args.Name);
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     var result = new List<GetAuthorsByBookNameRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus(), Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
+                        result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus(), Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
                     return result;
                 }
             }
@@ -1014,8 +1053,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task CreateExtendedBio(CreateExtendedBioArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(CreateExtendedBioSql))
                 {
                     command.Parameters.AddWithValue("@author_name", args.AuthorName);
@@ -1026,12 +1067,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = CreateExtendedBioSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@author_name", args.AuthorName);
                 command.Parameters.AddWithValue("@name", args.Name);
                 command.Parameters.AddWithValue("@bio_type", args.BioType ?? (object)DBNull.Value);
@@ -1052,8 +1093,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<GetFirstExtendedBioByTypeRow> GetFirstExtendedBioByType(GetFirstExtendedBioByTypeArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetFirstExtendedBioByTypeSql))
                 {
                     command.Parameters.AddWithValue("@bio_type", args.BioType ?? (object)DBNull.Value);
@@ -1074,12 +1117,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetFirstExtendedBioByTypeSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@bio_type", args.BioType ?? (object)DBNull.Value);
                 using (var reader = await command.ExecuteReaderAsync())
                 {
@@ -1101,8 +1144,10 @@ namespace NpgsqlLegacyExampleGen
         private const string TruncateExtendedBiosSql = "TRUNCATE TABLE extended.bios";
         public async Task TruncateExtendedBios()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(TruncateExtendedBiosSql))
                 {
                     await command.ExecuteNonQueryAsync();
@@ -1110,12 +1155,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = TruncateExtendedBiosSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 await command.ExecuteNonQueryAsync();
             }
         }
@@ -1129,7 +1174,7 @@ namespace NpgsqlLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
-            public AuthorStatus Status { get; set; }
+            public AuthorsStatus Status { get; set; }
         };
         public class GetAuthorsWithDuplicateParamsArgs
         {
@@ -1139,8 +1184,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<List<GetAuthorsWithDuplicateParamsRow>> GetAuthorsWithDuplicateParams(GetAuthorsWithDuplicateParamsArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetAuthorsWithDuplicateParamsSql))
                 {
                     command.Parameters.AddWithValue("@author_name", args.AuthorName ?? (object)DBNull.Value);
@@ -1150,18 +1197,18 @@ namespace NpgsqlLegacyExampleGen
                     {
                         var result = new List<GetAuthorsWithDuplicateParamsRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new GetAuthorsWithDuplicateParamsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus() });
+                            result.Add(new GetAuthorsWithDuplicateParamsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() });
                         return result;
                     }
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetAuthorsWithDuplicateParamsSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@author_name", args.AuthorName ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@min_id", args.MinId ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@date_filter", NpgsqlDbType.Timestamp, args.DateFilter ?? (object)DBNull.Value);
@@ -1169,7 +1216,7 @@ namespace NpgsqlLegacyExampleGen
                 {
                     var result = new List<GetAuthorsWithDuplicateParamsRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetAuthorsWithDuplicateParamsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus() });
+                        result.Add(new GetAuthorsWithDuplicateParamsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() });
                     return result;
                 }
             }
@@ -1184,7 +1231,7 @@ namespace NpgsqlLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
-            public AuthorStatus Status { get; set; }
+            public AuthorsStatus Status { get; set; }
         };
         public class GetAuthorWithPentaParamArgs
         {
@@ -1192,8 +1239,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<GetAuthorWithPentaParamRow> GetAuthorWithPentaParam(GetAuthorWithPentaParamArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetAuthorWithPentaParamSql))
                 {
                     command.Parameters.AddWithValue("@search_value", args.SearchValue ?? (object)DBNull.Value);
@@ -1209,7 +1258,7 @@ namespace NpgsqlLegacyExampleGen
                                 CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3),
                                 UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4),
                                 Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                                Status = reader.GetString(6).ToAuthorStatus()
+                                Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                             };
                         }
                     }
@@ -1218,12 +1267,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetAuthorWithPentaParamSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@search_value", args.SearchValue ?? (object)DBNull.Value);
                 using (var reader = await command.ExecuteReaderAsync())
                 {
@@ -1237,7 +1286,7 @@ namespace NpgsqlLegacyExampleGen
                             CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3),
                             UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4),
                             Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                            Status = reader.GetString(6).ToAuthorStatus()
+                            Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                         };
                     }
                 }
@@ -1255,7 +1304,7 @@ namespace NpgsqlLegacyExampleGen
             public DateTime? CreatedAt { get; set; }
             public DateTime? UpdatedAt { get; set; }
             public JsonElement? Metadata { get; set; }
-            public AuthorStatus Status { get; set; }
+            public AuthorsStatus Status { get; set; }
         };
         public class CreateAuthorWithMetadataArgs
         {
@@ -1266,8 +1315,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<CreateAuthorWithMetadataRow> CreateAuthorWithMetadata(CreateAuthorWithMetadataArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(CreateAuthorWithMetadataSql))
                 {
                     command.Parameters.AddWithValue("@id", args.Id);
@@ -1286,7 +1337,7 @@ namespace NpgsqlLegacyExampleGen
                                 CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3),
                                 UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4),
                                 Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                                Status = reader.GetString(6).ToAuthorStatus()
+                                Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                             };
                         }
                     }
@@ -1295,12 +1346,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = CreateAuthorWithMetadataSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@id", args.Id);
                 command.Parameters.AddWithValue("@name", args.Name);
                 command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
@@ -1317,7 +1368,7 @@ namespace NpgsqlLegacyExampleGen
                             CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3),
                             UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4),
                             Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                            Status = reader.GetString(6).ToAuthorStatus()
+                            Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                         };
                     }
                 }
@@ -1334,31 +1385,33 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<List<GetAuthorsWithJsonMetadataRow>> GetAuthorsWithJsonMetadata()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetAuthorsWithJsonMetadataSql))
                 {
                     using (var reader = await command.ExecuteReaderAsync())
                     {
                         var result = new List<GetAuthorsWithJsonMetadataRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new GetAuthorsWithJsonMetadataRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus() }, BookName = reader.IsDBNull(7) ? null : reader.GetString(7) });
+                            result.Add(new GetAuthorsWithJsonMetadataRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() }, BookName = reader.IsDBNull(7) ? null : reader.GetString(7) });
                         return result;
                     }
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetAuthorsWithJsonMetadataSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     var result = new List<GetAuthorsWithJsonMetadataRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetAuthorsWithJsonMetadataRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus() }, BookName = reader.IsDBNull(7) ? null : reader.GetString(7) });
+                        result.Add(new GetAuthorsWithJsonMetadataRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? (DateTime? )null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? (DateTime? )null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? (JsonElement? )null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() }, BookName = reader.IsDBNull(7) ? null : reader.GetString(7) });
                     return result;
                 }
             }
@@ -1373,8 +1426,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<GetPostgresFunctionsRow> GetPostgresFunctions()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetPostgresFunctionsSql))
                 {
                     using (var reader = await command.ExecuteReaderAsync())
@@ -1394,12 +1449,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetPostgresFunctionsSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     if (await reader.ReadAsync())
@@ -1433,8 +1488,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task InsertPostgresNumericTypes(InsertPostgresNumericTypesArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(InsertPostgresNumericTypesSql))
                 {
                     command.Parameters.AddWithValue("@c_boolean", args.CBoolean ?? (object)DBNull.Value);
@@ -1452,12 +1509,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = InsertPostgresNumericTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@c_boolean", args.CBoolean ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@c_bit", args.CBit ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@c_smallint", args.CSmallint ?? (object)DBNull.Value);
@@ -1488,8 +1545,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<GetPostgresNumericTypesRow> GetPostgresNumericTypes()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetPostgresNumericTypesSql))
                 {
                     using (var reader = await command.ExecuteReaderAsync())
@@ -1516,12 +1575,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetPostgresNumericTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     if (await reader.ReadAsync())
@@ -1549,8 +1608,10 @@ namespace NpgsqlLegacyExampleGen
         private const string TruncatePostgresNumericTypesSql = "TRUNCATE TABLE postgres_numeric_types";
         public async Task TruncatePostgresNumericTypes()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(TruncatePostgresNumericTypesSql))
                 {
                     await command.ExecuteNonQueryAsync();
@@ -1558,12 +1619,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = TruncatePostgresNumericTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 await command.ExecuteNonQueryAsync();
             }
         }
@@ -1585,8 +1646,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<GetPostgresNumericTypesCntRow> GetPostgresNumericTypesCnt()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetPostgresNumericTypesCntSql))
                 {
                     using (var reader = await command.ExecuteReaderAsync())
@@ -1614,12 +1677,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetPostgresNumericTypesCntSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     if (await reader.ReadAsync())
@@ -1699,8 +1762,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task InsertPostgresStringTypes(InsertPostgresStringTypesArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(InsertPostgresStringTypesSql))
                 {
                     command.Parameters.AddWithValue("@c_char", args.CChar ?? (object)DBNull.Value);
@@ -1713,12 +1778,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = InsertPostgresStringTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@c_char", args.CChar ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@c_varchar", args.CVarchar ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@c_character_varying", args.CCharacterVarying ?? (object)DBNull.Value);
@@ -1772,8 +1837,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<GetPostgresStringTypesRow> GetPostgresStringTypes()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetPostgresStringTypesSql))
                 {
                     using (var reader = await command.ExecuteReaderAsync())
@@ -1795,12 +1862,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetPostgresStringTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     if (await reader.ReadAsync())
@@ -1823,8 +1890,10 @@ namespace NpgsqlLegacyExampleGen
         private const string TruncatePostgresStringTypesSql = "TRUNCATE TABLE postgres_string_types";
         public async Task TruncatePostgresStringTypes()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(TruncatePostgresStringTypesSql))
                 {
                     await command.ExecuteNonQueryAsync();
@@ -1832,12 +1901,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = TruncatePostgresStringTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 await command.ExecuteNonQueryAsync();
             }
         }
@@ -1854,8 +1923,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<GetPostgresStringTypesCntRow> GetPostgresStringTypesCnt()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetPostgresStringTypesCntSql))
                 {
                     using (var reader = await command.ExecuteReaderAsync())
@@ -1878,12 +1949,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetPostgresStringTypesCntSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     if (await reader.ReadAsync())
@@ -1918,8 +1989,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<GetPostgresStringTypesTextSearchRow> GetPostgresStringTypesTextSearch(GetPostgresStringTypesTextSearchArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetPostgresStringTypesTextSearchSql))
                 {
                     command.Parameters.AddWithValue("@to_tsquery", args.ToTsquery);
@@ -1941,12 +2014,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetPostgresStringTypesTextSearchSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@to_tsquery", args.ToTsquery);
                 using (var reader = await command.ExecuteReaderAsync())
                 {
@@ -1978,8 +2051,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task InsertPostgresDateTimeTypes(InsertPostgresDateTimeTypesArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(InsertPostgresDateTimeTypesSql))
                 {
                     command.Parameters.AddWithValue("@c_date", NpgsqlDbType.Date, args.CDate ?? (object)DBNull.Value);
@@ -1993,12 +2068,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = InsertPostgresDateTimeTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@c_date", NpgsqlDbType.Date, args.CDate ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@c_time", NpgsqlDbType.Time, args.CTime ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@c_timestamp", NpgsqlDbType.Timestamp, args.CTimestamp ?? (object)DBNull.Value);
@@ -2021,8 +2096,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<GetPostgresDateTimeTypesRow> GetPostgresDateTimeTypes()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetPostgresDateTimeTypesSql))
                 {
                     using (var reader = await command.ExecuteReaderAsync())
@@ -2051,12 +2128,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetPostgresDateTimeTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     if (await reader.ReadAsync())
@@ -2086,8 +2163,10 @@ namespace NpgsqlLegacyExampleGen
         private const string TruncatePostgresDateTimeTypesSql = "TRUNCATE TABLE postgres_datetime_types";
         public async Task TruncatePostgresDateTimeTypes()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(TruncatePostgresDateTimeTypesSql))
                 {
                     await command.ExecuteNonQueryAsync();
@@ -2095,12 +2174,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = TruncatePostgresDateTimeTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 await command.ExecuteNonQueryAsync();
             }
         }
@@ -2117,8 +2196,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<GetPostgresDateTimeTypesCntRow> GetPostgresDateTimeTypesCnt()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetPostgresDateTimeTypesCntSql))
                 {
                     using (var reader = await command.ExecuteReaderAsync())
@@ -2141,12 +2222,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetPostgresDateTimeTypesCntSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     if (await reader.ReadAsync())
@@ -2210,8 +2291,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task InsertPostgresNetworkTypes(InsertPostgresNetworkTypesArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(InsertPostgresNetworkTypesSql))
                 {
                     command.Parameters.AddWithValue("@c_cidr", args.CCidr ?? (object)DBNull.Value);
@@ -2223,12 +2306,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = InsertPostgresNetworkTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@c_cidr", args.CCidr ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@c_inet", args.CInet ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@c_macaddr", args.CMacaddr ?? (object)DBNull.Value);
@@ -2247,8 +2330,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<GetPostgresNetworkTypesRow> GetPostgresNetworkTypes()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetPostgresNetworkTypesSql))
                 {
                     using (var reader = await command.ExecuteReaderAsync())
@@ -2269,12 +2354,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetPostgresNetworkTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     if (await reader.ReadAsync())
@@ -2296,8 +2381,10 @@ namespace NpgsqlLegacyExampleGen
         private const string TruncatePostgresNetworkTypesSql = "TRUNCATE TABLE postgres_network_types";
         public async Task TruncatePostgresNetworkTypes()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(TruncatePostgresNetworkTypesSql))
                 {
                     await command.ExecuteNonQueryAsync();
@@ -2305,12 +2392,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = TruncatePostgresNetworkTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 await command.ExecuteNonQueryAsync();
             }
         }
@@ -2325,8 +2412,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<GetPostgresNetworkTypesCntRow> GetPostgresNetworkTypesCnt()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetPostgresNetworkTypesCntSql))
                 {
                     using (var reader = await command.ExecuteReaderAsync())
@@ -2347,12 +2436,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetPostgresNetworkTypesCntSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     if (await reader.ReadAsync())
@@ -2414,8 +2503,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task InsertPostgresSpecialTypes(InsertPostgresSpecialTypesArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(InsertPostgresSpecialTypesSql))
                 {
                     command.Parameters.AddWithValue("@c_json", NpgsqlDbType.Json, args.CJson.HasValue ? (object)args.CJson.Value : (object)DBNull.Value);
@@ -2431,12 +2522,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = InsertPostgresSpecialTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@c_json", NpgsqlDbType.Json, args.CJson.HasValue ? (object)args.CJson.Value : (object)DBNull.Value);
                 command.Parameters.AddWithValue("@c_json_string_override", NpgsqlDbType.Json, args.CJsonStringOverride ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@c_jsonb", NpgsqlDbType.Jsonb, args.CJsonb.HasValue ? (object)args.CJsonb.Value : (object)DBNull.Value);
@@ -2456,8 +2547,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task InsertPostgresNotNullTypes(InsertPostgresNotNullTypesArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(InsertPostgresNotNullTypesSql))
                 {
                     command.Parameters.AddWithValue("@c_enum_not_null", args.CEnumNotNull);
@@ -2466,12 +2559,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = InsertPostgresNotNullTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@c_enum_not_null", args.CEnumNotNull);
                 await command.ExecuteNonQueryAsync();
             }
@@ -2484,8 +2577,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<GetPostgresNotNullTypesRow> GetPostgresNotNullTypes()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetPostgresNotNullTypesSql))
                 {
                     using (var reader = await command.ExecuteReaderAsync())
@@ -2503,12 +2598,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetPostgresNotNullTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     if (await reader.ReadAsync())
@@ -2527,8 +2622,10 @@ namespace NpgsqlLegacyExampleGen
         private const string TruncatePostgresNotNullTypesSql = "TRUNCATE TABLE postgres_not_null_types";
         public async Task TruncatePostgresNotNullTypes()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(TruncatePostgresNotNullTypesSql))
                 {
                     await command.ExecuteNonQueryAsync();
@@ -2536,12 +2633,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = TruncatePostgresNotNullTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 await command.ExecuteNonQueryAsync();
             }
         }
@@ -2560,8 +2657,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<GetPostgresSpecialTypesRow> GetPostgresSpecialTypes()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetPostgresSpecialTypesSql))
                 {
                     using (var reader = await command.ExecuteReaderAsync())
@@ -2591,12 +2690,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetPostgresSpecialTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     if (await reader.ReadAsync())
@@ -2627,8 +2726,10 @@ namespace NpgsqlLegacyExampleGen
         private const string TruncatePostgresSpecialTypesSql = "TRUNCATE TABLE postgres_special_types";
         public async Task TruncatePostgresSpecialTypes()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(TruncatePostgresSpecialTypesSql))
                 {
                     await command.ExecuteNonQueryAsync();
@@ -2636,12 +2737,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = TruncatePostgresSpecialTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 await command.ExecuteNonQueryAsync();
             }
         }
@@ -2685,8 +2786,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<GetPostgresSpecialTypesCntRow> GetPostgresSpecialTypesCnt()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetPostgresSpecialTypesCntSql))
                 {
                     using (var reader = await command.ExecuteReaderAsync())
@@ -2707,12 +2810,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetPostgresSpecialTypesCntSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     if (await reader.ReadAsync())
@@ -2744,8 +2847,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task InsertPostgresArrayTypes(InsertPostgresArrayTypesArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(InsertPostgresArrayTypesSql))
                 {
                     command.Parameters.AddWithValue("@c_bytea", args.CBytea ?? (object)DBNull.Value);
@@ -2760,12 +2865,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = InsertPostgresArrayTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@c_bytea", args.CBytea ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@c_boolean_array", args.CBooleanArray ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@c_text_array", args.CTextArray ?? (object)DBNull.Value);
@@ -2790,8 +2895,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<GetPostgresArrayTypesRow> GetPostgresArrayTypes()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetPostgresArrayTypesSql))
                 {
                     using (var reader = await command.ExecuteReaderAsync())
@@ -2815,12 +2922,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetPostgresArrayTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     if (await reader.ReadAsync())
@@ -2890,8 +2997,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<GetPostgresArrayTypesCntRow> GetPostgresArrayTypesCnt()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetPostgresArrayTypesCntSql))
                 {
                     using (var reader = await command.ExecuteReaderAsync())
@@ -2915,12 +3024,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetPostgresArrayTypesCntSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     if (await reader.ReadAsync())
@@ -2945,8 +3054,10 @@ namespace NpgsqlLegacyExampleGen
         private const string TruncatePostgresArrayTypesSql = "TRUNCATE TABLE postgres_array_types";
         public async Task TruncatePostgresArrayTypes()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(TruncatePostgresArrayTypesSql))
                 {
                     await command.ExecuteNonQueryAsync();
@@ -2954,12 +3065,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = TruncatePostgresArrayTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 await command.ExecuteNonQueryAsync();
             }
         }
@@ -2977,8 +3088,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task InsertPostgresGeoTypes(InsertPostgresGeoTypesArgs args)
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(InsertPostgresGeoTypesSql))
                 {
                     command.Parameters.AddWithValue("@c_point", args.CPoint ?? (object)DBNull.Value);
@@ -2993,12 +3106,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = InsertPostgresGeoTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 command.Parameters.AddWithValue("@c_point", args.CPoint ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@c_line", args.CLine ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@c_lseg", args.CLseg ?? (object)DBNull.Value);
@@ -3060,8 +3173,10 @@ namespace NpgsqlLegacyExampleGen
         };
         public async Task<GetPostgresGeoTypesRow> GetPostgresGeoTypes()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(GetPostgresGeoTypesSql))
                 {
                     using (var reader = await command.ExecuteReaderAsync())
@@ -3085,12 +3200,12 @@ namespace NpgsqlLegacyExampleGen
                 return null;
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = GetPostgresGeoTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     if (await reader.ReadAsync())
@@ -3115,8 +3230,10 @@ namespace NpgsqlLegacyExampleGen
         private const string TruncatePostgresGeoTypesSql = "TRUNCATE TABLE postgres_geometric_types";
         public async Task TruncatePostgresGeoTypes()
         {
-            if (this.Transaction == null)
+            if (Transaction == null)
             {
+                if (DataSource == null)
+                    throw new InvalidOperationException("Transaction is null, but datasource is also null.");
                 using (var command = DataSource.CreateCommand(TruncatePostgresGeoTypesSql))
                 {
                     await command.ExecuteNonQueryAsync();
@@ -3124,12 +3241,12 @@ namespace NpgsqlLegacyExampleGen
                 }
             }
 
-            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-            using (var command = this.Transaction.Connection.CreateCommand())
+            using (var command = Transaction.Connection.CreateCommand())
             {
                 command.CommandText = TruncatePostgresGeoTypesSql;
-                command.Transaction = this.Transaction;
+                command.Transaction = Transaction;
                 await command.ExecuteNonQueryAsync();
             }
         }

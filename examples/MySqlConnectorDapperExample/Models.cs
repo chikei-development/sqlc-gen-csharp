@@ -12,7 +12,7 @@ public class Author
     public required long Id { get; init; }
     public required string Name { get; init; }
     public string? Bio { get; init; }
-    public required AuthorsStatus Status { get; init; }
+    public AuthorsStatus? Status { get; init; }
 };
 public class Book
 {

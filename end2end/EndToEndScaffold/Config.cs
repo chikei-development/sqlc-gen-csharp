@@ -90,6 +90,7 @@ public enum KnownTestType
     MySqlBinaryDataTypes,
     MySqlEnumDataType,
     MySqlJsonDataTypes,
+    MySqlAuthorEmbedAndEnum,
 
     // :copyfrom (Batch)
     MySqlStringCopyFrom,
@@ -135,6 +136,7 @@ internal static class Config
         KnownTestType.MySqlBinaryDataTypes,
         KnownTestType.MySqlEnumDataType,
         KnownTestType.MySqlJsonDataTypes,
+        KnownTestType.MySqlAuthorEmbedAndEnum,
 
         // :copyfrom (Batch)
         KnownTestType.MySqlJsonCopyFrom,

@@ -20,7 +20,7 @@ namespace NpgsqlLegacyExampleGen
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public JsonElement? Metadata { get; set; }
-        public AuthorStatus Status { get; set; }
+        public AuthorsStatus Status { get; set; }
     };
     public class Book
     {
@@ -112,7 +112,7 @@ namespace NpgsqlLegacyExampleGen
         public string Name { get; set; }
         public ExtendedBioType? BioType { get; set; }
     };
-    public enum AuthorStatus
+    public enum AuthorsStatus
     {
         Invalid = 0, // reserved for invalid enum value
         Active = 1,
@@ -120,28 +120,28 @@ namespace NpgsqlLegacyExampleGen
         Pending = 3
     }
 
-    public static class AuthorStatusExtensions
+    public static class AuthorsStatusExtensions
     {
-        private static readonly Dictionary<string, AuthorStatus> StringToEnum = new Dictionary<string, AuthorStatus>()
+        private static readonly Dictionary<string, AuthorsStatus> StringToEnum = new Dictionary<string, AuthorsStatus>()
         {
-            [string.Empty] = AuthorStatus.Invalid,
-            ["active"] = AuthorStatus.Active,
-            ["inactive"] = AuthorStatus.Inactive,
-            ["pending"] = AuthorStatus.Pending
+            [string.Empty] = AuthorsStatus.Invalid,
+            ["active"] = AuthorsStatus.Active,
+            ["inactive"] = AuthorsStatus.Inactive,
+            ["pending"] = AuthorsStatus.Pending
         };
-        public static AuthorStatus ToAuthorStatus(this string me)
+        public static AuthorsStatus ToAuthorsStatus(this string me)
         {
             return StringToEnum[me];
         }
 
-        private static readonly Dictionary<AuthorStatus, string> EnumToString = new Dictionary<AuthorStatus, string>()
+        private static readonly Dictionary<AuthorsStatus, string> EnumToString = new Dictionary<AuthorsStatus, string>()
         {
-            [AuthorStatus.Invalid] = string.Empty,
-            [AuthorStatus.Active] = "active",
-            [AuthorStatus.Inactive] = "inactive",
-            [AuthorStatus.Pending] = "pending"
+            [AuthorsStatus.Invalid] = string.Empty,
+            [AuthorsStatus.Active] = "active",
+            [AuthorsStatus.Inactive] = "inactive",
+            [AuthorsStatus.Pending] = "pending"
         };
-        public static string Stringify(this AuthorStatus me)
+        public static string Stringify(this AuthorsStatus me)
         {
             return EnumToString[me];
         }
