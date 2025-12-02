@@ -32945,6 +32945,45 @@
       "filename": "query.sql"
     },
     {
+      "text": "UPDATE authors\nSET status = $1\nWHERE id = $2",
+      "name": "UpdateAuthorStatus",
+      "cmd": ":exec",
+      "parameters": [
+        {
+          "number": 1,
+          "column": {
+            "name": "status",
+            "notNull": true,
+            "length": -1,
+            "table": {
+              "schema": "public",
+              "name": "authors"
+            },
+            "type": {
+              "name": "author_status"
+            },
+            "originalName": "status"
+          }
+        },
+        {
+          "number": 2,
+          "column": {
+            "name": "id",
+            "notNull": true,
+            "length": -1,
+            "table": {
+              "name": "authors"
+            },
+            "type": {
+              "name": "bigserial"
+            },
+            "originalName": "id"
+          }
+        }
+      ],
+      "filename": "query.sql"
+    },
+    {
       "text": "INSERT INTO authors (id, name, bio) VALUES ($1, $2, $3) RETURNING id, name, bio, created_at, updated_at, metadata, status",
       "name": "CreateAuthor",
       "cmd": ":one",
@@ -34631,72 +34670,6 @@
             "name": "text"
           },
           "originalName": "name"
-        }
-      ],
-      "filename": "query.sql"
-    },
-    {
-      "text": "UPDATE \"user\"\nSET\n    \"updated_at\" = $1\nWHERE\n    \"id\" = $2\nRETURNING\n    id, updated_at",
-      "name": "UpdateUser",
-      "cmd": ":one",
-      "columns": [
-        {
-          "name": "id",
-          "notNull": true,
-          "length": -1,
-          "table": {
-            "name": "user"
-          },
-          "type": {
-            "name": "serial"
-          },
-          "originalName": "id"
-        },
-        {
-          "name": "updated_at",
-          "length": -1,
-          "table": {
-            "name": "user"
-          },
-          "type": {
-            "schema": "pg_catalog",
-            "name": "timestamptz"
-          },
-          "originalName": "updated_at"
-        }
-      ],
-      "parameters": [
-        {
-          "number": 1,
-          "column": {
-            "name": "updated_at",
-            "length": -1,
-            "isNamedParam": true,
-            "table": {
-              "schema": "public",
-              "name": "user"
-            },
-            "type": {
-              "name": "pg_catalog.timestamptz"
-            },
-            "originalName": "updated_at"
-          }
-        },
-        {
-          "number": 2,
-          "column": {
-            "name": "id",
-            "notNull": true,
-            "length": -1,
-            "isNamedParam": true,
-            "table": {
-              "name": "user"
-            },
-            "type": {
-              "name": "serial"
-            },
-            "originalName": "id"
-          }
         }
       ],
       "filename": "query.sql"

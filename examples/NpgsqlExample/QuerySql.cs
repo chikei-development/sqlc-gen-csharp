@@ -215,6 +215,33 @@ public class QuerySql
         }
     }
 
+    private const string UpdateAuthorStatusSql = "UPDATE authors SET status = @status WHERE id = @id";
+    public readonly record struct UpdateAuthorStatusArgs(AuthorStatus Status, long Id);
+    public async Task UpdateAuthorStatus(UpdateAuthorStatusArgs args)
+    {
+        if (this.Transaction == null)
+        {
+            using (var command = DataSource.CreateCommand(UpdateAuthorStatusSql))
+            {
+                command.Parameters.AddWithValue("@status", args.Status);
+                command.Parameters.AddWithValue("@id", args.Id);
+                await command.ExecuteNonQueryAsync();
+                return;
+            }
+        }
+
+        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        using (var command = this.Transaction.Connection.CreateCommand())
+        {
+            command.CommandText = UpdateAuthorStatusSql;
+            command.Transaction = this.Transaction;
+            command.Parameters.AddWithValue("@status", args.Status);
+            command.Parameters.AddWithValue("@id", args.Id);
+            await command.ExecuteNonQueryAsync();
+        }
+    }
+
     private const string CreateAuthorSql = "INSERT INTO authors (id, name, bio) VALUES (@id, @name, @bio) RETURNING id, name, bio, created_at, updated_at, metadata, status";
     public readonly record struct CreateAuthorRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorStatus Status);
     public readonly record struct CreateAuthorArgs(long Id, string Name, string? Bio);
@@ -1115,57 +1142,6 @@ public class QuerySql
                 return result;
             }
         }
-    }
-
-    private const string UpdateUserSql = "UPDATE \"user\" SET \"updated_at\" = @updated_at WHERE \"id\" = @id RETURNING id, updated_at";
-    public readonly record struct UpdateUserRow(int Id, DateTime? UpdatedAt);
-    public readonly record struct UpdateUserArgs(DateTime? UpdatedAt, int Id);
-    public async Task<UpdateUserRow?> UpdateUser(UpdateUserArgs args)
-    {
-        if (this.Transaction == null)
-        {
-            using (var command = DataSource.CreateCommand(UpdateUserSql))
-            {
-                command.Parameters.AddWithValue("@updated_at", NpgsqlDbType.TimestampTz, args.UpdatedAt ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@id", args.Id);
-                using (var reader = await command.ExecuteReaderAsync())
-                {
-                    if (await reader.ReadAsync())
-                    {
-                        return new UpdateUserRow
-                        {
-                            Id = reader.GetInt32(0),
-                            UpdatedAt = reader.IsDBNull(1) ? null : reader.GetDateTime(1)
-                        };
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
-            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
-        {
-            command.CommandText = UpdateUserSql;
-            command.Transaction = this.Transaction;
-            command.Parameters.AddWithValue("@updated_at", NpgsqlDbType.TimestampTz, args.UpdatedAt ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@id", args.Id);
-            using (var reader = await command.ExecuteReaderAsync())
-            {
-                if (await reader.ReadAsync())
-                {
-                    return new UpdateUserRow
-                    {
-                        Id = reader.GetInt32(0),
-                        UpdatedAt = reader.IsDBNull(1) ? null : reader.GetDateTime(1)
-                    };
-                }
-            }
-        }
-
-        return null;
     }
 
     private const string GetPostgresFunctionsSql = "SELECT MAX(c_integer) AS max_integer, MAX(c_varchar) AS max_varchar, MAX(c_timestamp) AS max_timestamp FROM postgres_datetime_types CROSS JOIN postgres_numeric_types CROSS JOIN postgres_string_types";

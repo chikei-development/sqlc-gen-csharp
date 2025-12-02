@@ -206,6 +206,37 @@ public class QuerySql
         }
     }
 
+    private const string UpdateAuthorStatusSql = "UPDATE authors SET status = @status WHERE id = @id";
+    public readonly record struct UpdateAuthorStatusArgs(AuthorsStatus Status, long Id);
+    public async Task UpdateAuthorStatus(UpdateAuthorStatusArgs args)
+    {
+        if (this.Transaction == null)
+        {
+            using (var connection = new MySqlConnection(ConnectionString))
+            {
+                await connection.OpenAsync();
+                using (var command = new MySqlCommand(UpdateAuthorStatusSql, connection))
+                {
+                    command.Parameters.AddWithValue("@status", args.Status);
+                    command.Parameters.AddWithValue("@id", args.Id);
+                    await command.ExecuteNonQueryAsync();
+                    return;
+                }
+            }
+        }
+
+        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        using (var command = this.Transaction.Connection.CreateCommand())
+        {
+            command.CommandText = UpdateAuthorStatusSql;
+            command.Transaction = this.Transaction;
+            command.Parameters.AddWithValue("@status", args.Status);
+            command.Parameters.AddWithValue("@id", args.Id);
+            await command.ExecuteNonQueryAsync();
+        }
+    }
+
     private const string CreateAuthorSql = "INSERT INTO authors (id, name, bio) VALUES (@id, @name, @bio)";
     public readonly record struct CreateAuthorArgs(long Id, string Name, string? Bio);
     public async Task CreateAuthor(CreateAuthorArgs args)

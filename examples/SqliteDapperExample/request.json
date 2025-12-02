@@ -450,6 +450,45 @@
       "filename": "query.sql"
     },
     {
+      "text": "UPDATE authors\nSET status = ?\nWHERE id = ?",
+      "name": "UpdateAuthorStatus",
+      "cmd": ":exec",
+      "parameters": [
+        {
+          "number": 1,
+          "column": {
+            "name": "status",
+            "notNull": true,
+            "length": -1,
+            "table": {
+              "schema": "main",
+              "name": "authors"
+            },
+            "type": {
+              "name": "TEXT"
+            },
+            "originalName": "status"
+          }
+        },
+        {
+          "number": 2,
+          "column": {
+            "name": "id",
+            "notNull": true,
+            "length": -1,
+            "table": {
+              "name": "authors"
+            },
+            "type": {
+              "name": "INTEGER"
+            },
+            "originalName": "id"
+          }
+        }
+      ],
+      "filename": "query.sql"
+    },
+    {
       "text": "INSERT INTO authors (id, name, bio) VALUES (?, ?, ?)",
       "name": "CreateAuthor",
       "cmd": ":exec",

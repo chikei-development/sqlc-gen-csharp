@@ -10284,7 +10284,12 @@ updated_at">
 pg_catalogjsonzmetadata"9
 status0ÿÿÿÿÿÿÿÿÿR	authorsbauthor_statuszstatus*&"
 offset0ÿÿÿÿÿÿÿÿÿ8b	integer*%!
-limit0ÿÿÿÿÿÿÿÿÿ8b	integer:	query.sqlä
+limit0ÿÿÿÿÿÿÿÿÿ8b	integer:	query.sqlÎ
+,UPDATE authors
+SET status = $1
+WHERE id = $2UpdateAuthorStatus:exec*EA
+status0ÿÿÿÿÿÿÿÿÿRpublicauthorsbauthor_statuszstatus*1-
+id0ÿÿÿÿÿÿÿÿÿR	authorsb	bigserialzid:	query.sqlä
 yINSERT INTO authors (id, name, bio) VALUES ($1, $2, $3) RETURNING id, name, bio, created_at, updated_at, metadata, statusCreateAuthor:one"-
 id0ÿÿÿÿÿÿÿÿÿR	authorsb	bigserialzid",
 name0ÿÿÿÿÿÿÿÿÿR	authorsbtextzname"(
@@ -10537,24 +10542,7 @@ LEFT JOIN books ON authors.id = books.author_id
 WHERE authors.metadata IS NOT NULL
 ORDER BY authors.nameGetAuthorsWithJsonMetadata:many"!
 authors0ÿÿÿÿÿÿÿÿÿb r	authors"-
-	book_name0ÿÿÿÿÿÿÿÿÿRbooksbtextzname:	query.sqlì
-XUPDATE "user"
-SET
-    "updated_at" = $1
-WHERE
-    "id" = $2
-RETURNING
-    id, updated_at
-UpdateUser:one"'
-id0ÿÿÿÿÿÿÿÿÿRuserbserialzid"F
-
-updated_at0ÿÿÿÿÿÿÿÿÿRuserb
-pg_catalogtimestamptzz
-updated_at*SO
-
-updated_at0ÿÿÿÿÿÿÿÿÿ8Rpublicuserbpg_catalog.timestamptzz
-updated_at*-)
-id0ÿÿÿÿÿÿÿÿÿ8Ruserbserialzid:	query.sqlü
+	book_name0ÿÿÿÿÿÿÿÿÿRbooksbtextzname:	query.sqlü
 ÒSELECT
     MAX(c_integer) AS max_integer,
     MAX(c_varchar) AS max_varchar,

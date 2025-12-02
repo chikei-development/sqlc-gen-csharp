@@ -25,8 +25,7 @@ public static class Consts
          {
              Id = {{BojackId}},
              Name = {{BojackAuthor}},
-             Bio = {{BojackTheme}},
-             Status = AuthorStatus.Active
+             Bio = {{BojackTheme}}
          });
          """;
 
@@ -34,8 +33,7 @@ public static class Consts
          var bojackId = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs 
          {
              Name = {{BojackAuthor}},
-             Bio = {{BojackTheme}},
-             Status = AuthorStatus.Active
+             Bio = {{BojackTheme}}
          });
          """;
 
@@ -52,8 +50,7 @@ public static class Consts
           {
               Id = {{DrSeussId}},
               Name = {{DrSeussAuthor}},
-              Bio = {{DrSeussQuote}},
-              Status = AuthorStatus.Active
+              Bio = {{DrSeussQuote}}
           });
           """;
 
@@ -61,8 +58,7 @@ public static class Consts
       var drSeussId = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs
       {
           Name = {{DrSeussAuthor}},
-          Bio = {{DrSeussQuote}},
-          Status = AuthorStatus.Active
+          Bio = {{DrSeussQuote}}
       });
       """;
 
@@ -78,8 +74,7 @@ public static class Consts
          var id1 = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs
          {
              Name = {{GenericAuthor}},
-             Bio = {{GenericQuote1}},
-             Status = AuthorStatus.Active
+             Bio = {{GenericQuote1}}
          });
          """;
 
@@ -87,8 +82,7 @@ public static class Consts
           var id2 = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs
           {
               Name = {{GenericAuthor}},
-              Bio = {{GenericQuote2}},
-              Status = AuthorStatus.Active
+              Bio = {{GenericQuote2}}
           });
           """;
 }

@@ -129,6 +129,11 @@ namespace NpgsqlDapperLegacyExampleGen
             ["inactive"] = AuthorStatus.Inactive,
             ["pending"] = AuthorStatus.Pending
         };
+        public static AuthorStatus ToAuthorStatus(this string me)
+        {
+            return StringToEnum[me];
+        }
+
         private static readonly Dictionary<AuthorStatus, string> EnumToString = new Dictionary<AuthorStatus, string>()
         {
             [AuthorStatus.Invalid] = string.Empty,
@@ -159,6 +164,11 @@ namespace NpgsqlDapperLegacyExampleGen
             ["medium"] = CEnum.Medium,
             ["big"] = CEnum.Big
         };
+        public static CEnum ToCEnum(this string me)
+        {
+            return StringToEnum[me];
+        }
+
         private static readonly Dictionary<CEnum, string> EnumToString = new Dictionary<CEnum, string>()
         {
             [CEnum.Invalid] = string.Empty,
@@ -189,6 +199,11 @@ namespace NpgsqlDapperLegacyExampleGen
             ["Biography"] = ExtendedBioType.Biography,
             ["Memoir"] = ExtendedBioType.Memoir
         };
+        public static ExtendedBioType ToExtendedBioType(this string me)
+        {
+            return StringToEnum[me];
+        }
+
         private static readonly Dictionary<ExtendedBioType, string> EnumToString = new Dictionary<ExtendedBioType, string>()
         {
             [ExtendedBioType.Invalid] = string.Empty,

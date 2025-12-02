@@ -177,6 +177,29 @@ public class QuerySql
         return (await this.Transaction.Connection.QueryAsync<ListAuthorsRow>(ListAuthorsSql, queryParams, transaction: this.Transaction)).AsList();
     }
 
+    private const string UpdateAuthorStatusSql = "UPDATE authors SET status = @status WHERE id = @id";
+    public class UpdateAuthorStatusArgs
+    {
+        public required AuthorsStatus Status { get; init; }
+        public required long Id { get; init; }
+    };
+    public async Task UpdateAuthorStatus(UpdateAuthorStatusArgs args)
+    {
+        var queryParams = new Dictionary<string, object?>();
+        queryParams.Add("status", args.Status);
+        queryParams.Add("id", args.Id);
+        if (this.Transaction == null)
+        {
+            using (var connection = new MySqlConnection(ConnectionString))
+                await connection.ExecuteAsync(UpdateAuthorStatusSql, queryParams);
+            return;
+        }
+
+        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        await this.Transaction.Connection.ExecuteAsync(UpdateAuthorStatusSql, queryParams, transaction: this.Transaction);
+    }
+
     private const string CreateAuthorSql = "INSERT INTO authors (id, name, bio) VALUES (@id, @name, @bio)";
     public class CreateAuthorArgs
     {

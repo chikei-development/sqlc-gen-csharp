@@ -103,6 +103,11 @@ namespace MySqlConnectorDapperLegacyExampleGen
             ["inactive"] = AuthorsStatus.Inactive,
             ["pending"] = AuthorsStatus.Pending
         };
+        public static AuthorsStatus ToAuthorsStatus(this string me)
+        {
+            return StringToEnum[me];
+        }
+
         public static HashSet<AuthorsStatus> ToAuthorsStatusSet(this string me)
         {
             return new HashSet<AuthorsStatus>(me.Split(',').ToList().Select(v => StringToEnum[v]));
@@ -126,6 +131,11 @@ namespace MySqlConnectorDapperLegacyExampleGen
             ["Biography"] = BiosBioType.Biography,
             ["Memoir"] = BiosBioType.Memoir
         };
+        public static BiosBioType ToBiosBioType(this string me)
+        {
+            return StringToEnum[me];
+        }
+
         public static HashSet<BiosBioType> ToBiosBioTypeSet(this string me)
         {
             return new HashSet<BiosBioType>(me.Split(',').ToList().Select(v => StringToEnum[v]));
@@ -149,6 +159,11 @@ namespace MySqlConnectorDapperLegacyExampleGen
             ["Editor"] = BiosAuthorType.Editor,
             ["Translator"] = BiosAuthorType.Translator
         };
+        public static BiosAuthorType ToBiosAuthorType(this string me)
+        {
+            return StringToEnum[me];
+        }
+
         public static HashSet<BiosAuthorType> ToBiosAuthorTypeSet(this string me)
         {
             return new HashSet<BiosAuthorType>(me.Split(',').ToList().Select(v => StringToEnum[v]));
@@ -172,6 +187,11 @@ namespace MySqlConnectorDapperLegacyExampleGen
             ["medium"] = MysqlStringTypesCEnum.Medium,
             ["big"] = MysqlStringTypesCEnum.Big
         };
+        public static MysqlStringTypesCEnum ToMysqlStringTypesCEnum(this string me)
+        {
+            return StringToEnum[me];
+        }
+
         public static HashSet<MysqlStringTypesCEnum> ToMysqlStringTypesCEnumSet(this string me)
         {
             return new HashSet<MysqlStringTypesCEnum>(me.Split(',').ToList().Select(v => StringToEnum[v]));
@@ -195,6 +215,11 @@ namespace MySqlConnectorDapperLegacyExampleGen
             ["coffee"] = MysqlStringTypesCSet.Coffee,
             ["milk"] = MysqlStringTypesCSet.Milk
         };
+        public static MysqlStringTypesCSet ToMysqlStringTypesCSet(this string me)
+        {
+            return StringToEnum[me];
+        }
+
         public static HashSet<MysqlStringTypesCSet> ToMysqlStringTypesCSetSet(this string me)
         {
             return new HashSet<MysqlStringTypesCSet>(me.Split(',').ToList().Select(v => StringToEnum[v]));

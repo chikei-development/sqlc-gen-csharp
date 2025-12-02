@@ -194,6 +194,29 @@ public class QuerySql
         return (await this.Transaction.Connection.QueryAsync<ListAuthorsRow>(ListAuthorsSql, queryParams, transaction: this.Transaction)).AsList();
     }
 
+    private const string UpdateAuthorStatusSql = "UPDATE authors SET status = @status WHERE id = @id";
+    public class UpdateAuthorStatusArgs
+    {
+        public required AuthorStatus Status { get; init; }
+        public required long Id { get; init; }
+    };
+    public async Task UpdateAuthorStatus(UpdateAuthorStatusArgs args)
+    {
+        var queryParams = new Dictionary<string, object?>();
+        queryParams.Add("status", args.Status.Stringify());
+        queryParams.Add("id", args.Id);
+        if (this.Transaction == null)
+        {
+            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
+                await connection.ExecuteAsync(UpdateAuthorStatusSql, queryParams);
+            return;
+        }
+
+        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        await this.Transaction.Connection.ExecuteAsync(UpdateAuthorStatusSql, queryParams, transaction: this.Transaction);
+    }
+
     private const string CreateAuthorSql = "INSERT INTO authors (id, name, bio) VALUES (@id, @name, @bio) RETURNING id, name, bio, created_at, updated_at, metadata, status";
     public class CreateAuthorRow
     {
@@ -927,36 +950,6 @@ public class QuerySql
                 return result;
             }
         }
-    }
-
-    private const string UpdateUserSql = "UPDATE \"user\" SET \"updated_at\" = @updated_at WHERE \"id\" = @id RETURNING id, updated_at";
-    public class UpdateUserRow
-    {
-        public required int Id { get; init; }
-        public DateTime? UpdatedAt { get; init; }
-    };
-    public class UpdateUserArgs
-    {
-        public DateTime? UpdatedAt { get; init; }
-        public required int Id { get; init; }
-    };
-    public async Task<UpdateUserRow?> UpdateUser(UpdateUserArgs args)
-    {
-        var queryParams = new Dictionary<string, object?>();
-        queryParams.Add("updated_at", args.UpdatedAt);
-        queryParams.Add("id", args.Id);
-        if (this.Transaction == null)
-        {
-            using (var connection = DataSource != null ? DataSource.CreateConnection() : new NpgsqlConnection(ConnectionString))
-            {
-                var result = await connection.QueryFirstOrDefaultAsync<UpdateUserRow?>(UpdateUserSql, queryParams);
-                return result;
-            }
-        }
-
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
-            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        return await this.Transaction.Connection.QueryFirstOrDefaultAsync<UpdateUserRow?>(UpdateUserSql, queryParams, transaction: this.Transaction);
     }
 
     private const string GetPostgresFunctionsSql = "SELECT MAX(c_integer) AS max_integer, MAX(c_varchar) AS max_varchar, MAX(c_timestamp) AS max_timestamp FROM postgres_datetime_types CROSS JOIN postgres_numeric_types CROSS JOIN postgres_string_types";

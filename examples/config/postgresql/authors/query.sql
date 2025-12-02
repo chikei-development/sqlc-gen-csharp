@@ -13,6 +13,11 @@ ORDER BY name
 LIMIT sqlc.arg('limit')
 OFFSET sqlc.arg('offset');
 
+-- name: UpdateAuthorStatus :exec
+UPDATE authors
+SET status = $1
+WHERE id = $2;
+
 -- name: CreateAuthor :one
 INSERT INTO authors (id, name, bio) VALUES ($1, $2, $3) RETURNING *;
 
@@ -122,12 +127,3 @@ FROM authors
 LEFT JOIN books ON authors.id = books.author_id
 WHERE authors.metadata IS NOT NULL
 ORDER BY authors.name;
-
--- name: UpdateUser :one
-UPDATE "user"
-SET
-    "updated_at" = sqlc.arg(updated_at)
-WHERE
-    "id" = sqlc.arg(id)
-RETURNING
-    *;

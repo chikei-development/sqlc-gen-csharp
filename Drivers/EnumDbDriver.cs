@@ -40,9 +40,7 @@ public abstract class EnumDbDriver : DbDriver
                 };
                 """
                 )!,
-            }.AddRangeIf(
-                [
-                    ParseMemberDeclaration(
+                ParseMemberDeclaration(
                         $$"""
                             public static {{name}} To{{name}}(this string me)
                             {
@@ -50,9 +48,7 @@ public abstract class EnumDbDriver : DbDriver
                             }
                         """
                     )!,
-                ],
-                !Options.UseDapper
-            ),
+            }
         ];
     }
 

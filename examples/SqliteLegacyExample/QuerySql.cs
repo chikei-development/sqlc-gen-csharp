@@ -226,6 +226,41 @@ namespace SqliteLegacyExampleGen
             }
         }
 
+        private const string UpdateAuthorStatusSql = "UPDATE authors SET status = @status WHERE id = @id";
+        public class UpdateAuthorStatusArgs
+        {
+            public string Status { get; set; }
+            public int Id { get; set; }
+        };
+        public async Task UpdateAuthorStatus(UpdateAuthorStatusArgs args)
+        {
+            if (this.Transaction == null)
+            {
+                using (var connection = new SqliteConnection(ConnectionString))
+                {
+                    await connection.OpenAsync();
+                    using (var command = new SqliteCommand(UpdateAuthorStatusSql, connection))
+                    {
+                        command.Parameters.AddWithValue("@status", args.Status);
+                        command.Parameters.AddWithValue("@id", args.Id);
+                        await command.ExecuteNonQueryAsync();
+                        return;
+                    }
+                }
+            }
+
+            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+                throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+            using (var command = this.Transaction.Connection.CreateCommand())
+            {
+                command.CommandText = UpdateAuthorStatusSql;
+                command.Transaction = this.Transaction;
+                command.Parameters.AddWithValue("@status", args.Status);
+                command.Parameters.AddWithValue("@id", args.Id);
+                await command.ExecuteNonQueryAsync();
+            }
+        }
+
         private const string CreateAuthorSql = "INSERT INTO authors (id, name, bio) VALUES (@id, @name, @bio)";
         public class CreateAuthorArgs
         {

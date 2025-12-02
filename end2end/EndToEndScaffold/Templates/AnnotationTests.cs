@@ -21,7 +21,7 @@ public static class AnnotationTests
                              Id = {{Consts.BojackId}},
                              Name = {{Consts.BojackAuthor}},
                              Bio = {{Consts.BojackTheme}},
-                             Status = AuthorStatus.Active
+                             Status = AuthorStatus.Pending
                          };
                          var actual = await this.QuerySql.GetAuthor(new QuerySql.GetAuthorArgs
                          {
