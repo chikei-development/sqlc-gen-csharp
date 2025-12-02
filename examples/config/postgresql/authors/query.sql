@@ -7,11 +7,12 @@ SELECT sqlc.embed(authors) FROM authors
 WHERE name = $1 LIMIT 1;
 
 -- name: ListAuthors :many
-SELECT * 
+SELECT *
 FROM authors
 ORDER BY name
-LIMIT sqlc.arg('limit')
-OFFSET sqlc.arg('offset');
+LIMIT
+    sqlc.arg('limit')
+    OFFSET sqlc.arg('offset');
 
 -- name: UpdateAuthorStatus :exec
 UPDATE authors
