@@ -64,7 +64,7 @@ public abstract class DbDriver
         """;
 
     public readonly string TransactionConnectionNullExcetionThrow = $"""
-        if (this.{Variable.Transaction.AsPropertyName()}?.Connection == null || this.{Variable.Transaction.AsPropertyName()}?.Connection.State != System.Data.ConnectionState.Open)
+        if ({Variable.Transaction.AsPropertyName()}?.Connection == null || {Variable.Transaction.AsPropertyName()}?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
         """;
 
@@ -147,6 +147,7 @@ public abstract class DbDriver
         return new HashSet<string>
         {
             "System",
+            "System.Data",
             "System.Collections.Generic",
             "System.Threading.Tasks",
         }
@@ -162,33 +163,30 @@ public abstract class DbDriver
             // Check return columns
             foreach (var column in query.Columns)
             {
-                // Check if this is an embedded table
-                if (column.EmbedTable != null)
-                {
-                    // Get the embedded table and check its columns for JSON types
-                    AddUsingDirectivesForEmbeddedTable(usingDirectives, column.EmbedTable);
-                }
-                else
-                {
-                    var csharpType = GetCsharpTypeWithoutNullableSuffix(column, query);
-                    if (ColumnMappings.ContainsKey(csharpType))
-                    {
-                        var columnMapping = ColumnMappings[csharpType];
-                        usingDirectives.AddRangeIf(
-                            columnMapping.UsingDirectives!,
-                            columnMapping.UsingDirectives is not null
-                        );
-                    }
-                }
+                AddUsingDirectivesForColumn(usingDirectives, column, query);
             }
 
             // Check parameters
             foreach (var param in query.Params)
             {
-                var csharpType = GetCsharpTypeWithoutNullableSuffix(param.Column, query);
-                if (!ColumnMappings.ContainsKey(csharpType))
-                    continue;
+                AddUsingDirectivesForColumn(usingDirectives, param.Column, query);
+            }
+        }
+        return usingDirectives;
+    }
 
+    private void AddUsingDirectivesForColumn(HashSet<string> usingDirectives, Column column, Query? query)
+    {
+        // Check if this is an embedded table
+        if (column.EmbedTable != null)
+        {
+            AddUsingDirectivesForEmbeddedTable(usingDirectives, column.EmbedTable);
+        }
+        else
+        {
+            var csharpType = GetCsharpTypeWithoutNullableSuffix(column, query);
+            if (ColumnMappings.ContainsKey(csharpType))
+            {
                 var columnMapping = ColumnMappings[csharpType];
                 usingDirectives.AddRangeIf(
                     columnMapping.UsingDirectives!,
@@ -196,7 +194,6 @@ public abstract class DbDriver
                 );
             }
         }
-        return usingDirectives;
     }
 
     private void AddUsingDirectivesForEmbeddedTable(HashSet<string> usingDirectives, Plugin.Identifier embedTable)
@@ -209,38 +206,12 @@ public abstract class DbDriver
         if (!schemaDict.TryGetValue(embedTable.Name, out var table))
             return;
 
-        // Check each column of the embedded table for JSON types that need System.Text.Json
+        // Check each column of the embedded table using the same logic as regular columns
         foreach (var tableColumn in table.Columns)
         {
-            var csharpType = GetCsharpTypeForTableColumn(tableColumn);
-            if (ColumnMappings.ContainsKey(csharpType))
-            {
-                var columnMapping = ColumnMappings[csharpType];
-                usingDirectives.AddRangeIf(
-                    columnMapping.UsingDirectives!,
-                    columnMapping.UsingDirectives is not null
-                );
-            }
+            // For embedded table columns, we don't have a query context, so pass null
+            AddUsingDirectivesForColumn(usingDirectives, tableColumn, null);
         }
-    }
-
-    protected virtual string GetCsharpTypeForTableColumn(Plugin.Column tableColumn)
-    {
-        if (string.IsNullOrEmpty(tableColumn.Type.Name))
-            return "object";
-
-        // Check overrides first (though unlikely for table columns)
-        foreach (var columnMapping in ColumnMappings.Where(cm =>
-            DoesColumnMappingApply(cm.Value, tableColumn)))
-        {
-            if (tableColumn.IsArray || tableColumn.IsSqlcSlice)
-                return $"{columnMapping.Key}[]";
-            return columnMapping.Key;
-        }
-
-        throw new NotSupportedException(
-            $"Column {tableColumn.Name} has unsupported column type: {tableColumn.Type.Name} in {GetType().Name}"
-        );
     }
 
     public virtual ISet<string> GetUsingDirectivesForUtils()
@@ -415,7 +386,7 @@ public abstract class DbDriver
         var transactionProperty = Variable.Transaction.AsPropertyName();
         var commandVar = Variable.Command.AsVarName();
         return $$"""
-            using (var {{commandVar}} = this.{{transactionProperty}}.Connection.CreateCommand())
+            using (var {{commandVar}} = {{transactionProperty}}.Connection.CreateCommand())
             {
                 {{commandVar}}.CommandText = {{sqlVar}};
                 {{commandVar}}.Transaction = this.{{transactionProperty}};

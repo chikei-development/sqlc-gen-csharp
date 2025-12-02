@@ -2,12 +2,22 @@
 SELECT * FROM authors
 WHERE name = $1 LIMIT 1;
 
+-- name: GetAuthorEmbed :one
+SELECT sqlc.embed(authors) FROM authors
+WHERE name = $1 LIMIT 1;
+
 -- name: ListAuthors :many
-SELECT * 
+SELECT *
 FROM authors
 ORDER BY name
-LIMIT sqlc.arg('limit')
-OFFSET sqlc.arg('offset');
+LIMIT
+    sqlc.arg('limit')
+    OFFSET sqlc.arg('offset');
+
+-- name: UpdateAuthorStatus :exec
+UPDATE authors
+SET status = sqlc.arg('status')::authors_status
+WHERE id = sqlc.arg('id');
 
 -- name: CreateAuthor :one
 INSERT INTO authors (id, name, bio) VALUES ($1, $2, $3) RETURNING *;
@@ -21,6 +31,9 @@ INSERT INTO authors (
 
 -- name: CreateAuthorReturnId :execlastid
 INSERT INTO authors (name, bio) VALUES ($1, $2) RETURNING id;
+
+-- name: CreateAuthorEmbed :one
+INSERT INTO authors (id, name, bio) VALUES ($1, $2, $3) RETURNING sqlc.embed(authors);
 
 -- name: GetAuthorById :one
 SELECT * FROM authors
@@ -115,12 +128,3 @@ FROM authors
 LEFT JOIN books ON authors.id = books.author_id
 WHERE authors.metadata IS NOT NULL
 ORDER BY authors.name;
-
--- name: UpdateUser :one
-UPDATE "user"
-SET
-    "updated_at" = sqlc.arg(updated_at)
-WHERE
-    "id" = sqlc.arg(id)
-RETURNING
-    *;

@@ -20,7 +20,7 @@ public static class AnnotationTests
                          {
                              Id = {{Consts.BojackId}},
                              Name = {{Consts.BojackAuthor}},
-                             Bio = {{Consts.BojackTheme}}
+                             Bio = {{Consts.BojackTheme}},
                          };
                          var actual = await this.QuerySql.GetAuthor(new QuerySql.GetAuthorArgs
                          {
@@ -51,14 +51,13 @@ public static class AnnotationTests
                              { 
                                  Id = {{Consts.BojackId}},
                                  Name = {{Consts.BojackAuthor}}, 
-                                 Bio = {{Consts.BojackTheme}}
+                                 Bio = {{Consts.BojackTheme}}                             
                              },
                              new QuerySql.ListAuthorsRow 
                              { 
                                  Id = {{Consts.DrSeussId}},
                                  Name = {{Consts.DrSeussAuthor}}, 
-                                 Bio = {{Consts.DrSeussQuote}}
-                             }
+                                 Bio = {{Consts.DrSeussQuote}}                             }
                          };
                          var actual = await this.QuerySql.ListAuthors(new QuerySql.ListAuthorsArgs
                          {

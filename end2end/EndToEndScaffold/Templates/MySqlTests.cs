@@ -606,7 +606,8 @@ public static class MySqlTests
                          {
                              Id = {{Consts.BojackId}},
                              Name = {{Consts.BojackAuthor}},
-                             Bio = {{Consts.BojackTheme}}
+                             Bio = {{Consts.BojackTheme}},
+                             Status = AuthorsStatus.Pending
                          };
                          actual = await QuerySql.GetAuthor(new QuerySql.GetAuthorArgs { Name = {{Consts.BojackAuthor}} });
                          AssertSingularEquals(expected, actual{{Consts.UnknownRecordValuePlaceholder}});
@@ -616,6 +617,7 @@ public static class MySqlTests
                              Assert.That(x.Id, Is.EqualTo(y.Id));
                              Assert.That(x.Name, Is.EqualTo(y.Name));
                              Assert.That(x.Bio, Is.EqualTo(y.Bio));
+                             Assert.That(x.Status, Is.EqualTo(y.Status));
                          }
                      }
                      """
@@ -932,6 +934,44 @@ public static class MySqlTests
                          Assert.That(author, Is.Not.Null);
                          Assert.That(author{{Consts.UnknownRecordValuePlaceholder}}.Name, Is.EqualTo("Test Author With Comments"));
                          Assert.That(author{{Consts.UnknownRecordValuePlaceholder}}.Bio, Is.EqualTo("Biography with inline comments test"));
+                     }
+                     """
+        },
+        [KnownTestType.MySqlAuthorEmbedAndEnum] = new TestImpl
+        {
+            Impl = $$"""
+                     [Test]
+                     [TestCase(AuthorsStatus.Active)]
+                     [TestCase(AuthorsStatus.Inactive)]
+                     [TestCase(AuthorsStatus.Pending)]
+                     public async Task TestMySqlAuthorStatusEnum(AuthorsStatus status)
+                     {
+                         // Create author using regular CreateAuthor (MySQL doesn't support RETURNING like PostgreSQL)
+                         await QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 88888, Name = "Status Test Author", Bio = "Testing author status enum" });
+                         
+                         // Update the status
+                         await QuerySql.UpdateAuthorStatus(new QuerySql.UpdateAuthorStatusArgs { Status = status, Id = 88888 });
+                        
+                         var expected = new Author
+                         {
+                             Id = 88888,
+                             Name = "Status Test Author",
+                             Bio = "Testing author status enum",
+                             Status = status
+                         };
+
+                         // Get the author using embed to verify the enum functionality with embedded structs
+                         var result = (await QuerySql.GetAuthorEmbed(new QuerySql.GetAuthorEmbedArgs { Name = "Status Test Author" }))?.Author;
+                         Assert.That(result, Is.Not.Null);
+                         AssertSingularEquals(expected, result ?? throw new InvalidOperationException());
+                         
+                         void AssertSingularEquals(Author x, Author y)
+                         {
+                             Assert.That(x.Id, Is.EqualTo(y.Id));
+                             Assert.That(x.Name, Is.EqualTo(y.Name));
+                             Assert.That(x.Bio, Is.EqualTo(y.Bio));
+                             Assert.That(x.Status, Is.EqualTo(y.Status));
+                         }
                      }
                      """
         }

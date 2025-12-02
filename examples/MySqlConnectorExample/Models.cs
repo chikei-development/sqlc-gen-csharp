@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text.Json;
 
 namespace MySqlConnectorExampleGen;
-public readonly record struct Author(long Id, string Name, string? Bio);
+public readonly record struct Author(long Id, string Name, string? Bio, AuthorsStatus? Status);
 public readonly record struct Book(long Id, string Name, long AuthorId, string? Description);
 public readonly record struct User(int Id, DateTime? UpdatedAt);
 public readonly record struct MysqlNumericType(bool? CBool, bool? CBoolean, short? CTinyint, short? CSmallint, int? CMediumint, int? CInt, int? CInteger, long? CBigint, double? CFloat, decimal? CDecimal, decimal? CDec, decimal? CNumeric, decimal? CFixed, double? CDouble, double? CDoublePrecision);
@@ -15,6 +15,34 @@ public readonly record struct MysqlStringType(string? CChar, string? CNchar, str
 public readonly record struct MysqlDatetimeType(short? CYear, DateTime? CDate, DateTime? CDatetime, DateTime? CTimestamp, TimeSpan? CTime, DateTime? CTimestampNodaInstantOverride);
 public readonly record struct MysqlBinaryType(byte? CBit, byte[]? CBinary, byte[]? CVarbinary, byte[]? CTinyblob, byte[]? CBlob, byte[]? CMediumblob, byte[]? CLongblob);
 public readonly record struct ExtendedBio(string? AuthorName, string? Name, BiosBioType? BioType, HashSet<BiosAuthorType>? AuthorType);
+public enum AuthorsStatus
+{
+    Invalid = 0, // reserved for invalid enum value
+    Active = 1,
+    Inactive = 2,
+    Pending = 3
+}
+
+public static class AuthorsStatusExtensions
+{
+    private static readonly Dictionary<string, AuthorsStatus> StringToEnum = new Dictionary<string, AuthorsStatus>()
+    {
+        [string.Empty] = AuthorsStatus.Invalid,
+        ["active"] = AuthorsStatus.Active,
+        ["inactive"] = AuthorsStatus.Inactive,
+        ["pending"] = AuthorsStatus.Pending
+    };
+    public static AuthorsStatus ToAuthorsStatus(this string me)
+    {
+        return StringToEnum[me];
+    }
+
+    public static HashSet<AuthorsStatus> ToAuthorsStatusSet(this string me)
+    {
+        return new HashSet<AuthorsStatus>(me.Split(',').ToList().Select(v => StringToEnum[v]));
+    }
+}
+
 public enum BiosBioType
 {
     Invalid = 0, // reserved for invalid enum value

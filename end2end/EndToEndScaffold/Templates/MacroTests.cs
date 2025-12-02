@@ -105,7 +105,7 @@ public static class MacroTests
                                  { 
                                      Id = bojackId, 
                                      Name = {{Consts.BojackAuthor}}, 
-                                     Bio = {{Consts.BojackTheme}}
+                                     Bio = {{Consts.BojackTheme}} 
                                  },
                                  Book = new Book 
                                  { 
@@ -120,7 +120,7 @@ public static class MacroTests
                                  { 
                                      Id = drSeussId, 
                                      Name = {{Consts.DrSeussAuthor}}, 
-                                     Bio = {{Consts.DrSeussQuote}}
+                                     Bio = {{Consts.DrSeussQuote}},
                                  },
                                  Book = new Book 
                                  { 

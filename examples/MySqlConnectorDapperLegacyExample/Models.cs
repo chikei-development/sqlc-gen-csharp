@@ -13,6 +13,7 @@ namespace MySqlConnectorDapperLegacyExampleGen
         public long Id { get; set; }
         public string Name { get; set; }
         public string Bio { get; set; }
+        public AuthorsStatus Status { get; set; }
     };
     public class Book
     {
@@ -85,6 +86,34 @@ namespace MySqlConnectorDapperLegacyExampleGen
         public BiosBioType? BioType { get; set; }
         public HashSet<BiosAuthorType> AuthorType { get; set; }
     };
+    public enum AuthorsStatus
+    {
+        Invalid = 0, // reserved for invalid enum value
+        Active = 1,
+        Inactive = 2,
+        Pending = 3
+    }
+
+    public static class AuthorsStatusExtensions
+    {
+        private static readonly Dictionary<string, AuthorsStatus> StringToEnum = new Dictionary<string, AuthorsStatus>()
+        {
+            [string.Empty] = AuthorsStatus.Invalid,
+            ["active"] = AuthorsStatus.Active,
+            ["inactive"] = AuthorsStatus.Inactive,
+            ["pending"] = AuthorsStatus.Pending
+        };
+        public static AuthorsStatus ToAuthorsStatus(this string me)
+        {
+            return StringToEnum[me];
+        }
+
+        public static HashSet<AuthorsStatus> ToAuthorsStatusSet(this string me)
+        {
+            return new HashSet<AuthorsStatus>(me.Split(',').ToList().Select(v => StringToEnum[v]));
+        }
+    }
+
     public enum BiosBioType
     {
         Invalid = 0, // reserved for invalid enum value

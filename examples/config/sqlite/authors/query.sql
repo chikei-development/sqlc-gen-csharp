@@ -1,11 +1,19 @@
 -- name: GetAuthor :one
 SELECT * FROM authors WHERE name = ? LIMIT 1;
 
+-- name: GetAuthorEmbed :one
+SELECT sqlc.embed(authors) FROM authors WHERE name = ? LIMIT 1;
+
 -- name: ListAuthors :many
 SELECT * 
 FROM authors
 ORDER BY name
 LIMIT ? OFFSET ?;
+
+-- name: UpdateAuthorStatus :exec
+UPDATE authors
+SET status = ?
+WHERE id = ?;
 
 -- name: CreateAuthor :exec
 INSERT INTO authors (id, name, bio) VALUES (?, ?, ?);

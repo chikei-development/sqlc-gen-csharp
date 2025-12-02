@@ -21,7 +21,7 @@ namespace EndToEndTests
             {
                 Id = 1111,
                 Name = "Bojack Horseman",
-                Bio = "Back in the 90s he was in a very famous TV show"
+                Bio = "Back in the 90s he was in a very famous TV show",
             };
             var actual = await this.QuerySql.GetAuthor(new QuerySql.GetAuthorArgs { Name = "Bojack Horseman" });
             AssertSingularEquals(expected, actual);
@@ -212,7 +212,7 @@ namespace EndToEndTests
                     {
                         Id = drSeussId,
                         Name = "Dr. Seuss",
-                        Bio = "You'll miss the best things if you keep your eyes shut"
+                        Bio = "You'll miss the best things if you keep your eyes shut",
                     },
                     Book = new Book
                     {

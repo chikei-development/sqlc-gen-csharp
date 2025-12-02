@@ -43,22 +43,25 @@ public class QuerySql
 
     public static void ConfigureEnumMappings(NpgsqlDataSourceBuilder dataSourceBuilder)
     {
-        dataSourceBuilder.MapEnum<AuthorStatus>("author_status");
+        dataSourceBuilder.MapEnum<AuthorsStatus>("authors_status");
         dataSourceBuilder.MapEnum<CEnum>("c_enum");
         dataSourceBuilder.MapEnum<ExtendedBioType>("bio_type");
     }
 
-    private NpgsqlTransaction? Transaction { get; }
-    private NpgsqlDataSource? DataSource { get; }
+    // This being generated code, we can suppress the warning about non-nullable fields not being initialized
+    private NpgsqlTransaction Transaction { get; } = null !;
+    private NpgsqlDataSource DataSource { get; } = null !;
     private string? ConnectionString { get; }
 
     private const string GetAuthorSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors WHERE name = @name LIMIT 1";
-    public readonly record struct GetAuthorRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorStatus? Status);
+    public readonly record struct GetAuthorRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorsStatus? Status);
     public readonly record struct GetAuthorArgs(string Name);
     public async Task<GetAuthorRow?> GetAuthor(GetAuthorArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetAuthorSql))
             {
                 command.Parameters.AddWithValue("@name", args.Name);
@@ -74,7 +77,7 @@ public class QuerySql
                             CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
                             UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
                             Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                            Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus()
+                            Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                         };
                     }
                 }
@@ -83,12 +86,12 @@ public class QuerySql
             return null;
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetAuthorSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@name", args.Name);
             using (var reader = await command.ExecuteReaderAsync())
             {
@@ -102,7 +105,74 @@ public class QuerySql
                         CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
                         UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
                         Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                        Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus()
+                        Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
+                    };
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private const string GetAuthorEmbedSql = "SELECT authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at, authors.metadata, authors.status FROM authors WHERE name = @name LIMIT 1";
+    public readonly record struct GetAuthorEmbedRow(Author? Author);
+    public readonly record struct GetAuthorEmbedArgs(string Name);
+    public async Task<GetAuthorEmbedRow?> GetAuthorEmbed(GetAuthorEmbedArgs args)
+    {
+        if (Transaction == null)
+        {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
+            using (var command = DataSource.CreateCommand(GetAuthorEmbedSql))
+            {
+                command.Parameters.AddWithValue("@name", args.Name);
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync())
+                    {
+                        return new GetAuthorEmbedRow
+                        {
+                            Author = new Author
+                            {
+                                Id = reader.GetInt64(0),
+                                Name = reader.GetString(1),
+                                Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
+                                CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
+                                UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
+                                Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
+                                Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
+                            }
+                        };
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        using (var command = Transaction.Connection.CreateCommand())
+        {
+            command.CommandText = GetAuthorEmbedSql;
+            command.Transaction = Transaction;
+            command.Parameters.AddWithValue("@name", args.Name);
+            using (var reader = await command.ExecuteReaderAsync())
+            {
+                if (await reader.ReadAsync())
+                {
+                    return new GetAuthorEmbedRow
+                    {
+                        Author = new Author
+                        {
+                            Id = reader.GetInt64(0),
+                            Name = reader.GetString(1),
+                            Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
+                            CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
+                            UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
+                            Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
+                            Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
+                        }
                     };
                 }
             }
@@ -112,12 +182,14 @@ public class QuerySql
     }
 
     private const string ListAuthorsSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors ORDER BY name LIMIT @limit OFFSET @offset";
-    public readonly record struct ListAuthorsRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorStatus? Status);
+    public readonly record struct ListAuthorsRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorsStatus? Status);
     public readonly record struct ListAuthorsArgs(int Offset, int Limit);
     public async Task<List<ListAuthorsRow>> ListAuthors(ListAuthorsArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(ListAuthorsSql))
             {
                 command.Parameters.AddWithValue("@offset", args.Offset);
@@ -126,37 +198,68 @@ public class QuerySql
                 {
                     var result = new List<ListAuthorsRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new ListAuthorsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus() });
+                        result.Add(new ListAuthorsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() });
                     return result;
                 }
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = ListAuthorsSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@offset", args.Offset);
             command.Parameters.AddWithValue("@limit", args.Limit);
             using (var reader = await command.ExecuteReaderAsync())
             {
                 var result = new List<ListAuthorsRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new ListAuthorsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus() });
+                    result.Add(new ListAuthorsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() });
                 return result;
             }
         }
     }
 
+    private const string UpdateAuthorStatusSql = "UPDATE authors SET status = @status::authors_status WHERE id = @id";
+    public readonly record struct UpdateAuthorStatusArgs(AuthorsStatus Status, long Id);
+    public async Task UpdateAuthorStatus(UpdateAuthorStatusArgs args)
+    {
+        if (Transaction == null)
+        {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
+            using (var command = DataSource.CreateCommand(UpdateAuthorStatusSql))
+            {
+                command.Parameters.AddWithValue("@status", args.Status);
+                command.Parameters.AddWithValue("@id", args.Id);
+                await command.ExecuteNonQueryAsync();
+                return;
+            }
+        }
+
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        using (var command = Transaction.Connection.CreateCommand())
+        {
+            command.CommandText = UpdateAuthorStatusSql;
+            command.Transaction = Transaction;
+            command.Parameters.AddWithValue("@status", args.Status);
+            command.Parameters.AddWithValue("@id", args.Id);
+            await command.ExecuteNonQueryAsync();
+        }
+    }
+
     private const string CreateAuthorSql = "INSERT INTO authors (id, name, bio) VALUES (@id, @name, @bio) RETURNING id, name, bio, created_at, updated_at, metadata, status";
-    public readonly record struct CreateAuthorRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorStatus? Status);
+    public readonly record struct CreateAuthorRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorsStatus? Status);
     public readonly record struct CreateAuthorArgs(long Id, string Name, string? Bio);
     public async Task<CreateAuthorRow?> CreateAuthor(CreateAuthorArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(CreateAuthorSql))
             {
                 command.Parameters.AddWithValue("@id", args.Id);
@@ -174,7 +277,7 @@ public class QuerySql
                             CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
                             UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
                             Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                            Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus()
+                            Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                         };
                     }
                 }
@@ -183,12 +286,12 @@ public class QuerySql
             return null;
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = CreateAuthorSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@id", args.Id);
             command.Parameters.AddWithValue("@name", args.Name);
             command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
@@ -204,7 +307,7 @@ public class QuerySql
                         CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
                         UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
                         Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                        Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus()
+                        Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                     };
                 }
             }
@@ -214,12 +317,14 @@ public class QuerySql
     }
 
     private const string CreateAuthorIncludingCommentSql = "INSERT INTO authors ( id, name, bio ) VALUES (@id, @name, @bio) RETURNING id, name, bio, created_at, updated_at, metadata, status";
-    public readonly record struct CreateAuthorIncludingCommentRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorStatus? Status);
+    public readonly record struct CreateAuthorIncludingCommentRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorsStatus? Status);
     public readonly record struct CreateAuthorIncludingCommentArgs(long Id, string Name, string? Bio);
     public async Task<CreateAuthorIncludingCommentRow?> CreateAuthorIncludingComment(CreateAuthorIncludingCommentArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(CreateAuthorIncludingCommentSql))
             {
                 command.Parameters.AddWithValue("@id", args.Id);
@@ -237,7 +342,7 @@ public class QuerySql
                             CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
                             UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
                             Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                            Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus()
+                            Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                         };
                     }
                 }
@@ -246,12 +351,12 @@ public class QuerySql
             return null;
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = CreateAuthorIncludingCommentSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@id", args.Id);
             command.Parameters.AddWithValue("@name", args.Name);
             command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
@@ -267,7 +372,7 @@ public class QuerySql
                         CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
                         UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
                         Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                        Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus()
+                        Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                     };
                 }
             }
@@ -281,8 +386,10 @@ public class QuerySql
     public readonly record struct CreateAuthorReturnIdArgs(string Name, string? Bio);
     public async Task<long> CreateAuthorReturnId(CreateAuthorReturnIdArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(CreateAuthorReturnIdSql))
             {
                 command.Parameters.AddWithValue("@name", args.Name);
@@ -292,12 +399,12 @@ public class QuerySql
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = CreateAuthorReturnIdSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@name", args.Name);
             command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
             var result = await command.ExecuteScalarAsync();
@@ -305,13 +412,86 @@ public class QuerySql
         }
     }
 
+    private const string CreateAuthorEmbedSql = "INSERT INTO authors (id, name, bio) VALUES (@id, @name, @bio) RETURNING authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at, authors.metadata, authors.status";
+    public readonly record struct CreateAuthorEmbedRow(Author? Author);
+    public readonly record struct CreateAuthorEmbedArgs(long Id, string Name, string? Bio);
+    public async Task<CreateAuthorEmbedRow?> CreateAuthorEmbed(CreateAuthorEmbedArgs args)
+    {
+        if (Transaction == null)
+        {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
+            using (var command = DataSource.CreateCommand(CreateAuthorEmbedSql))
+            {
+                command.Parameters.AddWithValue("@id", args.Id);
+                command.Parameters.AddWithValue("@name", args.Name);
+                command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync())
+                    {
+                        return new CreateAuthorEmbedRow
+                        {
+                            Author = new Author
+                            {
+                                Id = reader.GetInt64(0),
+                                Name = reader.GetString(1),
+                                Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
+                                CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
+                                UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
+                                Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
+                                Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
+                            }
+                        };
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        using (var command = Transaction.Connection.CreateCommand())
+        {
+            command.CommandText = CreateAuthorEmbedSql;
+            command.Transaction = Transaction;
+            command.Parameters.AddWithValue("@id", args.Id);
+            command.Parameters.AddWithValue("@name", args.Name);
+            command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
+            using (var reader = await command.ExecuteReaderAsync())
+            {
+                if (await reader.ReadAsync())
+                {
+                    return new CreateAuthorEmbedRow
+                    {
+                        Author = new Author
+                        {
+                            Id = reader.GetInt64(0),
+                            Name = reader.GetString(1),
+                            Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
+                            CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
+                            UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
+                            Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
+                            Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
+                        }
+                    };
+                }
+            }
+        }
+
+        return null;
+    }
+
     private const string GetAuthorByIdSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors WHERE id = @id LIMIT 1";
-    public readonly record struct GetAuthorByIdRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorStatus? Status);
+    public readonly record struct GetAuthorByIdRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorsStatus? Status);
     public readonly record struct GetAuthorByIdArgs(long Id);
     public async Task<GetAuthorByIdRow?> GetAuthorById(GetAuthorByIdArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetAuthorByIdSql))
             {
                 command.Parameters.AddWithValue("@id", args.Id);
@@ -327,7 +507,7 @@ public class QuerySql
                             CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
                             UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
                             Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                            Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus()
+                            Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                         };
                     }
                 }
@@ -336,12 +516,12 @@ public class QuerySql
             return null;
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetAuthorByIdSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@id", args.Id);
             using (var reader = await command.ExecuteReaderAsync())
             {
@@ -355,7 +535,7 @@ public class QuerySql
                         CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
                         UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
                         Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                        Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus()
+                        Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                     };
                 }
             }
@@ -365,12 +545,14 @@ public class QuerySql
     }
 
     private const string GetAuthorByNamePatternSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors WHERE name LIKE COALESCE(@name_pattern, '%')";
-    public readonly record struct GetAuthorByNamePatternRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorStatus? Status);
+    public readonly record struct GetAuthorByNamePatternRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorsStatus? Status);
     public readonly record struct GetAuthorByNamePatternArgs(string? NamePattern);
     public async Task<List<GetAuthorByNamePatternRow>> GetAuthorByNamePattern(GetAuthorByNamePatternArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetAuthorByNamePatternSql))
             {
                 command.Parameters.AddWithValue("@name_pattern", args.NamePattern ?? (object)DBNull.Value);
@@ -378,24 +560,24 @@ public class QuerySql
                 {
                     var result = new List<GetAuthorByNamePatternRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetAuthorByNamePatternRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus() });
+                        result.Add(new GetAuthorByNamePatternRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() });
                     return result;
                 }
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetAuthorByNamePatternSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@name_pattern", args.NamePattern ?? (object)DBNull.Value);
             using (var reader = await command.ExecuteReaderAsync())
             {
                 var result = new List<GetAuthorByNamePatternRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new GetAuthorByNamePatternRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus() });
+                    result.Add(new GetAuthorByNamePatternRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() });
                 return result;
             }
         }
@@ -405,8 +587,10 @@ public class QuerySql
     public readonly record struct DeleteAuthorArgs(string Name);
     public async Task DeleteAuthor(DeleteAuthorArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(DeleteAuthorSql))
             {
                 command.Parameters.AddWithValue("@name", args.Name);
@@ -415,12 +599,12 @@ public class QuerySql
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = DeleteAuthorSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@name", args.Name);
             await command.ExecuteNonQueryAsync();
         }
@@ -429,8 +613,10 @@ public class QuerySql
     private const string TruncateAuthorsSql = "TRUNCATE TABLE authors CASCADE";
     public async Task TruncateAuthors()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(TruncateAuthorsSql))
             {
                 await command.ExecuteNonQueryAsync();
@@ -438,12 +624,12 @@ public class QuerySql
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = TruncateAuthorsSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             await command.ExecuteNonQueryAsync();
         }
     }
@@ -452,8 +638,10 @@ public class QuerySql
     public readonly record struct UpdateAuthorsArgs(string? Bio);
     public async Task<long> UpdateAuthors(UpdateAuthorsArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(UpdateAuthorsSql))
             {
                 command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
@@ -461,24 +649,26 @@ public class QuerySql
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = UpdateAuthorsSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
             return await command.ExecuteNonQueryAsync();
         }
     }
 
     private const string GetAuthorsByIdsSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors WHERE id = ANY(@longArr_1::BIGINT [])";
-    public readonly record struct GetAuthorsByIdsRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorStatus? Status);
+    public readonly record struct GetAuthorsByIdsRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorsStatus? Status);
     public readonly record struct GetAuthorsByIdsArgs(long[] LongArr1);
     public async Task<List<GetAuthorsByIdsRow>> GetAuthorsByIds(GetAuthorsByIdsArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetAuthorsByIdsSql))
             {
                 command.Parameters.AddWithValue("@longArr_1", args.LongArr1);
@@ -486,36 +676,38 @@ public class QuerySql
                 {
                     var result = new List<GetAuthorsByIdsRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetAuthorsByIdsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus() });
+                        result.Add(new GetAuthorsByIdsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() });
                     return result;
                 }
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetAuthorsByIdsSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@longArr_1", args.LongArr1);
             using (var reader = await command.ExecuteReaderAsync())
             {
                 var result = new List<GetAuthorsByIdsRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new GetAuthorsByIdsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus() });
+                    result.Add(new GetAuthorsByIdsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() });
                 return result;
             }
         }
     }
 
     private const string GetAuthorsByIdsAndNamesSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors WHERE id = ANY(@longArr_1::BIGINT []) AND name = ANY(@stringArr_2::TEXT [])";
-    public readonly record struct GetAuthorsByIdsAndNamesRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorStatus? Status);
+    public readonly record struct GetAuthorsByIdsAndNamesRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorsStatus? Status);
     public readonly record struct GetAuthorsByIdsAndNamesArgs(long[] LongArr1, string[] StringArr2);
     public async Task<List<GetAuthorsByIdsAndNamesRow>> GetAuthorsByIdsAndNames(GetAuthorsByIdsAndNamesArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetAuthorsByIdsAndNamesSql))
             {
                 command.Parameters.AddWithValue("@longArr_1", args.LongArr1);
@@ -524,25 +716,25 @@ public class QuerySql
                 {
                     var result = new List<GetAuthorsByIdsAndNamesRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetAuthorsByIdsAndNamesRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus() });
+                        result.Add(new GetAuthorsByIdsAndNamesRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() });
                     return result;
                 }
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetAuthorsByIdsAndNamesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@longArr_1", args.LongArr1);
             command.Parameters.AddWithValue("@stringArr_2", args.StringArr2);
             using (var reader = await command.ExecuteReaderAsync())
             {
                 var result = new List<GetAuthorsByIdsAndNamesRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new GetAuthorsByIdsAndNamesRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus() });
+                    result.Add(new GetAuthorsByIdsAndNamesRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() });
                 return result;
             }
         }
@@ -553,8 +745,10 @@ public class QuerySql
     public readonly record struct CreateBookArgs(string Name, long AuthorId);
     public async Task<Guid> CreateBook(CreateBookArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(CreateBookSql))
             {
                 command.Parameters.AddWithValue("@name", args.Name);
@@ -564,12 +758,12 @@ public class QuerySql
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = CreateBookSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@name", args.Name);
             command.Parameters.AddWithValue("@author_id", args.AuthorId);
             var result = await command.ExecuteScalarAsync();
@@ -581,31 +775,33 @@ public class QuerySql
     public readonly record struct ListAllAuthorsBooksRow(Author? Author, Book? Book);
     public async Task<List<ListAllAuthorsBooksRow>> ListAllAuthorsBooks()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(ListAllAuthorsBooksSql))
             {
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     var result = new List<ListAllAuthorsBooksRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus() }, Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
+                        result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() }, Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
                     return result;
                 }
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = ListAllAuthorsBooksSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             using (var reader = await command.ExecuteReaderAsync())
             {
                 var result = new List<ListAllAuthorsBooksRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus() }, Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
+                    result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() }, Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
                 return result;
             }
         }
@@ -615,43 +811,47 @@ public class QuerySql
     public readonly record struct GetDuplicateAuthorsRow(Author? Author, Author? Author2);
     public async Task<List<GetDuplicateAuthorsRow>> GetDuplicateAuthors()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetDuplicateAuthorsSql))
             {
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     var result = new List<GetDuplicateAuthorsRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus() }, Author2 = new Author { Id = reader.GetInt64(7), Name = reader.GetString(8), Bio = reader.IsDBNull(9) ? null : reader.GetString(9), CreatedAt = reader.IsDBNull(10) ? null : reader.GetDateTime(10), UpdatedAt = reader.IsDBNull(11) ? null : reader.GetDateTime(11), Metadata = reader.IsDBNull(12) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(12)), Status = reader.IsDBNull(13) ? null : reader.GetString(13).ToAuthorStatus() } });
+                        result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() }, Author2 = new Author { Id = reader.GetInt64(7), Name = reader.GetString(8), Bio = reader.IsDBNull(9) ? null : reader.GetString(9), CreatedAt = reader.IsDBNull(10) ? null : reader.GetDateTime(10), UpdatedAt = reader.IsDBNull(11) ? null : reader.GetDateTime(11), Metadata = reader.IsDBNull(12) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(12)), Status = reader.IsDBNull(13) ? null : reader.GetString(13).ToAuthorsStatus() } });
                     return result;
                 }
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetDuplicateAuthorsSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             using (var reader = await command.ExecuteReaderAsync())
             {
                 var result = new List<GetDuplicateAuthorsRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus() }, Author2 = new Author { Id = reader.GetInt64(7), Name = reader.GetString(8), Bio = reader.IsDBNull(9) ? null : reader.GetString(9), CreatedAt = reader.IsDBNull(10) ? null : reader.GetDateTime(10), UpdatedAt = reader.IsDBNull(11) ? null : reader.GetDateTime(11), Metadata = reader.IsDBNull(12) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(12)), Status = reader.IsDBNull(13) ? null : reader.GetString(13).ToAuthorStatus() } });
+                    result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() }, Author2 = new Author { Id = reader.GetInt64(7), Name = reader.GetString(8), Bio = reader.IsDBNull(9) ? null : reader.GetString(9), CreatedAt = reader.IsDBNull(10) ? null : reader.GetDateTime(10), UpdatedAt = reader.IsDBNull(11) ? null : reader.GetDateTime(11), Metadata = reader.IsDBNull(12) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(12)), Status = reader.IsDBNull(13) ? null : reader.GetString(13).ToAuthorsStatus() } });
                 return result;
             }
         }
     }
 
     private const string GetAuthorsByBookNameSql = "SELECT authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at, authors.metadata, authors.status, books.id, books.name, books.author_id, books.description FROM authors INNER JOIN books ON authors.id = books.author_id WHERE books.name = @name";
-    public readonly record struct GetAuthorsByBookNameRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorStatus? Status, Book? Book);
+    public readonly record struct GetAuthorsByBookNameRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorsStatus? Status, Book? Book);
     public readonly record struct GetAuthorsByBookNameArgs(string Name);
     public async Task<List<GetAuthorsByBookNameRow>> GetAuthorsByBookName(GetAuthorsByBookNameArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetAuthorsByBookNameSql))
             {
                 command.Parameters.AddWithValue("@name", args.Name);
@@ -659,24 +859,24 @@ public class QuerySql
                 {
                     var result = new List<GetAuthorsByBookNameRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus(), Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
+                        result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus(), Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
                     return result;
                 }
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetAuthorsByBookNameSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@name", args.Name);
             using (var reader = await command.ExecuteReaderAsync())
             {
                 var result = new List<GetAuthorsByBookNameRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus(), Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
+                    result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus(), Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
                 return result;
             }
         }
@@ -686,8 +886,10 @@ public class QuerySql
     public readonly record struct CreateExtendedBioArgs(string AuthorName, string Name, ExtendedBioType? BioType);
     public async Task CreateExtendedBio(CreateExtendedBioArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(CreateExtendedBioSql))
             {
                 command.Parameters.AddWithValue("@author_name", args.AuthorName);
@@ -698,12 +900,12 @@ public class QuerySql
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = CreateExtendedBioSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@author_name", args.AuthorName);
             command.Parameters.AddWithValue("@name", args.Name);
             command.Parameters.AddWithValue("@bio_type", args.BioType ?? (object)DBNull.Value);
@@ -716,8 +918,10 @@ public class QuerySql
     public readonly record struct GetFirstExtendedBioByTypeArgs(ExtendedBioType? BioType);
     public async Task<GetFirstExtendedBioByTypeRow?> GetFirstExtendedBioByType(GetFirstExtendedBioByTypeArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetFirstExtendedBioByTypeSql))
             {
                 command.Parameters.AddWithValue("@bio_type", args.BioType ?? (object)DBNull.Value);
@@ -738,12 +942,12 @@ public class QuerySql
             return null;
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetFirstExtendedBioByTypeSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@bio_type", args.BioType ?? (object)DBNull.Value);
             using (var reader = await command.ExecuteReaderAsync())
             {
@@ -765,8 +969,10 @@ public class QuerySql
     private const string TruncateExtendedBiosSql = "TRUNCATE TABLE extended.bios";
     public async Task TruncateExtendedBios()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(TruncateExtendedBiosSql))
             {
                 await command.ExecuteNonQueryAsync();
@@ -774,23 +980,25 @@ public class QuerySql
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = TruncateExtendedBiosSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             await command.ExecuteNonQueryAsync();
         }
     }
 
     private const string GetAuthorsWithDuplicateParamsSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors WHERE (name = @author_name OR bio LIKE '%' || @author_name || '%') AND (id > @min_id OR id < @min_id + 1000) AND created_at >= @date_filter AND updated_at >= @date_filter";
-    public readonly record struct GetAuthorsWithDuplicateParamsRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorStatus? Status);
+    public readonly record struct GetAuthorsWithDuplicateParamsRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorsStatus? Status);
     public readonly record struct GetAuthorsWithDuplicateParamsArgs(string? AuthorName, long? MinId, DateTime? DateFilter);
     public async Task<List<GetAuthorsWithDuplicateParamsRow>> GetAuthorsWithDuplicateParams(GetAuthorsWithDuplicateParamsArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetAuthorsWithDuplicateParamsSql))
             {
                 command.Parameters.AddWithValue("@author_name", args.AuthorName ?? (object)DBNull.Value);
@@ -800,18 +1008,18 @@ public class QuerySql
                 {
                     var result = new List<GetAuthorsWithDuplicateParamsRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetAuthorsWithDuplicateParamsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus() });
+                        result.Add(new GetAuthorsWithDuplicateParamsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() });
                     return result;
                 }
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetAuthorsWithDuplicateParamsSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@author_name", args.AuthorName ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@min_id", args.MinId ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@date_filter", NpgsqlDbType.Timestamp, args.DateFilter ?? (object)DBNull.Value);
@@ -819,19 +1027,21 @@ public class QuerySql
             {
                 var result = new List<GetAuthorsWithDuplicateParamsRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new GetAuthorsWithDuplicateParamsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus() });
+                    result.Add(new GetAuthorsWithDuplicateParamsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() });
                 return result;
             }
         }
     }
 
     private const string GetAuthorWithPentaParamSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors WHERE name = @search_value OR bio LIKE '%' || @search_value || '%' OR CAST(id AS TEXT) = @search_value OR created_at::TEXT LIKE '%' || @search_value || '%' OR (LENGTH(@search_value) > 0 AND name IS NOT NULL) LIMIT 1";
-    public readonly record struct GetAuthorWithPentaParamRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorStatus? Status);
+    public readonly record struct GetAuthorWithPentaParamRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorsStatus? Status);
     public readonly record struct GetAuthorWithPentaParamArgs(string? SearchValue);
     public async Task<GetAuthorWithPentaParamRow?> GetAuthorWithPentaParam(GetAuthorWithPentaParamArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetAuthorWithPentaParamSql))
             {
                 command.Parameters.AddWithValue("@search_value", args.SearchValue ?? (object)DBNull.Value);
@@ -847,7 +1057,7 @@ public class QuerySql
                             CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
                             UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
                             Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                            Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus()
+                            Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                         };
                     }
                 }
@@ -856,12 +1066,12 @@ public class QuerySql
             return null;
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetAuthorWithPentaParamSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@search_value", args.SearchValue ?? (object)DBNull.Value);
             using (var reader = await command.ExecuteReaderAsync())
             {
@@ -875,7 +1085,7 @@ public class QuerySql
                         CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
                         UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
                         Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                        Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus()
+                        Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                     };
                 }
             }
@@ -885,12 +1095,14 @@ public class QuerySql
     }
 
     private const string CreateAuthorWithMetadataSql = "INSERT INTO authors (id, name, bio, metadata) VALUES (@id, @name, @bio, @metadata) RETURNING id, name, bio, created_at, updated_at, metadata, status";
-    public readonly record struct CreateAuthorWithMetadataRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorStatus? Status);
+    public readonly record struct CreateAuthorWithMetadataRow(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorsStatus? Status);
     public readonly record struct CreateAuthorWithMetadataArgs(long Id, string Name, string? Bio, JsonElement? Metadata);
     public async Task<CreateAuthorWithMetadataRow?> CreateAuthorWithMetadata(CreateAuthorWithMetadataArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(CreateAuthorWithMetadataSql))
             {
                 command.Parameters.AddWithValue("@id", args.Id);
@@ -909,7 +1121,7 @@ public class QuerySql
                             CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
                             UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
                             Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                            Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus()
+                            Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                         };
                     }
                 }
@@ -918,12 +1130,12 @@ public class QuerySql
             return null;
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = CreateAuthorWithMetadataSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@id", args.Id);
             command.Parameters.AddWithValue("@name", args.Name);
             command.Parameters.AddWithValue("@bio", args.Bio ?? (object)DBNull.Value);
@@ -940,7 +1152,7 @@ public class QuerySql
                         CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
                         UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
                         Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
-                        Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus()
+                        Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus()
                     };
                 }
             }
@@ -953,93 +1165,46 @@ public class QuerySql
     public readonly record struct GetAuthorsWithJsonMetadataRow(Author? Author, string? BookName);
     public async Task<List<GetAuthorsWithJsonMetadataRow>> GetAuthorsWithJsonMetadata()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetAuthorsWithJsonMetadataSql))
             {
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     var result = new List<GetAuthorsWithJsonMetadataRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetAuthorsWithJsonMetadataRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus() }, BookName = reader.IsDBNull(7) ? null : reader.GetString(7) });
+                        result.Add(new GetAuthorsWithJsonMetadataRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() }, BookName = reader.IsDBNull(7) ? null : reader.GetString(7) });
                     return result;
                 }
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetAuthorsWithJsonMetadataSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             using (var reader = await command.ExecuteReaderAsync())
             {
                 var result = new List<GetAuthorsWithJsonMetadataRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new GetAuthorsWithJsonMetadataRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorStatus() }, BookName = reader.IsDBNull(7) ? null : reader.GetString(7) });
+                    result.Add(new GetAuthorsWithJsonMetadataRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.IsDBNull(6) ? null : reader.GetString(6).ToAuthorsStatus() }, BookName = reader.IsDBNull(7) ? null : reader.GetString(7) });
                 return result;
             }
         }
-    }
-
-    private const string UpdateUserSql = "UPDATE \"user\" SET \"updated_at\" = @updated_at WHERE \"id\" = @id RETURNING id, updated_at";
-    public readonly record struct UpdateUserRow(int Id, DateTime? UpdatedAt);
-    public readonly record struct UpdateUserArgs(DateTime? UpdatedAt, int Id);
-    public async Task<UpdateUserRow?> UpdateUser(UpdateUserArgs args)
-    {
-        if (this.Transaction == null)
-        {
-            using (var command = DataSource.CreateCommand(UpdateUserSql))
-            {
-                command.Parameters.AddWithValue("@updated_at", NpgsqlDbType.TimestampTz, args.UpdatedAt ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@id", args.Id);
-                using (var reader = await command.ExecuteReaderAsync())
-                {
-                    if (await reader.ReadAsync())
-                    {
-                        return new UpdateUserRow
-                        {
-                            Id = reader.GetInt32(0),
-                            UpdatedAt = reader.IsDBNull(1) ? null : reader.GetDateTime(1)
-                        };
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
-            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
-        {
-            command.CommandText = UpdateUserSql;
-            command.Transaction = this.Transaction;
-            command.Parameters.AddWithValue("@updated_at", NpgsqlDbType.TimestampTz, args.UpdatedAt ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@id", args.Id);
-            using (var reader = await command.ExecuteReaderAsync())
-            {
-                if (await reader.ReadAsync())
-                {
-                    return new UpdateUserRow
-                    {
-                        Id = reader.GetInt32(0),
-                        UpdatedAt = reader.IsDBNull(1) ? null : reader.GetDateTime(1)
-                    };
-                }
-            }
-        }
-
-        return null;
     }
 
     private const string GetPostgresFunctionsSql = "SELECT MAX(c_integer) AS max_integer, MAX(c_varchar) AS max_varchar, MAX(c_timestamp) AS max_timestamp FROM postgres_datetime_types CROSS JOIN postgres_numeric_types CROSS JOIN postgres_string_types";
     public readonly record struct GetPostgresFunctionsRow(int? MaxInteger, string? MaxVarchar, DateTime MaxTimestamp);
     public async Task<GetPostgresFunctionsRow?> GetPostgresFunctions()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetPostgresFunctionsSql))
             {
                 using (var reader = await command.ExecuteReaderAsync())
@@ -1059,12 +1224,12 @@ public class QuerySql
             return null;
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetPostgresFunctionsSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             using (var reader = await command.ExecuteReaderAsync())
             {
                 if (await reader.ReadAsync())
@@ -1086,8 +1251,10 @@ public class QuerySql
     public readonly record struct InsertPostgresNumericTypesArgs(bool? CBoolean, byte[]? CBit, short? CSmallint, int? CInteger, long? CBigint, decimal? CDecimal, decimal? CNumeric, float? CReal, double? CDoublePrecision, decimal? CMoney);
     public async Task InsertPostgresNumericTypes(InsertPostgresNumericTypesArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(InsertPostgresNumericTypesSql))
             {
                 command.Parameters.AddWithValue("@c_boolean", args.CBoolean ?? (object)DBNull.Value);
@@ -1105,12 +1272,12 @@ public class QuerySql
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = InsertPostgresNumericTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@c_boolean", args.CBoolean ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@c_bit", args.CBit ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@c_smallint", args.CSmallint ?? (object)DBNull.Value);
@@ -1129,8 +1296,10 @@ public class QuerySql
     public readonly record struct GetPostgresNumericTypesRow(bool? CBoolean, byte[]? CBit, short? CSmallint, int? CInteger, long? CBigint, decimal? CDecimal, decimal? CNumeric, float? CReal, double? CDoublePrecision, decimal? CMoney);
     public async Task<GetPostgresNumericTypesRow?> GetPostgresNumericTypes()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetPostgresNumericTypesSql))
             {
                 using (var reader = await command.ExecuteReaderAsync())
@@ -1157,12 +1326,12 @@ public class QuerySql
             return null;
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetPostgresNumericTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             using (var reader = await command.ExecuteReaderAsync())
             {
                 if (await reader.ReadAsync())
@@ -1190,8 +1359,10 @@ public class QuerySql
     private const string TruncatePostgresNumericTypesSql = "TRUNCATE TABLE postgres_numeric_types";
     public async Task TruncatePostgresNumericTypes()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(TruncatePostgresNumericTypesSql))
             {
                 await command.ExecuteNonQueryAsync();
@@ -1199,12 +1370,12 @@ public class QuerySql
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = TruncatePostgresNumericTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             await command.ExecuteNonQueryAsync();
         }
     }
@@ -1213,8 +1384,10 @@ public class QuerySql
     public readonly record struct GetPostgresNumericTypesCntRow(bool? CBoolean, byte[]? CBit, short? CSmallint, int? CInteger, long? CBigint, decimal? CDecimal, decimal? CNumeric, float? CReal, double? CDoublePrecision, decimal? CMoney, long Cnt);
     public async Task<GetPostgresNumericTypesCntRow?> GetPostgresNumericTypesCnt()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetPostgresNumericTypesCntSql))
             {
                 using (var reader = await command.ExecuteReaderAsync())
@@ -1242,12 +1415,12 @@ public class QuerySql
             return null;
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetPostgresNumericTypesCntSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             using (var reader = await command.ExecuteReaderAsync())
             {
                 if (await reader.ReadAsync())
@@ -1308,8 +1481,10 @@ public class QuerySql
     public readonly record struct InsertPostgresStringTypesArgs(string? CChar, string? CVarchar, string? CCharacterVarying, string? CBpchar, string? CText);
     public async Task InsertPostgresStringTypes(InsertPostgresStringTypesArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(InsertPostgresStringTypesSql))
             {
                 command.Parameters.AddWithValue("@c_char", args.CChar ?? (object)DBNull.Value);
@@ -1322,12 +1497,12 @@ public class QuerySql
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = InsertPostgresStringTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@c_char", args.CChar ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@c_varchar", args.CVarchar ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@c_character_varying", args.CCharacterVarying ?? (object)DBNull.Value);
@@ -1367,8 +1542,10 @@ public class QuerySql
     public readonly record struct GetPostgresStringTypesRow(string? CChar, string? CVarchar, string? CCharacterVarying, string? CBpchar, string? CText);
     public async Task<GetPostgresStringTypesRow?> GetPostgresStringTypes()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetPostgresStringTypesSql))
             {
                 using (var reader = await command.ExecuteReaderAsync())
@@ -1390,12 +1567,12 @@ public class QuerySql
             return null;
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetPostgresStringTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             using (var reader = await command.ExecuteReaderAsync())
             {
                 if (await reader.ReadAsync())
@@ -1418,8 +1595,10 @@ public class QuerySql
     private const string TruncatePostgresStringTypesSql = "TRUNCATE TABLE postgres_string_types";
     public async Task TruncatePostgresStringTypes()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(TruncatePostgresStringTypesSql))
             {
                 await command.ExecuteNonQueryAsync();
@@ -1427,12 +1606,12 @@ public class QuerySql
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = TruncatePostgresStringTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             await command.ExecuteNonQueryAsync();
         }
     }
@@ -1441,8 +1620,10 @@ public class QuerySql
     public readonly record struct GetPostgresStringTypesCntRow(string? CChar, string? CVarchar, string? CCharacterVarying, string? CBpchar, string? CText, long Cnt);
     public async Task<GetPostgresStringTypesCntRow?> GetPostgresStringTypesCnt()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetPostgresStringTypesCntSql))
             {
                 using (var reader = await command.ExecuteReaderAsync())
@@ -1465,12 +1646,12 @@ public class QuerySql
             return null;
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetPostgresStringTypesCntSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             using (var reader = await command.ExecuteReaderAsync())
             {
                 if (await reader.ReadAsync())
@@ -1496,8 +1677,10 @@ public class QuerySql
     public readonly record struct GetPostgresStringTypesTextSearchArgs(string ToTsquery);
     public async Task<GetPostgresStringTypesTextSearchRow?> GetPostgresStringTypesTextSearch(GetPostgresStringTypesTextSearchArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetPostgresStringTypesTextSearchSql))
             {
                 command.Parameters.AddWithValue("@to_tsquery", args.ToTsquery);
@@ -1519,12 +1702,12 @@ public class QuerySql
             return null;
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetPostgresStringTypesTextSearchSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@to_tsquery", args.ToTsquery);
             using (var reader = await command.ExecuteReaderAsync())
             {
@@ -1548,8 +1731,10 @@ public class QuerySql
     public readonly record struct InsertPostgresDateTimeTypesArgs(DateTime? CDate, TimeSpan? CTime, DateTime? CTimestamp, DateTime? CTimestampWithTz, TimeSpan? CInterval, Instant? CTimestampNodaInstantOverride);
     public async Task InsertPostgresDateTimeTypes(InsertPostgresDateTimeTypesArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(InsertPostgresDateTimeTypesSql))
             {
                 command.Parameters.AddWithValue("@c_date", NpgsqlDbType.Date, args.CDate ?? (object)DBNull.Value);
@@ -1563,12 +1748,12 @@ public class QuerySql
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = InsertPostgresDateTimeTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@c_date", NpgsqlDbType.Date, args.CDate ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@c_time", NpgsqlDbType.Time, args.CTime ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@c_timestamp", NpgsqlDbType.Timestamp, args.CTimestamp ?? (object)DBNull.Value);
@@ -1583,8 +1768,10 @@ public class QuerySql
     public readonly record struct GetPostgresDateTimeTypesRow(DateTime? CDate, TimeSpan? CTime, DateTime? CTimestamp, DateTime? CTimestampWithTz, TimeSpan? CInterval, Instant? CTimestampNodaInstantOverride);
     public async Task<GetPostgresDateTimeTypesRow?> GetPostgresDateTimeTypes()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetPostgresDateTimeTypesSql))
             {
                 using (var reader = await command.ExecuteReaderAsync())
@@ -1613,12 +1800,12 @@ public class QuerySql
             return null;
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetPostgresDateTimeTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             using (var reader = await command.ExecuteReaderAsync())
             {
                 if (await reader.ReadAsync())
@@ -1648,8 +1835,10 @@ public class QuerySql
     private const string TruncatePostgresDateTimeTypesSql = "TRUNCATE TABLE postgres_datetime_types";
     public async Task TruncatePostgresDateTimeTypes()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(TruncatePostgresDateTimeTypesSql))
             {
                 await command.ExecuteNonQueryAsync();
@@ -1657,12 +1846,12 @@ public class QuerySql
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = TruncatePostgresDateTimeTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             await command.ExecuteNonQueryAsync();
         }
     }
@@ -1671,8 +1860,10 @@ public class QuerySql
     public readonly record struct GetPostgresDateTimeTypesCntRow(DateTime? CDate, TimeSpan? CTime, DateTime? CTimestamp, DateTime? CTimestampWithTz, TimeSpan? CInterval, long Cnt);
     public async Task<GetPostgresDateTimeTypesCntRow?> GetPostgresDateTimeTypesCnt()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetPostgresDateTimeTypesCntSql))
             {
                 using (var reader = await command.ExecuteReaderAsync())
@@ -1695,12 +1886,12 @@ public class QuerySql
             return null;
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetPostgresDateTimeTypesCntSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             using (var reader = await command.ExecuteReaderAsync())
             {
                 if (await reader.ReadAsync())
@@ -1751,8 +1942,10 @@ public class QuerySql
     public readonly record struct InsertPostgresNetworkTypesArgs(NpgsqlCidr? CCidr, IPAddress? CInet, PhysicalAddress? CMacaddr, string? CMacaddr8);
     public async Task InsertPostgresNetworkTypes(InsertPostgresNetworkTypesArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(InsertPostgresNetworkTypesSql))
             {
                 command.Parameters.AddWithValue("@c_cidr", args.CCidr ?? (object)DBNull.Value);
@@ -1764,12 +1957,12 @@ public class QuerySql
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = InsertPostgresNetworkTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@c_cidr", args.CCidr ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@c_inet", args.CInet ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@c_macaddr", args.CMacaddr ?? (object)DBNull.Value);
@@ -1782,8 +1975,10 @@ public class QuerySql
     public readonly record struct GetPostgresNetworkTypesRow(NpgsqlCidr? CCidr, IPAddress? CInet, PhysicalAddress? CMacaddr, string? CMacaddr8);
     public async Task<GetPostgresNetworkTypesRow?> GetPostgresNetworkTypes()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetPostgresNetworkTypesSql))
             {
                 using (var reader = await command.ExecuteReaderAsync())
@@ -1804,12 +1999,12 @@ public class QuerySql
             return null;
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetPostgresNetworkTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             using (var reader = await command.ExecuteReaderAsync())
             {
                 if (await reader.ReadAsync())
@@ -1831,8 +2026,10 @@ public class QuerySql
     private const string TruncatePostgresNetworkTypesSql = "TRUNCATE TABLE postgres_network_types";
     public async Task TruncatePostgresNetworkTypes()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(TruncatePostgresNetworkTypesSql))
             {
                 await command.ExecuteNonQueryAsync();
@@ -1840,12 +2037,12 @@ public class QuerySql
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = TruncatePostgresNetworkTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             await command.ExecuteNonQueryAsync();
         }
     }
@@ -1854,8 +2051,10 @@ public class QuerySql
     public readonly record struct GetPostgresNetworkTypesCntRow(NpgsqlCidr? CCidr, IPAddress? CInet, PhysicalAddress? CMacaddr, long Cnt);
     public async Task<GetPostgresNetworkTypesCntRow?> GetPostgresNetworkTypesCnt()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetPostgresNetworkTypesCntSql))
             {
                 using (var reader = await command.ExecuteReaderAsync())
@@ -1876,12 +2075,12 @@ public class QuerySql
             return null;
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetPostgresNetworkTypesCntSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             using (var reader = await command.ExecuteReaderAsync())
             {
                 if (await reader.ReadAsync())
@@ -1928,8 +2127,10 @@ public class QuerySql
     public readonly record struct InsertPostgresSpecialTypesArgs(JsonElement? CJson, string? CJsonStringOverride, JsonElement? CJsonb, string? CJsonpath, XmlDocument? CXml, string? CXmlStringOverride, Guid? CUuid, CEnum? CEnum);
     public async Task InsertPostgresSpecialTypes(InsertPostgresSpecialTypesArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(InsertPostgresSpecialTypesSql))
             {
                 command.Parameters.AddWithValue("@c_json", NpgsqlDbType.Json, args.CJson.HasValue ? (object)args.CJson.Value : (object)DBNull.Value);
@@ -1945,12 +2146,12 @@ public class QuerySql
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = InsertPostgresSpecialTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@c_json", NpgsqlDbType.Json, args.CJson.HasValue ? (object)args.CJson.Value : (object)DBNull.Value);
             command.Parameters.AddWithValue("@c_json_string_override", NpgsqlDbType.Json, args.CJsonStringOverride ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@c_jsonb", NpgsqlDbType.Jsonb, args.CJsonb.HasValue ? (object)args.CJsonb.Value : (object)DBNull.Value);
@@ -1967,8 +2168,10 @@ public class QuerySql
     public readonly record struct InsertPostgresNotNullTypesArgs(CEnum CEnumNotNull);
     public async Task InsertPostgresNotNullTypes(InsertPostgresNotNullTypesArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(InsertPostgresNotNullTypesSql))
             {
                 command.Parameters.AddWithValue("@c_enum_not_null", args.CEnumNotNull);
@@ -1977,12 +2180,12 @@ public class QuerySql
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = InsertPostgresNotNullTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@c_enum_not_null", args.CEnumNotNull);
             await command.ExecuteNonQueryAsync();
         }
@@ -1992,8 +2195,10 @@ public class QuerySql
     public readonly record struct GetPostgresNotNullTypesRow(CEnum CEnumNotNull);
     public async Task<GetPostgresNotNullTypesRow?> GetPostgresNotNullTypes()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetPostgresNotNullTypesSql))
             {
                 using (var reader = await command.ExecuteReaderAsync())
@@ -2011,12 +2216,12 @@ public class QuerySql
             return null;
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetPostgresNotNullTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             using (var reader = await command.ExecuteReaderAsync())
             {
                 if (await reader.ReadAsync())
@@ -2035,8 +2240,10 @@ public class QuerySql
     private const string TruncatePostgresNotNullTypesSql = "TRUNCATE TABLE postgres_not_null_types";
     public async Task TruncatePostgresNotNullTypes()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(TruncatePostgresNotNullTypesSql))
             {
                 await command.ExecuteNonQueryAsync();
@@ -2044,12 +2251,12 @@ public class QuerySql
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = TruncatePostgresNotNullTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             await command.ExecuteNonQueryAsync();
         }
     }
@@ -2058,8 +2265,10 @@ public class QuerySql
     public readonly record struct GetPostgresSpecialTypesRow(JsonElement? CJson, string? CJsonStringOverride, JsonElement? CJsonb, string? CJsonpath, XmlDocument? CXml, string? CXmlStringOverride, Guid? CUuid, CEnum? CEnum);
     public async Task<GetPostgresSpecialTypesRow?> GetPostgresSpecialTypes()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetPostgresSpecialTypesSql))
             {
                 using (var reader = await command.ExecuteReaderAsync())
@@ -2089,12 +2298,12 @@ public class QuerySql
             return null;
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetPostgresSpecialTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             using (var reader = await command.ExecuteReaderAsync())
             {
                 if (await reader.ReadAsync())
@@ -2125,8 +2334,10 @@ public class QuerySql
     private const string TruncatePostgresSpecialTypesSql = "TRUNCATE TABLE postgres_special_types";
     public async Task TruncatePostgresSpecialTypes()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(TruncatePostgresSpecialTypesSql))
             {
                 await command.ExecuteNonQueryAsync();
@@ -2134,12 +2345,12 @@ public class QuerySql
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = TruncatePostgresSpecialTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             await command.ExecuteNonQueryAsync();
         }
     }
@@ -2172,8 +2383,10 @@ public class QuerySql
     public readonly record struct GetPostgresSpecialTypesCntRow(Guid? CUuid, JsonElement? CJson, JsonElement? CJsonb, long Cnt);
     public async Task<GetPostgresSpecialTypesCntRow?> GetPostgresSpecialTypesCnt()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetPostgresSpecialTypesCntSql))
             {
                 using (var reader = await command.ExecuteReaderAsync())
@@ -2194,12 +2407,12 @@ public class QuerySql
             return null;
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetPostgresSpecialTypesCntSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             using (var reader = await command.ExecuteReaderAsync())
             {
                 if (await reader.ReadAsync())
@@ -2222,8 +2435,10 @@ public class QuerySql
     public readonly record struct InsertPostgresArrayTypesArgs(byte[]? CBytea, bool[]? CBooleanArray, string[]? CTextArray, int[]? CIntegerArray, decimal[]? CDecimalArray, DateTime[]? CDateArray, DateTime[]? CTimestampArray);
     public async Task InsertPostgresArrayTypes(InsertPostgresArrayTypesArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(InsertPostgresArrayTypesSql))
             {
                 command.Parameters.AddWithValue("@c_bytea", args.CBytea ?? (object)DBNull.Value);
@@ -2238,12 +2453,12 @@ public class QuerySql
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = InsertPostgresArrayTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@c_bytea", args.CBytea ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@c_boolean_array", args.CBooleanArray ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@c_text_array", args.CTextArray ?? (object)DBNull.Value);
@@ -2259,8 +2474,10 @@ public class QuerySql
     public readonly record struct GetPostgresArrayTypesRow(byte[]? CBytea, bool[]? CBooleanArray, string[]? CTextArray, int[]? CIntegerArray, decimal[]? CDecimalArray, DateTime[]? CDateArray, DateTime[]? CTimestampArray);
     public async Task<GetPostgresArrayTypesRow?> GetPostgresArrayTypes()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetPostgresArrayTypesSql))
             {
                 using (var reader = await command.ExecuteReaderAsync())
@@ -2284,12 +2501,12 @@ public class QuerySql
             return null;
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetPostgresArrayTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             using (var reader = await command.ExecuteReaderAsync())
             {
                 if (await reader.ReadAsync())
@@ -2342,8 +2559,10 @@ public class QuerySql
     public readonly record struct GetPostgresArrayTypesCntRow(byte[]? CBytea, bool[]? CBooleanArray, string[]? CTextArray, int[]? CIntegerArray, decimal[]? CDecimalArray, DateTime[]? CTimestampArray, long Cnt);
     public async Task<GetPostgresArrayTypesCntRow?> GetPostgresArrayTypesCnt()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetPostgresArrayTypesCntSql))
             {
                 using (var reader = await command.ExecuteReaderAsync())
@@ -2367,12 +2586,12 @@ public class QuerySql
             return null;
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetPostgresArrayTypesCntSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             using (var reader = await command.ExecuteReaderAsync())
             {
                 if (await reader.ReadAsync())
@@ -2397,8 +2616,10 @@ public class QuerySql
     private const string TruncatePostgresArrayTypesSql = "TRUNCATE TABLE postgres_array_types";
     public async Task TruncatePostgresArrayTypes()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(TruncatePostgresArrayTypesSql))
             {
                 await command.ExecuteNonQueryAsync();
@@ -2406,12 +2627,12 @@ public class QuerySql
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = TruncatePostgresArrayTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             await command.ExecuteNonQueryAsync();
         }
     }
@@ -2420,8 +2641,10 @@ public class QuerySql
     public readonly record struct InsertPostgresGeoTypesArgs(NpgsqlPoint? CPoint, NpgsqlLine? CLine, NpgsqlLSeg? CLseg, NpgsqlBox? CBox, NpgsqlPath? CPath, NpgsqlPolygon? CPolygon, NpgsqlCircle? CCircle);
     public async Task InsertPostgresGeoTypes(InsertPostgresGeoTypesArgs args)
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(InsertPostgresGeoTypesSql))
             {
                 command.Parameters.AddWithValue("@c_point", args.CPoint ?? (object)DBNull.Value);
@@ -2436,12 +2659,12 @@ public class QuerySql
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = InsertPostgresGeoTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             command.Parameters.AddWithValue("@c_point", args.CPoint ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@c_line", args.CLine ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@c_lseg", args.CLseg ?? (object)DBNull.Value);
@@ -2485,8 +2708,10 @@ public class QuerySql
     public readonly record struct GetPostgresGeoTypesRow(NpgsqlPoint? CPoint, NpgsqlLine? CLine, NpgsqlLSeg? CLseg, NpgsqlBox? CBox, NpgsqlPath? CPath, NpgsqlPolygon? CPolygon, NpgsqlCircle? CCircle);
     public async Task<GetPostgresGeoTypesRow?> GetPostgresGeoTypes()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(GetPostgresGeoTypesSql))
             {
                 using (var reader = await command.ExecuteReaderAsync())
@@ -2510,12 +2735,12 @@ public class QuerySql
             return null;
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = GetPostgresGeoTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             using (var reader = await command.ExecuteReaderAsync())
             {
                 if (await reader.ReadAsync())
@@ -2540,8 +2765,10 @@ public class QuerySql
     private const string TruncatePostgresGeoTypesSql = "TRUNCATE TABLE postgres_geometric_types";
     public async Task TruncatePostgresGeoTypes()
     {
-        if (this.Transaction == null)
+        if (Transaction == null)
         {
+            if (DataSource == null)
+                throw new InvalidOperationException("Transaction is null, but datasource is also null.");
             using (var command = DataSource.CreateCommand(TruncatePostgresGeoTypesSql))
             {
                 await command.ExecuteNonQueryAsync();
@@ -2549,12 +2776,12 @@ public class QuerySql
             }
         }
 
-        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+        if (Transaction?.Connection == null || Transaction?.Connection.State != ConnectionState.Open)
             throw new InvalidOperationException("Transaction is provided, but its connection is null.");
-        using (var command = this.Transaction.Connection.CreateCommand())
+        using (var command = Transaction.Connection.CreateCommand())
         {
             command.CommandText = TruncatePostgresGeoTypesSql;
-            command.Transaction = this.Transaction;
+            command.Transaction = Transaction;
             await command.ExecuteNonQueryAsync();
         }
     }

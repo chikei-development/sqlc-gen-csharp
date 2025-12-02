@@ -61,6 +61,16 @@
                 "type": {
                   "name": "text"
                 }
+              },
+              {
+                "name": "status",
+                "length": 8,
+                "table": {
+                  "name": "authors"
+                },
+                "type": {
+                  "name": "authors_status"
+                }
               }
             ]
           },
@@ -573,6 +583,14 @@
         ],
         "enums": [
           {
+            "name": "authors_status",
+            "vals": [
+              "active",
+              "inactive",
+              "pending"
+            ]
+          },
+          {
             "name": "bios_bio_type",
             "vals": [
               "Autobiography",
@@ -667,7 +685,7 @@
   },
   "queries": [
     {
-      "text": "SELECT id, name, bio FROM authors WHERE name = ? LIMIT 1",
+      "text": "SELECT id, name, bio, status FROM authors WHERE name = ? LIMIT 1",
       "name": "GetAuthor",
       "cmd": ":one",
       "columns": [
@@ -705,6 +723,17 @@
             "name": "text"
           },
           "originalName": "bio"
+        },
+        {
+          "name": "status",
+          "length": 8,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "name": "authors_status"
+          },
+          "originalName": "status"
         }
       ],
       "parameters": [
@@ -727,7 +756,40 @@
       "filename": "query.sql"
     },
     {
-      "text": "SELECT id, name, bio \nFROM authors\nORDER BY name\nLIMIT ? OFFSET ?",
+      "text": "SELECT authors.id, authors.name, authors.bio, authors.status FROM authors WHERE name = ? LIMIT 1",
+      "name": "GetAuthorEmbed",
+      "cmd": ":one",
+      "columns": [
+        {
+          "name": "authors",
+          "length": -1,
+          "type": {},
+          "embedTable": {
+            "name": "authors"
+          }
+        }
+      ],
+      "parameters": [
+        {
+          "number": 1,
+          "column": {
+            "name": "name",
+            "notNull": true,
+            "length": -1,
+            "table": {
+              "name": "authors"
+            },
+            "type": {
+              "name": "text"
+            },
+            "originalName": "name"
+          }
+        }
+      ],
+      "filename": "query.sql"
+    },
+    {
+      "text": "SELECT id, name, bio, status \nFROM authors\nORDER BY name\nLIMIT ? OFFSET ?",
       "name": "ListAuthors",
       "cmd": ":many",
       "columns": [
@@ -765,6 +827,17 @@
             "name": "text"
           },
           "originalName": "bio"
+        },
+        {
+          "name": "status",
+          "length": 8,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "name": "authors_status"
+          },
+          "originalName": "status"
         }
       ],
       "parameters": [
@@ -788,6 +861,44 @@
             "type": {
               "name": "integer"
             }
+          }
+        }
+      ],
+      "filename": "query.sql"
+    },
+    {
+      "text": "UPDATE authors\nSET status = ?\nWHERE id = ?",
+      "name": "UpdateAuthorStatus",
+      "cmd": ":exec",
+      "parameters": [
+        {
+          "number": 1,
+          "column": {
+            "name": "status",
+            "length": 8,
+            "table": {
+              "schema": "public",
+              "name": "authors"
+            },
+            "type": {
+              "name": "authors_status"
+            },
+            "originalName": "status"
+          }
+        },
+        {
+          "number": 2,
+          "column": {
+            "name": "id",
+            "notNull": true,
+            "length": -1,
+            "table": {
+              "name": "authors"
+            },
+            "type": {
+              "name": "bigint"
+            },
+            "originalName": "id"
           }
         }
       ],
@@ -952,7 +1063,7 @@
       }
     },
     {
-      "text": "SELECT id, name, bio FROM authors WHERE id = ? LIMIT 1",
+      "text": "SELECT id, name, bio, status FROM authors WHERE id = ? LIMIT 1",
       "name": "GetAuthorById",
       "cmd": ":one",
       "columns": [
@@ -990,6 +1101,17 @@
             "name": "text"
           },
           "originalName": "bio"
+        },
+        {
+          "name": "status",
+          "length": 8,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "name": "authors_status"
+          },
+          "originalName": "status"
         }
       ],
       "parameters": [
@@ -1012,7 +1134,7 @@
       "filename": "query.sql"
     },
     {
-      "text": "SELECT id, name, bio FROM authors\nWHERE name LIKE COALESCE(?, '%')",
+      "text": "SELECT id, name, bio, status FROM authors\nWHERE name LIKE COALESCE(?, '%')",
       "name": "GetAuthorByNamePattern",
       "cmd": ":many",
       "columns": [
@@ -1050,6 +1172,17 @@
             "name": "text"
           },
           "originalName": "bio"
+        },
+        {
+          "name": "status",
+          "length": 8,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "name": "authors_status"
+          },
+          "originalName": "status"
         }
       ],
       "parameters": [
@@ -1125,7 +1258,7 @@
       "filename": "query.sql"
     },
     {
-      "text": "SELECT id, name, bio FROM authors WHERE id IN (/*SLICE:ids*/?)",
+      "text": "SELECT id, name, bio, status FROM authors WHERE id IN (/*SLICE:ids*/?)",
       "name": "GetAuthorsByIds",
       "cmd": ":many",
       "columns": [
@@ -1163,6 +1296,17 @@
             "name": "text"
           },
           "originalName": "bio"
+        },
+        {
+          "name": "status",
+          "length": 8,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "name": "authors_status"
+          },
+          "originalName": "status"
         }
       ],
       "parameters": [
@@ -1187,7 +1331,7 @@
       "filename": "query.sql"
     },
     {
-      "text": "SELECT id, name, bio FROM authors WHERE id IN (/*SLICE:ids*/?) AND name IN (/*SLICE:names*/?)",
+      "text": "SELECT id, name, bio, status FROM authors WHERE id IN (/*SLICE:ids*/?) AND name IN (/*SLICE:names*/?)",
       "name": "GetAuthorsByIdsAndNames",
       "cmd": ":many",
       "columns": [
@@ -1225,6 +1369,17 @@
             "name": "text"
           },
           "originalName": "bio"
+        },
+        {
+          "name": "status",
+          "length": 8,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "name": "authors_status"
+          },
+          "originalName": "status"
         }
       ],
       "parameters": [
@@ -1309,7 +1464,7 @@
       }
     },
     {
-      "text": "SELECT authors.id, authors.name, authors.bio, books.id, books.name, books.author_id, books.description \nFROM authors JOIN books ON authors.id = books.author_id \nORDER BY authors.name",
+      "text": "SELECT authors.id, authors.name, authors.bio, authors.status, books.id, books.name, books.author_id, books.description \nFROM authors JOIN books ON authors.id = books.author_id \nORDER BY authors.name",
       "name": "ListAllAuthorsBooks",
       "cmd": ":many",
       "columns": [
@@ -1333,7 +1488,7 @@
       "filename": "query.sql"
     },
     {
-      "text": "SELECT authors1.id, authors1.name, authors1.bio, authors2.id, authors2.name, authors2.bio\nFROM authors authors1 JOIN authors authors2 ON authors1.name = authors2.name\nWHERE authors1.id \u003c authors2.id",
+      "text": "SELECT authors1.id, authors1.name, authors1.bio, authors1.status, authors2.id, authors2.name, authors2.bio, authors2.status\nFROM authors authors1 JOIN authors authors2 ON authors1.name = authors2.name\nWHERE authors1.id \u003c authors2.id",
       "name": "GetDuplicateAuthors",
       "cmd": ":many",
       "columns": [
@@ -1357,7 +1512,7 @@
       "filename": "query.sql"
     },
     {
-      "text": "SELECT authors.id, authors.name, authors.bio, books.id, books.name, books.author_id, books.description\nFROM authors JOIN books ON authors.id = books.author_id\nWHERE books.name = ?",
+      "text": "SELECT authors.id, authors.name, authors.bio, authors.status, books.id, books.name, books.author_id, books.description\nFROM authors JOIN books ON authors.id = books.author_id\nWHERE books.name = ?",
       "name": "GetAuthorsByBookName",
       "cmd": ":many",
       "columns": [
@@ -1395,6 +1550,17 @@
             "name": "text"
           },
           "originalName": "bio"
+        },
+        {
+          "name": "status",
+          "length": 8,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "name": "authors_status"
+          },
+          "originalName": "status"
         },
         {
           "name": "books",
@@ -1576,7 +1742,7 @@
       "filename": "query.sql"
     },
     {
-      "text": "SELECT id, name, bio FROM authors \nWHERE (name = ? OR bio LIKE CONCAT('%', ?, '%'))\n  AND (id \u003e ? OR id \u003c ? + 1000)",
+      "text": "SELECT id, name, bio, status FROM authors \nWHERE (name = ? OR bio LIKE CONCAT('%', ?, '%'))\n  AND (id \u003e ? OR id \u003c ? + 1000)",
       "name": "GetAuthorsWithDuplicateParams",
       "cmd": ":many",
       "columns": [
@@ -1614,6 +1780,17 @@
             "name": "text"
           },
           "originalName": "bio"
+        },
+        {
+          "name": "status",
+          "length": 8,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "name": "authors_status"
+          },
+          "originalName": "status"
         }
       ],
       "parameters": [
@@ -1676,7 +1853,7 @@
       "filename": "query.sql"
     },
     {
-      "text": "SELECT id, name, bio FROM authors \nWHERE name = ? \n   OR bio LIKE CONCAT('%', ?, '%')\n   OR CAST(id AS CHAR) LIKE CONCAT('%', ?, '%')\nLIMIT 1",
+      "text": "SELECT id, name, bio, status FROM authors \nWHERE name = ? \n   OR bio LIKE CONCAT('%', ?, '%')\n   OR CAST(id AS CHAR) LIKE CONCAT('%', ?, '%')\nLIMIT 1",
       "name": "GetAuthorWithTripleNameParam",
       "cmd": ":one",
       "columns": [
@@ -1714,6 +1891,17 @@
             "name": "text"
           },
           "originalName": "bio"
+        },
+        {
+          "name": "status",
+          "length": 8,
+          "table": {
+            "name": "authors"
+          },
+          "type": {
+            "name": "authors_status"
+          },
+          "originalName": "status"
         }
       ],
       "parameters": [

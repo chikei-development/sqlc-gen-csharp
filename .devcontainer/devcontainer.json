@@ -31,7 +31,7 @@
       ]
     }
   },
-  "postCreateCommand": ".devcontainer/post-create.sh",
+  "postCreateCommand": "chmod +x .devcontainer/post-create.sh && .devcontainer/post-create.sh",
   "forwardPorts": [3306, 5432],
   "remoteEnv": {
     "WASI_SDK_PATH": "/opt/wasi-sdk"

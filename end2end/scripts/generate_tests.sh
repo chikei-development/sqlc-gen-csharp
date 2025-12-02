@@ -12,22 +12,12 @@ TARGETS=(
 )
   
 generate() {
-  export IS_LEGACY=false
   export TEST_CLASS_NAME="$1"
   local TEST_FILENAME="${TEST_CLASS_NAME}.generated.cs"
   echo "generating EndToEndTests/$TEST_FILENAME..."
   dotnet run --project ./end2end/EndToEndScaffold/EndToEndScaffold.csproj > ./end2end/EndToEndTests/"$TEST_FILENAME"
 }
 
-generate_legacy() {
-  export IS_LEGACY=true
-  export TEST_CLASS_NAME="$1"
-  local TEST_FILENAME="${TEST_CLASS_NAME}.generated.cs"
-  echo "generating EndToEndTestsLegacy/$TEST_FILENAME..."
-  dotnet run --project ./end2end/EndToEndScaffold/EndToEndScaffold.csproj > ./end2end/EndToEndTestsLegacy/"$TEST_FILENAME"
-}
-
 for target in "${TARGETS[@]}"; do
     generate "$target"
-    generate_legacy "$target"
 done

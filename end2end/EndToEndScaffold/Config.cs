@@ -61,6 +61,7 @@ public enum KnownTestType
     PostgresXmlDataTypes,
     PostgresEnumDataType,
     PostgresNotNullTypes,
+    PostgresAuthorEmbedAndEnum,
 
     // :copyfrom (Batch)
     PostgresStringCopyFrom,
@@ -89,6 +90,7 @@ public enum KnownTestType
     MySqlBinaryDataTypes,
     MySqlEnumDataType,
     MySqlJsonDataTypes,
+    MySqlAuthorEmbedAndEnum,
 
     // :copyfrom (Batch)
     MySqlStringCopyFrom,
@@ -134,6 +136,7 @@ internal static class Config
         KnownTestType.MySqlBinaryDataTypes,
         KnownTestType.MySqlEnumDataType,
         KnownTestType.MySqlJsonDataTypes,
+        KnownTestType.MySqlAuthorEmbedAndEnum,
 
         // :copyfrom (Batch)
         KnownTestType.MySqlJsonCopyFrom,
@@ -183,6 +186,7 @@ internal static class Config
         KnownTestType.PostgresXmlDataTypes,
         KnownTestType.PostgresEnumDataType,
         KnownTestType.PostgresNotNullTypes,
+        KnownTestType.PostgresAuthorEmbedAndEnum,
         KnownTestType.PostgresFullTextSearchDataTypes,
 
         // :copyfrom (Batch)

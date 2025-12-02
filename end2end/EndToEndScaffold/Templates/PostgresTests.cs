@@ -955,7 +955,8 @@ public static class PostgresTests
                          {
                              Id = {{Consts.BojackId}},
                              Name = {{Consts.BojackAuthor}},
-                             Bio = {{Consts.BojackTheme}}
+                             Bio = {{Consts.BojackTheme}},
+                             Status = AuthorsStatus.Pending
                          };
                          actual = await QuerySql.GetAuthor(new QuerySql.GetAuthorArgs { Name = {{Consts.BojackAuthor}} });
                          AssertSingularEquals(expected, actual{{Consts.UnknownRecordValuePlaceholder}});
@@ -965,6 +966,7 @@ public static class PostgresTests
                              Assert.That(x.Id, Is.EqualTo(y.Id));
                              Assert.That(x.Name, Is.EqualTo(y.Name));
                              Assert.That(x.Bio, Is.EqualTo(y.Bio));
+                             Assert.That(x.Status, Is.EqualTo(y.Status));
                          }
                      }
                      """
@@ -980,7 +982,7 @@ public static class PostgresTests
                          var transaction = connection.BeginTransaction();
 
                          var sqlQueryWithTx = QuerySql.WithTransaction(transaction);
-                         await sqlQueryWithTx.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = {{Consts.BojackId}}, Name = {{Consts.BojackAuthor}}, Bio = {{Consts.BojackTheme}} });
+                         await sqlQueryWithTx.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = {{Consts.BojackId}}, Name = {{Consts.BojackAuthor}}, Bio = {{Consts.BojackTheme}}});
 
                          await transaction.RollbackAsync();
 
@@ -1328,6 +1330,47 @@ public static class PostgresTests
                          Assert.That(result, Is.Not.Null);
                          Assert.That(result{{Consts.UnknownRecordValuePlaceholder}}.Name, Is.EqualTo("Test Author With Comments"));
                          Assert.That(result{{Consts.UnknownRecordValuePlaceholder}}.Bio, Is.EqualTo("Biography with inline comments test"));
+                     }
+                     """
+        },
+        [KnownTestType.PostgresAuthorEmbedAndEnum] = new TestImpl
+        {
+            Impl = $$"""
+                     [Test]
+                     [TestCase(AuthorsStatus.Active)]
+                     [TestCase(AuthorsStatus.Inactive)]
+                     [TestCase(AuthorsStatus.Pending)]
+                     public async Task TestPostgresAuthorStatusEnum(AuthorsStatus status)
+                     {
+                         var result = (await QuerySql.CreateAuthorEmbed(new QuerySql.CreateAuthorEmbedArgs { Id = 88888, Name = "Status Test Author", Bio = "Testing author status enum" }))?.Author;
+                        // now update the status
+                        await QuerySql.UpdateAuthorStatus(new QuerySql.UpdateAuthorStatusArgs { Status = status, Id = 88888 });
+                        
+                        var expected = new Author
+                        {
+                            Id = 88888,
+                            Name = "Status Test Author",
+                            Bio = "Testing author status enum",
+                            Status = status
+                        };
+
+                        // get the actual author to verify
+                        result = (await QuerySql.GetAuthorEmbed(new QuerySql.GetAuthorEmbedArgs { Name = "Status Test Author" }))?.Author;
+                        Assert.That(result, Is.Not.Null);
+                        AssertSingularEquals(expected, result ?? throw new InvalidOperationException());
+                        void AssertSingularEquals(Author x, Author y, AuthorsStatus? statusOverride = null)
+                        {
+                            Assert.That(x.Id, Is.EqualTo(y.Id));
+                            Assert.That(x.Name, Is.EqualTo(y.Name));
+                            Assert.That(x.Bio, Is.EqualTo(y.Bio));
+                            if (!statusOverride.HasValue)
+                            {
+                                Assert.That(x.Status, Is.EqualTo(y.Status));
+                            } else
+                            {
+                                Assert.That(statusOverride.Value, Is.EqualTo(y.Status));
+                            }
+                        }
                      }
                      """
         },

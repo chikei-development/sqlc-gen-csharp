@@ -40,7 +40,13 @@ public class ManyDeclareGen(DbDriver dbDriver)
                 ? Variable.TransformedSql.AsVarName()
                 : queryTextConstant;
         var transactionProperty = Variable.Transaction.AsPropertyName();
-
+        var dataSourceProperty = Variable.DataSource.AsPropertyName();
+        var datasourceCheck = dbDriver.Options.DriverName == DriverName.Npgsql
+            ? $$"""
+               if ({{dataSourceProperty}} == null)
+                   throw new InvalidOperationException("Transaction is null, but datasource is also null.");
+            """
+            : string.Empty;
         var noTxBody = useDapper
             ? GetDapperNoTxBody(sqlVar, returnInterface, query)
             : GetDriverNoTxBody(sqlVar, returnInterface, query);
@@ -51,8 +57,9 @@ public class ManyDeclareGen(DbDriver dbDriver)
         return $$"""
                {{sqlTextTransform}}
                {{dapperParams}}
-               if (this.{{transactionProperty}} == null)
+               if ({{transactionProperty}} == null)
                {
+                   {{datasourceCheck}}
                    {{noTxBody}}
                }
                {{withTxBody}}
