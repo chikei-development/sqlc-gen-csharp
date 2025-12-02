@@ -2,6 +2,10 @@
 SELECT * FROM authors
 WHERE name = $1 LIMIT 1;
 
+-- name: GetAuthorEmbed :one
+SELECT sqlc.embed(authors) FROM authors
+WHERE name = $1 LIMIT 1;
+
 -- name: ListAuthors :many
 SELECT * 
 FROM authors
@@ -21,6 +25,9 @@ INSERT INTO authors (
 
 -- name: CreateAuthorReturnId :execlastid
 INSERT INTO authors (name, bio) VALUES ($1, $2) RETURNING id;
+
+-- name: CreateAuthorEmbed :one
+INSERT INTO authors (id, name, bio) VALUES ($1, $2, $3) RETURNING sqlc.embed(authors);
 
 -- name: GetAuthorById :one
 SELECT * FROM authors

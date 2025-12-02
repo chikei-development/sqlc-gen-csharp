@@ -944,7 +944,7 @@ public static class PostgresTests
                          var transaction = connection.BeginTransaction();
 
                          var querySqlWithTx = QuerySql.WithTransaction(transaction);
-                         await querySqlWithTx.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = {{Consts.BojackId}}, Name = {{Consts.BojackAuthor}}, Bio = {{Consts.BojackTheme}} });
+                         await querySqlWithTx.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = {{Consts.BojackId}}, Name = {{Consts.BojackAuthor}}, Bio = {{Consts.BojackTheme}}, Status = AuthorStatus.Active });
 
                          var actual = await QuerySql.GetAuthor(new QuerySql.GetAuthorArgs { Name = {{Consts.BojackAuthor}} });
                          ClassicAssert.IsNull(actual);
@@ -955,7 +955,8 @@ public static class PostgresTests
                          {
                              Id = {{Consts.BojackId}},
                              Name = {{Consts.BojackAuthor}},
-                             Bio = {{Consts.BojackTheme}}
+                             Bio = {{Consts.BojackTheme}},
+                             Status = AuthorStatus.Active
                          };
                          actual = await QuerySql.GetAuthor(new QuerySql.GetAuthorArgs { Name = {{Consts.BojackAuthor}} });
                          AssertSingularEquals(expected, actual{{Consts.UnknownRecordValuePlaceholder}});
@@ -965,6 +966,7 @@ public static class PostgresTests
                              Assert.That(x.Id, Is.EqualTo(y.Id));
                              Assert.That(x.Name, Is.EqualTo(y.Name));
                              Assert.That(x.Bio, Is.EqualTo(y.Bio));
+                             Assert.That(x.Status, Is.EqualTo(y.Status));
                          }
                      }
                      """
@@ -980,7 +982,7 @@ public static class PostgresTests
                          var transaction = connection.BeginTransaction();
 
                          var sqlQueryWithTx = QuerySql.WithTransaction(transaction);
-                         await sqlQueryWithTx.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = {{Consts.BojackId}}, Name = {{Consts.BojackAuthor}}, Bio = {{Consts.BojackTheme}} });
+                         await sqlQueryWithTx.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = {{Consts.BojackId}}, Name = {{Consts.BojackAuthor}}, Bio = {{Consts.BojackTheme}}, Status = AuthorStatus.Active });
 
                          await transaction.RollbackAsync();
 
@@ -1322,12 +1324,52 @@ public static class PostgresTests
                          {
                              Id = 9999,
                              Name = "Test Author With Comments",
-                             Bio = "Biography with inline comments test"
+                             Bio = "Biography with inline comments test",
+                             Status = AuthorStatus.Active
                          });
                          
                          Assert.That(result, Is.Not.Null);
                          Assert.That(result{{Consts.UnknownRecordValuePlaceholder}}.Name, Is.EqualTo("Test Author With Comments"));
                          Assert.That(result{{Consts.UnknownRecordValuePlaceholder}}.Bio, Is.EqualTo("Biography with inline comments test"));
+                     }
+                     """
+        },
+        [KnownTestType.PostgresAuthorStatusEnum] = new TestImpl
+        {
+            Impl = $$"""
+                     [Test]
+                     [TestCase(AuthorStatus.Active)]
+                     [TestCase(AuthorStatus.Inactive)]
+                     [TestCase(AuthorStatus.Pending)]
+                     [TestCase(AuthorStatus.Archived)]
+                     public async Task TestPostgresAuthorStatusEnum(AuthorStatus status)
+                     {
+                         var result = await QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs
+                         {
+                             Id = 88888,
+                             Name = "Status Test Author",
+                             Bio = "Testing author status enum",
+                             Status = status
+                         });
+                         
+                         var expected = new QuerySql.CreateAuthorRow
+                         {
+                             Id = 88888,
+                             Name = "Status Test Author",
+                             Bio = "Testing author status enum",
+                             Status = status
+                         };
+                         
+                         Assert.That(result, Is.Not.Null);
+                         AssertSingularEquals(expected, result{{Consts.UnknownRecordValuePlaceholder}});
+
+                         void AssertSingularEquals(QuerySql.CreateAuthorRow x, QuerySql.CreateAuthorRow y)
+                         {
+                             Assert.That(x.Id, Is.EqualTo(y.Id));
+                             Assert.That(x.Name, Is.EqualTo(y.Name));
+                             Assert.That(x.Bio, Is.EqualTo(y.Bio));
+                             Assert.That(x.Status, Is.EqualTo(y.Status));
+                         }
                      }
                      """
         },
@@ -1354,7 +1396,8 @@ public static class PostgresTests
                              Id = 12345,
                              Name = "JSON Test Author",
                              Bio = "Author with JSON metadata",
-                             Metadata = testMetadata
+                             Metadata = testMetadata,
+                             Status = AuthorStatus.Active
                          });
                          
                          // Create a book for this author
@@ -1379,6 +1422,108 @@ public static class PostgresTests
                          var metadataText = authorData.Metadata.Value.GetRawText();
                          Assert.That(metadataText, Does.Contain("fiction"));
                          Assert.That(metadataText, Does.Contain("4.5"));
+                     }
+                     """
+        },
+        [KnownTestType.PostgresEnumEmbed] = new TestImpl
+        {
+            Impl = $$"""
+                     [Test]
+                     public async Task TestPostgresEnumEmbed()
+                     {
+                         // Test that enums are correctly handled when using sqlc.embed
+                         // This covers the case where embedded tables contain enum fields
+                         
+                         // Create authors with different enum statuses
+                         await QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs 
+                         { 
+                             Id = 11111, 
+                             Name = "Active Author", 
+                             Bio = "Bio for active author" 
+                         });
+                         
+                         await QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs 
+                         { 
+                             Id = 22222, 
+                             Name = "Inactive Author", 
+                             Bio = "Bio for inactive author" 
+                         });
+                         
+                         // Update author status
+                         await QuerySql.CreateAuthorWithMetadata(new QuerySql.CreateAuthorWithMetadataArgs
+                         {
+                             Id = 33333,
+                             Name = "Status Test Author",
+                             Bio = "Testing explicit status",
+                             Metadata = null,
+                             Status = AuthorStatus.Active
+                         });
+                         
+                         // Create a book for the active author
+                         await QuerySql.CreateBook(new QuerySql.CreateBookArgs { Name = "Test Book", AuthorId = 33333 });
+                         
+                         // Query that uses sqlc.embed with authors table containing enum status
+                         var result = await QuerySql.GetAuthorsWithEmbeddedStatus(new QuerySql.GetAuthorsWithEmbeddedStatusArgs
+                         {
+                             Status = AuthorStatus.Active
+                         });
+                         
+                         Assert.That(result, Is.Not.Empty);
+                         
+                         var activeAuthor = result.First();
+                         
+                         // Verify embedded Author struct with enum handling
+                         Assert.That(activeAuthor.Author, Is.Not.Null);
+                         var authorData = activeAuthor.Author{{Consts.UnknownRecordValuePlaceholder}};
+                         Assert.That(authorData.Id, Is.EqualTo(33333));
+                         Assert.That(authorData.Name, Is.EqualTo("Status Test Author"));
+                         Assert.That(authorData.Bio, Is.EqualTo("Testing explicit status"));
+                         Assert.That(authorData.Status, Is.EqualTo(AuthorStatus.Active));
+                         
+                         // Verify the book name is correctly retrieved
+                         Assert.That(activeAuthor.BookName, Is.EqualTo("Test Book"));
+                     }
+                     """
+        },
+        [KnownTestType.PostgresEnumEmbedReturning] = new TestImpl
+        {
+            Impl = $$"""
+                     [Test]
+                     public async Task TestPostgresEnumEmbedReturning()
+                     {
+                         // Test that enums are correctly handled when using sqlc.embed in RETURNING clauses
+                         
+                         // Create author using RETURNING sqlc.embed(authors) which includes enum field
+                         var result = await QuerySql.CreateAuthorEmbed(new QuerySql.CreateAuthorEmbedArgs 
+                         { 
+                             Id = 22222, 
+                             Name = "Embed Return Author", 
+                             Bio = "Testing enum in RETURNING embed" 
+                         });
+                         
+                         Assert.That(result, Is.Not.Null);
+                         var authorData = result{{Consts.UnknownRecordValuePlaceholder}};
+                         Assert.That(authorData.Id, Is.EqualTo(22222));
+                         Assert.That(authorData.Name, Is.EqualTo("Embed Return Author"));
+                         Assert.That(authorData.Bio, Is.EqualTo("Testing enum in RETURNING embed"));
+                         Assert.That(authorData.Status, Is.EqualTo(AuthorStatus.Pending)); // Default enum value
+                         
+                         // Test with explicit enum value
+                         var resultWithStatus = await QuerySql.CreateAuthorWithMetadataEmbed(new QuerySql.CreateAuthorWithMetadataEmbedArgs 
+                         { 
+                             Id = 33333, 
+                             Name = "Active Author", 
+                             Bio = "Active status test", 
+                             Metadata = null,
+                             Status = AuthorStatus.Active
+                         });
+                         
+                         Assert.That(resultWithStatus, Is.Not.Null);
+                         var activeAuthorData = resultWithStatus{{Consts.UnknownRecordValuePlaceholder}};
+                         Assert.That(activeAuthorData.Id, Is.EqualTo(33333));
+                         Assert.That(activeAuthorData.Name, Is.EqualTo("Active Author"));
+                         Assert.That(activeAuthorData.Bio, Is.EqualTo("Active status test"));
+                         Assert.That(activeAuthorData.Status, Is.EqualTo(AuthorStatus.Active));
                      }
                      """
         }

@@ -20,7 +20,8 @@ public static class AnnotationTests
                          {
                              Id = {{Consts.BojackId}},
                              Name = {{Consts.BojackAuthor}},
-                             Bio = {{Consts.BojackTheme}}
+                             Bio = {{Consts.BojackTheme}},
+                             Status = AuthorStatus.Active
                          };
                          var actual = await this.QuerySql.GetAuthor(new QuerySql.GetAuthorArgs
                          {
@@ -33,6 +34,7 @@ public static class AnnotationTests
                             Assert.That(x.Id, Is.EqualTo(y.Id));
                             Assert.That(x.Name, Is.EqualTo(y.Name));
                             Assert.That(x.Bio, Is.EqualTo(y.Bio));
+                            Assert.That(x.Status, Is.EqualTo(y.Status));
                          }
                      }
                      """
@@ -51,13 +53,15 @@ public static class AnnotationTests
                              { 
                                  Id = {{Consts.BojackId}},
                                  Name = {{Consts.BojackAuthor}}, 
-                                 Bio = {{Consts.BojackTheme}}
+                                 Bio = {{Consts.BojackTheme}},
+                                 Status = AuthorStatus.Active
                              },
                              new QuerySql.ListAuthorsRow 
                              { 
                                  Id = {{Consts.DrSeussId}},
                                  Name = {{Consts.DrSeussAuthor}}, 
-                                 Bio = {{Consts.DrSeussQuote}}
+                                 Bio = {{Consts.DrSeussQuote}},
+                                 Status = AuthorStatus.Active
                              }
                          };
                          var actual = await this.QuerySql.ListAuthors(new QuerySql.ListAuthorsArgs
@@ -72,6 +76,7 @@ public static class AnnotationTests
                              Assert.That(x.Id, Is.EqualTo(y.Id));
                              Assert.That(x.Name, Is.EqualTo(y.Name));
                              Assert.That(x.Bio, Is.EqualTo(y.Bio));
+                             Assert.That(x.Status, Is.EqualTo(y.Status));
                          }
 
                         void AssertSequenceEquals(List<QuerySql.ListAuthorsRow> x, List<QuerySql.ListAuthorsRow> y)
@@ -122,13 +127,15 @@ public static class AnnotationTests
                              { 
                                  Id = {{Consts.BojackId}},
                                  Name = {{Consts.BojackAuthor}}, 
-                                 Bio = {{Consts.GenericQuote1}}
+                                 Bio = {{Consts.GenericQuote1}},
+                                 Status = AuthorStatus.Active
                              },
                              new QuerySql.ListAuthorsRow 
                              { 
                                  Id = {{Consts.DrSeussId}},
                                  Name = {{Consts.DrSeussAuthor}}, 
-                                 Bio = {{Consts.GenericQuote1}}
+                                 Bio = {{Consts.GenericQuote1}},
+                                 Status = AuthorStatus.Active
                              }
                          };
                          var actual = await this.QuerySql.ListAuthors(new QuerySql.ListAuthorsArgs
@@ -143,6 +150,7 @@ public static class AnnotationTests
                              Assert.That(x.Id, Is.EqualTo(y.Id));
                              Assert.That(x.Name, Is.EqualTo(y.Name));
                              Assert.That(x.Bio, Is.EqualTo(y.Bio));
+                             Assert.That(x.Status, Is.EqualTo(y.Status));
                          }
 
                          void AssertSequenceEquals(List<QuerySql.ListAuthorsRow> x, List<QuerySql.ListAuthorsRow> y)
@@ -165,7 +173,8 @@ public static class AnnotationTests
                          {
                              Id = id1,
                              Name = {{Consts.GenericAuthor}},
-                             Bio = {{Consts.GenericQuote1}}
+                             Bio = {{Consts.GenericQuote1}},
+                             Status = AuthorStatus.Active
                          };
                          var actual = await QuerySql.GetAuthorById(new QuerySql.GetAuthorByIdArgs 
                          {
@@ -178,6 +187,7 @@ public static class AnnotationTests
                              Assert.That(x.Id, Is.EqualTo(y.Id));
                              Assert.That(x.Name, Is.EqualTo(y.Name));
                              Assert.That(x.Bio, Is.EqualTo(y.Bio));
+                             Assert.That(x.Status, Is.EqualTo(y.Status));
                          }
                      }
                      """

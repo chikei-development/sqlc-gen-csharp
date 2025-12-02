@@ -57,6 +57,7 @@ dotnet restore
 
 # Set up pre-commit hooks
 echo "Setting up pre-commit hooks..."
+git config --global --add safe.directory /workspaces/sqlc-gen-csharp
 pre-commit install
 
 echo "Development environment setup complete!"

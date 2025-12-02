@@ -11,7 +11,7 @@ using System.Text.Json;
 using System.Xml;
 
 namespace NpgsqlExampleGen;
-public readonly record struct Author(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata);
+public readonly record struct Author(long Id, string Name, string? Bio, DateTime? CreatedAt, DateTime? UpdatedAt, JsonElement? Metadata, AuthorStatus Status);
 public readonly record struct Book(Guid Id, string Name, long AuthorId, string? Description);
 public readonly record struct User(int Id, DateTime? UpdatedAt);
 public readonly record struct PostgresNumericType(bool? CBoolean, byte[]? CBit, short? CSmallint, int? CInteger, long? CBigint, decimal? CDecimal, decimal? CNumeric, float? CReal, double? CDoublePrecision, decimal? CMoney);
@@ -23,6 +23,41 @@ public readonly record struct PostgresGeometricType(NpgsqlPoint? CPoint, NpgsqlL
 public readonly record struct PostgresSpecialType(Guid? CUuid, CEnum? CEnum, JsonElement? CJson, JsonElement? CJsonStringOverride, JsonElement? CJsonb, string? CJsonpath, XmlDocument? CXml, XmlDocument? CXmlStringOverride);
 public readonly record struct PostgresNotNullType(CEnum CEnumNotNull);
 public readonly record struct ExtendedBio(string AuthorName, string Name, ExtendedBioType? BioType);
+public enum AuthorStatus
+{
+    Invalid = 0, // reserved for invalid enum value
+    Active = 1,
+    Inactive = 2,
+    Pending = 3
+}
+
+public static class AuthorStatusExtensions
+{
+    private static readonly Dictionary<string, AuthorStatus> StringToEnum = new Dictionary<string, AuthorStatus>()
+    {
+        [string.Empty] = AuthorStatus.Invalid,
+        ["active"] = AuthorStatus.Active,
+        ["inactive"] = AuthorStatus.Inactive,
+        ["pending"] = AuthorStatus.Pending
+    };
+    public static AuthorStatus ToAuthorStatus(this string me)
+    {
+        return StringToEnum[me];
+    }
+
+    private static readonly Dictionary<AuthorStatus, string> EnumToString = new Dictionary<AuthorStatus, string>()
+    {
+        [AuthorStatus.Invalid] = string.Empty,
+        [AuthorStatus.Active] = "active",
+        [AuthorStatus.Inactive] = "inactive",
+        [AuthorStatus.Pending] = "pending"
+    };
+    public static string Stringify(this AuthorStatus me)
+    {
+        return EnumToString[me];
+    }
+}
+
 public enum CEnum
 {
     Invalid = 0, // reserved for invalid enum value

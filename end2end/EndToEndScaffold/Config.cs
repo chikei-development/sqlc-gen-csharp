@@ -61,6 +61,9 @@ public enum KnownTestType
     PostgresXmlDataTypes,
     PostgresEnumDataType,
     PostgresNotNullTypes,
+    PostgresAuthorStatusEnum,
+    PostgresEnumEmbed,
+    PostgresEnumEmbedReturning,
 
     // :copyfrom (Batch)
     PostgresStringCopyFrom,
@@ -183,6 +186,9 @@ internal static class Config
         KnownTestType.PostgresXmlDataTypes,
         KnownTestType.PostgresEnumDataType,
         KnownTestType.PostgresNotNullTypes,
+        KnownTestType.PostgresAuthorStatusEnum,
+        KnownTestType.PostgresEnumEmbed,
+        KnownTestType.PostgresEnumEmbedReturning,
         KnownTestType.PostgresFullTextSearchDataTypes,
 
         // :copyfrom (Batch)

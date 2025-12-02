@@ -46,6 +46,7 @@ public class QuerySql
 
     public static void ConfigureEnumMappings(NpgsqlDataSourceBuilder dataSourceBuilder)
     {
+        dataSourceBuilder.MapEnum<AuthorStatus>("author_status");
         dataSourceBuilder.MapEnum<CEnum>("c_enum");
         dataSourceBuilder.MapEnum<ExtendedBioType>("bio_type");
     }
@@ -54,7 +55,7 @@ public class QuerySql
     private NpgsqlDataSource? DataSource { get; }
     private string? ConnectionString { get; }
 
-    private const string GetAuthorSql = "SELECT id, name, bio, created_at, updated_at, metadata FROM authors WHERE name = @name LIMIT 1";
+    private const string GetAuthorSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors WHERE name = @name LIMIT 1";
     public class GetAuthorRow
     {
         public required long Id { get; init; }
@@ -63,6 +64,7 @@ public class QuerySql
         public DateTime? CreatedAt { get; init; }
         public DateTime? UpdatedAt { get; init; }
         public JsonElement? Metadata { get; init; }
+        public required AuthorStatus Status { get; init; }
     };
     public class GetAuthorArgs
     {
@@ -86,7 +88,78 @@ public class QuerySql
         return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetAuthorRow?>(GetAuthorSql, queryParams, transaction: this.Transaction);
     }
 
-    private const string ListAuthorsSql = "SELECT id, name, bio, created_at, updated_at, metadata FROM authors ORDER BY name LIMIT @limit OFFSET @offset";
+    private const string GetAuthorEmbedSql = "SELECT authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at, authors.metadata, authors.status FROM authors WHERE name = @name LIMIT 1";
+    public class GetAuthorEmbedRow
+    {
+        public required Author? Author { get; init; }
+    };
+    public class GetAuthorEmbedArgs
+    {
+        public required string Name { get; init; }
+    };
+    public async Task<GetAuthorEmbedRow?> GetAuthorEmbed(GetAuthorEmbedArgs args)
+    {
+        if (this.Transaction == null)
+        {
+            using (var command = DataSource.CreateCommand(GetAuthorEmbedSql))
+            {
+                command.Parameters.AddWithValue("@name", args.Name);
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync())
+                    {
+                        return new GetAuthorEmbedRow
+                        {
+                            Author = new Author
+                            {
+                                Id = reader.GetInt64(0),
+                                Name = reader.GetString(1),
+                                Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
+                                CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
+                                UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
+                                Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
+                                Status = reader.GetString(6).ToAuthorStatus()
+                            }
+                        };
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        using (var command = this.Transaction.Connection.CreateCommand())
+        {
+            command.CommandText = GetAuthorEmbedSql;
+            command.Transaction = this.Transaction;
+            command.Parameters.AddWithValue("@name", args.Name);
+            using (var reader = await command.ExecuteReaderAsync())
+            {
+                if (await reader.ReadAsync())
+                {
+                    return new GetAuthorEmbedRow
+                    {
+                        Author = new Author
+                        {
+                            Id = reader.GetInt64(0),
+                            Name = reader.GetString(1),
+                            Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
+                            CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
+                            UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
+                            Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
+                            Status = reader.GetString(6).ToAuthorStatus()
+                        }
+                    };
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private const string ListAuthorsSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors ORDER BY name LIMIT @limit OFFSET @offset";
     public class ListAuthorsRow
     {
         public required long Id { get; init; }
@@ -95,6 +168,7 @@ public class QuerySql
         public DateTime? CreatedAt { get; init; }
         public DateTime? UpdatedAt { get; init; }
         public JsonElement? Metadata { get; init; }
+        public required AuthorStatus Status { get; init; }
     };
     public class ListAuthorsArgs
     {
@@ -120,7 +194,7 @@ public class QuerySql
         return (await this.Transaction.Connection.QueryAsync<ListAuthorsRow>(ListAuthorsSql, queryParams, transaction: this.Transaction)).AsList();
     }
 
-    private const string CreateAuthorSql = "INSERT INTO authors (id, name, bio) VALUES (@id, @name, @bio) RETURNING id, name, bio, created_at, updated_at, metadata";
+    private const string CreateAuthorSql = "INSERT INTO authors (id, name, bio) VALUES (@id, @name, @bio) RETURNING id, name, bio, created_at, updated_at, metadata, status";
     public class CreateAuthorRow
     {
         public required long Id { get; init; }
@@ -129,6 +203,7 @@ public class QuerySql
         public DateTime? CreatedAt { get; init; }
         public DateTime? UpdatedAt { get; init; }
         public JsonElement? Metadata { get; init; }
+        public required AuthorStatus Status { get; init; }
     };
     public class CreateAuthorArgs
     {
@@ -156,7 +231,7 @@ public class QuerySql
         return await this.Transaction.Connection.QueryFirstOrDefaultAsync<CreateAuthorRow?>(CreateAuthorSql, queryParams, transaction: this.Transaction);
     }
 
-    private const string CreateAuthorIncludingCommentSql = "INSERT INTO authors ( id, name, bio ) VALUES (@id, @name, @bio) RETURNING id, name, bio, created_at, updated_at, metadata";
+    private const string CreateAuthorIncludingCommentSql = "INSERT INTO authors ( id, name, bio ) VALUES (@id, @name, @bio) RETURNING id, name, bio, created_at, updated_at, metadata, status";
     public class CreateAuthorIncludingCommentRow
     {
         public required long Id { get; init; }
@@ -165,6 +240,7 @@ public class QuerySql
         public DateTime? CreatedAt { get; init; }
         public DateTime? UpdatedAt { get; init; }
         public JsonElement? Metadata { get; init; }
+        public required AuthorStatus Status { get; init; }
     };
     public class CreateAuthorIncludingCommentArgs
     {
@@ -218,7 +294,84 @@ public class QuerySql
         return await this.Transaction.Connection.QuerySingleAsync<long>(CreateAuthorReturnIdSql, queryParams, transaction: this.Transaction);
     }
 
-    private const string GetAuthorByIdSql = "SELECT id, name, bio, created_at, updated_at, metadata FROM authors WHERE id = @id LIMIT 1";
+    private const string CreateAuthorEmbedSql = "INSERT INTO authors (id, name, bio) VALUES (@id, @name, @bio) RETURNING authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at, authors.metadata, authors.status";
+    public class CreateAuthorEmbedRow
+    {
+        public required Author? Author { get; init; }
+    };
+    public class CreateAuthorEmbedArgs
+    {
+        public required long Id { get; init; }
+        public required string Name { get; init; }
+        public string? Bio { get; init; }
+    };
+    public async Task<CreateAuthorEmbedRow?> CreateAuthorEmbed(CreateAuthorEmbedArgs args)
+    {
+        if (this.Transaction == null)
+        {
+            using (var command = DataSource.CreateCommand(CreateAuthorEmbedSql))
+            {
+                command.Parameters.AddWithValue("@id", args.Id);
+                command.Parameters.AddWithValue("@name", args.Name);
+                command.Parameters.AddWithValue("@bio", args.Bio);
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync())
+                    {
+                        return new CreateAuthorEmbedRow
+                        {
+                            Author = new Author
+                            {
+                                Id = reader.GetInt64(0),
+                                Name = reader.GetString(1),
+                                Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
+                                CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
+                                UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
+                                Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
+                                Status = reader.GetString(6).ToAuthorStatus()
+                            }
+                        };
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        using (var command = this.Transaction.Connection.CreateCommand())
+        {
+            command.CommandText = CreateAuthorEmbedSql;
+            command.Transaction = this.Transaction;
+            command.Parameters.AddWithValue("@id", args.Id);
+            command.Parameters.AddWithValue("@name", args.Name);
+            command.Parameters.AddWithValue("@bio", args.Bio);
+            using (var reader = await command.ExecuteReaderAsync())
+            {
+                if (await reader.ReadAsync())
+                {
+                    return new CreateAuthorEmbedRow
+                    {
+                        Author = new Author
+                        {
+                            Id = reader.GetInt64(0),
+                            Name = reader.GetString(1),
+                            Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
+                            CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
+                            UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
+                            Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)),
+                            Status = reader.GetString(6).ToAuthorStatus()
+                        }
+                    };
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private const string GetAuthorByIdSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors WHERE id = @id LIMIT 1";
     public class GetAuthorByIdRow
     {
         public required long Id { get; init; }
@@ -227,6 +380,7 @@ public class QuerySql
         public DateTime? CreatedAt { get; init; }
         public DateTime? UpdatedAt { get; init; }
         public JsonElement? Metadata { get; init; }
+        public required AuthorStatus Status { get; init; }
     };
     public class GetAuthorByIdArgs
     {
@@ -250,7 +404,7 @@ public class QuerySql
         return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetAuthorByIdRow?>(GetAuthorByIdSql, queryParams, transaction: this.Transaction);
     }
 
-    private const string GetAuthorByNamePatternSql = "SELECT id, name, bio, created_at, updated_at, metadata FROM authors WHERE name LIKE COALESCE(@name_pattern, '%')";
+    private const string GetAuthorByNamePatternSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors WHERE name LIKE COALESCE(@name_pattern, '%')";
     public class GetAuthorByNamePatternRow
     {
         public required long Id { get; init; }
@@ -259,6 +413,7 @@ public class QuerySql
         public DateTime? CreatedAt { get; init; }
         public DateTime? UpdatedAt { get; init; }
         public JsonElement? Metadata { get; init; }
+        public required AuthorStatus Status { get; init; }
     };
     public class GetAuthorByNamePatternArgs
     {
@@ -338,7 +493,7 @@ public class QuerySql
         return await this.Transaction.Connection.ExecuteAsync(UpdateAuthorsSql, queryParams, transaction: this.Transaction);
     }
 
-    private const string GetAuthorsByIdsSql = "SELECT id, name, bio, created_at, updated_at, metadata FROM authors WHERE id = ANY(@longArr_1::BIGINT [])";
+    private const string GetAuthorsByIdsSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors WHERE id = ANY(@longArr_1::BIGINT [])";
     public class GetAuthorsByIdsRow
     {
         public required long Id { get; init; }
@@ -347,6 +502,7 @@ public class QuerySql
         public DateTime? CreatedAt { get; init; }
         public DateTime? UpdatedAt { get; init; }
         public JsonElement? Metadata { get; init; }
+        public required AuthorStatus Status { get; init; }
     };
     public class GetAuthorsByIdsArgs
     {
@@ -370,7 +526,7 @@ public class QuerySql
         return (await this.Transaction.Connection.QueryAsync<GetAuthorsByIdsRow>(GetAuthorsByIdsSql, queryParams, transaction: this.Transaction)).AsList();
     }
 
-    private const string GetAuthorsByIdsAndNamesSql = "SELECT id, name, bio, created_at, updated_at, metadata FROM authors WHERE id = ANY(@longArr_1::BIGINT []) AND name = ANY(@stringArr_2::TEXT [])";
+    private const string GetAuthorsByIdsAndNamesSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors WHERE id = ANY(@longArr_1::BIGINT []) AND name = ANY(@stringArr_2::TEXT [])";
     public class GetAuthorsByIdsAndNamesRow
     {
         public required long Id { get; init; }
@@ -379,6 +535,7 @@ public class QuerySql
         public DateTime? CreatedAt { get; init; }
         public DateTime? UpdatedAt { get; init; }
         public JsonElement? Metadata { get; init; }
+        public required AuthorStatus Status { get; init; }
     };
     public class GetAuthorsByIdsAndNamesArgs
     {
@@ -430,7 +587,7 @@ public class QuerySql
         return await this.Transaction.Connection.QuerySingleAsync<Guid>(CreateBookSql, queryParams, transaction: this.Transaction);
     }
 
-    private const string ListAllAuthorsBooksSql = "SELECT authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at, authors.metadata, books.id, books.name, books.author_id, books.description FROM authors INNER JOIN books ON authors.id = books.author_id ORDER BY authors.name";
+    private const string ListAllAuthorsBooksSql = "SELECT authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at, authors.metadata, authors.status, books.id, books.name, books.author_id, books.description FROM authors INNER JOIN books ON authors.id = books.author_id ORDER BY authors.name";
     public class ListAllAuthorsBooksRow
     {
         public required Author? Author { get; init; }
@@ -446,7 +603,7 @@ public class QuerySql
                 {
                     var result = new List<ListAllAuthorsBooksRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)) }, Book = new Book { Id = reader.GetFieldValue<Guid>(6), Name = reader.GetString(7), AuthorId = reader.GetInt64(8), Description = reader.IsDBNull(9) ? null : reader.GetString(9) } });
+                        result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus() }, Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
                     return result;
                 }
             }
@@ -462,13 +619,13 @@ public class QuerySql
             {
                 var result = new List<ListAllAuthorsBooksRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)) }, Book = new Book { Id = reader.GetFieldValue<Guid>(6), Name = reader.GetString(7), AuthorId = reader.GetInt64(8), Description = reader.IsDBNull(9) ? null : reader.GetString(9) } });
+                    result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus() }, Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
                 return result;
             }
         }
     }
 
-    private const string GetDuplicateAuthorsSql = "SELECT authors1.id, authors1.name, authors1.bio, authors1.created_at, authors1.updated_at, authors1.metadata, authors2.id, authors2.name, authors2.bio, authors2.created_at, authors2.updated_at, authors2.metadata FROM authors AS authors1 INNER JOIN authors AS authors2 ON authors1.name = authors2.name WHERE authors1.id < authors2.id";
+    private const string GetDuplicateAuthorsSql = "SELECT authors1.id, authors1.name, authors1.bio, authors1.created_at, authors1.updated_at, authors1.metadata, authors1.status, authors2.id, authors2.name, authors2.bio, authors2.created_at, authors2.updated_at, authors2.metadata, authors2.status FROM authors AS authors1 INNER JOIN authors AS authors2 ON authors1.name = authors2.name WHERE authors1.id < authors2.id";
     public class GetDuplicateAuthorsRow
     {
         public required Author? Author { get; init; }
@@ -484,7 +641,7 @@ public class QuerySql
                 {
                     var result = new List<GetDuplicateAuthorsRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)) }, Author2 = new Author { Id = reader.GetInt64(6), Name = reader.GetString(7), Bio = reader.IsDBNull(8) ? null : reader.GetString(8), CreatedAt = reader.IsDBNull(9) ? null : reader.GetDateTime(9), UpdatedAt = reader.IsDBNull(10) ? null : reader.GetDateTime(10), Metadata = reader.IsDBNull(11) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(11)) } });
+                        result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus() }, Author2 = new Author { Id = reader.GetInt64(7), Name = reader.GetString(8), Bio = reader.IsDBNull(9) ? null : reader.GetString(9), CreatedAt = reader.IsDBNull(10) ? null : reader.GetDateTime(10), UpdatedAt = reader.IsDBNull(11) ? null : reader.GetDateTime(11), Metadata = reader.IsDBNull(12) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(12)), Status = reader.GetString(13).ToAuthorStatus() } });
                     return result;
                 }
             }
@@ -500,13 +657,13 @@ public class QuerySql
             {
                 var result = new List<GetDuplicateAuthorsRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)) }, Author2 = new Author { Id = reader.GetInt64(6), Name = reader.GetString(7), Bio = reader.IsDBNull(8) ? null : reader.GetString(8), CreatedAt = reader.IsDBNull(9) ? null : reader.GetDateTime(9), UpdatedAt = reader.IsDBNull(10) ? null : reader.GetDateTime(10), Metadata = reader.IsDBNull(11) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(11)) } });
+                    result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus() }, Author2 = new Author { Id = reader.GetInt64(7), Name = reader.GetString(8), Bio = reader.IsDBNull(9) ? null : reader.GetString(9), CreatedAt = reader.IsDBNull(10) ? null : reader.GetDateTime(10), UpdatedAt = reader.IsDBNull(11) ? null : reader.GetDateTime(11), Metadata = reader.IsDBNull(12) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(12)), Status = reader.GetString(13).ToAuthorStatus() } });
                 return result;
             }
         }
     }
 
-    private const string GetAuthorsByBookNameSql = "SELECT authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at, authors.metadata, books.id, books.name, books.author_id, books.description FROM authors INNER JOIN books ON authors.id = books.author_id WHERE books.name = @name";
+    private const string GetAuthorsByBookNameSql = "SELECT authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at, authors.metadata, authors.status, books.id, books.name, books.author_id, books.description FROM authors INNER JOIN books ON authors.id = books.author_id WHERE books.name = @name";
     public class GetAuthorsByBookNameRow
     {
         public required long Id { get; init; }
@@ -515,6 +672,7 @@ public class QuerySql
         public DateTime? CreatedAt { get; init; }
         public DateTime? UpdatedAt { get; init; }
         public JsonElement? Metadata { get; init; }
+        public required AuthorStatus Status { get; init; }
         public required Book? Book { get; init; }
     };
     public class GetAuthorsByBookNameArgs
@@ -532,7 +690,7 @@ public class QuerySql
                 {
                     var result = new List<GetAuthorsByBookNameRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Book = new Book { Id = reader.GetFieldValue<Guid>(6), Name = reader.GetString(7), AuthorId = reader.GetInt64(8), Description = reader.IsDBNull(9) ? null : reader.GetString(9) } });
+                        result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus(), Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
                     return result;
                 }
             }
@@ -549,7 +707,7 @@ public class QuerySql
             {
                 var result = new List<GetAuthorsByBookNameRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Book = new Book { Id = reader.GetFieldValue<Guid>(6), Name = reader.GetString(7), AuthorId = reader.GetInt64(8), Description = reader.IsDBNull(9) ? null : reader.GetString(9) } });
+                    result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus(), Book = new Book { Id = reader.GetFieldValue<Guid>(7), Name = reader.GetString(8), AuthorId = reader.GetInt64(9), Description = reader.IsDBNull(10) ? null : reader.GetString(10) } });
                 return result;
             }
         }
@@ -624,7 +782,7 @@ public class QuerySql
         await this.Transaction.Connection.ExecuteAsync(TruncateExtendedBiosSql, transaction: this.Transaction);
     }
 
-    private const string GetAuthorsWithDuplicateParamsSql = "SELECT id, name, bio, created_at, updated_at, metadata FROM authors WHERE (name = @author_name OR bio LIKE '%' || @author_name || '%') AND (id > @min_id OR id < @min_id + 1000) AND created_at >= @date_filter AND updated_at >= @date_filter";
+    private const string GetAuthorsWithDuplicateParamsSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors WHERE (name = @author_name OR bio LIKE '%' || @author_name || '%') AND (id > @min_id OR id < @min_id + 1000) AND created_at >= @date_filter AND updated_at >= @date_filter";
     public class GetAuthorsWithDuplicateParamsRow
     {
         public required long Id { get; init; }
@@ -633,6 +791,7 @@ public class QuerySql
         public DateTime? CreatedAt { get; init; }
         public DateTime? UpdatedAt { get; init; }
         public JsonElement? Metadata { get; init; }
+        public required AuthorStatus Status { get; init; }
     };
     public class GetAuthorsWithDuplicateParamsArgs
     {
@@ -660,7 +819,7 @@ public class QuerySql
         return (await this.Transaction.Connection.QueryAsync<GetAuthorsWithDuplicateParamsRow>(GetAuthorsWithDuplicateParamsSql, queryParams, transaction: this.Transaction)).AsList();
     }
 
-    private const string GetAuthorWithPentaParamSql = "SELECT id, name, bio, created_at, updated_at, metadata FROM authors WHERE name = @search_value OR bio LIKE '%' || @search_value || '%' OR CAST(id AS TEXT) = @search_value OR created_at::TEXT LIKE '%' || @search_value || '%' OR (LENGTH(@search_value) > 0 AND name IS NOT NULL) LIMIT 1";
+    private const string GetAuthorWithPentaParamSql = "SELECT id, name, bio, created_at, updated_at, metadata, status FROM authors WHERE name = @search_value OR bio LIKE '%' || @search_value || '%' OR CAST(id AS TEXT) = @search_value OR created_at::TEXT LIKE '%' || @search_value || '%' OR (LENGTH(@search_value) > 0 AND name IS NOT NULL) LIMIT 1";
     public class GetAuthorWithPentaParamRow
     {
         public required long Id { get; init; }
@@ -669,6 +828,7 @@ public class QuerySql
         public DateTime? CreatedAt { get; init; }
         public DateTime? UpdatedAt { get; init; }
         public JsonElement? Metadata { get; init; }
+        public required AuthorStatus Status { get; init; }
     };
     public class GetAuthorWithPentaParamArgs
     {
@@ -692,7 +852,7 @@ public class QuerySql
         return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetAuthorWithPentaParamRow?>(GetAuthorWithPentaParamSql, queryParams, transaction: this.Transaction);
     }
 
-    private const string CreateAuthorWithMetadataSql = "INSERT INTO authors (id, name, bio, metadata) VALUES (@id, @name, @bio, @metadata) RETURNING id, name, bio, created_at, updated_at, metadata";
+    private const string CreateAuthorWithMetadataSql = "INSERT INTO authors (id, name, bio, metadata) VALUES (@id, @name, @bio, @metadata) RETURNING id, name, bio, created_at, updated_at, metadata, status";
     public class CreateAuthorWithMetadataRow
     {
         public required long Id { get; init; }
@@ -701,6 +861,7 @@ public class QuerySql
         public DateTime? CreatedAt { get; init; }
         public DateTime? UpdatedAt { get; init; }
         public JsonElement? Metadata { get; init; }
+        public required AuthorStatus Status { get; init; }
     };
     public class CreateAuthorWithMetadataArgs
     {
@@ -730,7 +891,7 @@ public class QuerySql
         return await this.Transaction.Connection.QueryFirstOrDefaultAsync<CreateAuthorWithMetadataRow?>(CreateAuthorWithMetadataSql, queryParams, transaction: this.Transaction);
     }
 
-    private const string GetAuthorsWithJsonMetadataSql = "SELECT authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at, authors.metadata, books.name as book_name FROM authors LEFT JOIN books ON authors.id = books.author_id WHERE authors.metadata IS NOT NULL ORDER BY authors.name";
+    private const string GetAuthorsWithJsonMetadataSql = "SELECT authors.id, authors.name, authors.bio, authors.created_at, authors.updated_at, authors.metadata, authors.status, books.name as book_name FROM authors LEFT JOIN books ON authors.id = books.author_id WHERE authors.metadata IS NOT NULL ORDER BY authors.name";
     public class GetAuthorsWithJsonMetadataRow
     {
         public required Author? Author { get; init; }
@@ -746,7 +907,7 @@ public class QuerySql
                 {
                     var result = new List<GetAuthorsWithJsonMetadataRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetAuthorsWithJsonMetadataRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)) }, BookName = reader.IsDBNull(6) ? null : reader.GetString(6) });
+                        result.Add(new GetAuthorsWithJsonMetadataRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus() }, BookName = reader.IsDBNull(7) ? null : reader.GetString(7) });
                     return result;
                 }
             }
@@ -762,7 +923,7 @@ public class QuerySql
             {
                 var result = new List<GetAuthorsWithJsonMetadataRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new GetAuthorsWithJsonMetadataRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)) }, BookName = reader.IsDBNull(6) ? null : reader.GetString(6) });
+                    result.Add(new GetAuthorsWithJsonMetadataRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), CreatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3), UpdatedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4), Metadata = reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(5)), Status = reader.GetString(6).ToAuthorStatus() }, BookName = reader.IsDBNull(7) ? null : reader.GetString(7) });
                 return result;
             }
         }

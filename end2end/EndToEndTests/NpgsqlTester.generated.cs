@@ -20,13 +20,14 @@ namespace EndToEndTests
         [Test]
         public async Task TestOne()
         {
-            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 1111, Name = "Bojack Horseman", Bio = "Back in the 90s he was in a very famous TV show" });
-            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 2222, Name = "Dr. Seuss", Bio = "You'll miss the best things if you keep your eyes shut" });
+            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 1111, Name = "Bojack Horseman", Bio = "Back in the 90s he was in a very famous TV show", Status = AuthorStatus.Active });
+            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 2222, Name = "Dr. Seuss", Bio = "You'll miss the best things if you keep your eyes shut", Status = AuthorStatus.Active });
             var expected = new QuerySql.GetAuthorRow
             {
                 Id = 1111,
                 Name = "Bojack Horseman",
-                Bio = "Back in the 90s he was in a very famous TV show"
+                Bio = "Back in the 90s he was in a very famous TV show",
+                Status = AuthorStatus.Active
             };
             var actual = await this.QuerySql.GetAuthor(new QuerySql.GetAuthorArgs { Name = "Bojack Horseman" });
             AssertSingularEquals(expected, actual.Value);
@@ -35,27 +36,30 @@ namespace EndToEndTests
                 Assert.That(x.Id, Is.EqualTo(y.Id));
                 Assert.That(x.Name, Is.EqualTo(y.Name));
                 Assert.That(x.Bio, Is.EqualTo(y.Bio));
+                Assert.That(x.Status, Is.EqualTo(y.Status));
             }
         }
 
         [Test]
         public async Task TestMany()
         {
-            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 1111, Name = "Bojack Horseman", Bio = "Back in the 90s he was in a very famous TV show" });
-            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 2222, Name = "Dr. Seuss", Bio = "You'll miss the best things if you keep your eyes shut" });
+            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 1111, Name = "Bojack Horseman", Bio = "Back in the 90s he was in a very famous TV show", Status = AuthorStatus.Active });
+            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 2222, Name = "Dr. Seuss", Bio = "You'll miss the best things if you keep your eyes shut", Status = AuthorStatus.Active });
             var expected = new List<QuerySql.ListAuthorsRow>
             {
                 new QuerySql.ListAuthorsRow
                 {
                     Id = 1111,
                     Name = "Bojack Horseman",
-                    Bio = "Back in the 90s he was in a very famous TV show"
+                    Bio = "Back in the 90s he was in a very famous TV show",
+                    Status = AuthorStatus.Active
                 },
                 new QuerySql.ListAuthorsRow
                 {
                     Id = 2222,
                     Name = "Dr. Seuss",
-                    Bio = "You'll miss the best things if you keep your eyes shut"
+                    Bio = "You'll miss the best things if you keep your eyes shut",
+                    Status = AuthorStatus.Active
                 }
             };
             var actual = await this.QuerySql.ListAuthors(new QuerySql.ListAuthorsArgs { Limit = 2, Offset = 0 });
@@ -65,6 +69,7 @@ namespace EndToEndTests
                 Assert.That(x.Id, Is.EqualTo(y.Id));
                 Assert.That(x.Name, Is.EqualTo(y.Name));
                 Assert.That(x.Bio, Is.EqualTo(y.Bio));
+                Assert.That(x.Status, Is.EqualTo(y.Status));
             }
 
             void AssertSequenceEquals(List<QuerySql.ListAuthorsRow> x, List<QuerySql.ListAuthorsRow> y)
@@ -78,8 +83,8 @@ namespace EndToEndTests
         [Test]
         public async Task TestExec()
         {
-            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 1111, Name = "Bojack Horseman", Bio = "Back in the 90s he was in a very famous TV show" });
-            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 2222, Name = "Dr. Seuss", Bio = "You'll miss the best things if you keep your eyes shut" });
+            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 1111, Name = "Bojack Horseman", Bio = "Back in the 90s he was in a very famous TV show", Status = AuthorStatus.Active });
+            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 2222, Name = "Dr. Seuss", Bio = "You'll miss the best things if you keep your eyes shut", Status = AuthorStatus.Active });
             await this.QuerySql.DeleteAuthor(new QuerySql.DeleteAuthorArgs { Name = "Bojack Horseman" });
             var actual = await this.QuerySql.GetAuthor(new QuerySql.GetAuthorArgs { Name = "Bojack Horseman" });
             ClassicAssert.IsNull(actual);
@@ -88,8 +93,8 @@ namespace EndToEndTests
         [Test]
         public async Task TestExecRows()
         {
-            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 1111, Name = "Bojack Horseman", Bio = "Back in the 90s he was in a very famous TV show" });
-            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 2222, Name = "Dr. Seuss", Bio = "You'll miss the best things if you keep your eyes shut" });
+            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 1111, Name = "Bojack Horseman", Bio = "Back in the 90s he was in a very famous TV show", Status = AuthorStatus.Active });
+            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 2222, Name = "Dr. Seuss", Bio = "You'll miss the best things if you keep your eyes shut", Status = AuthorStatus.Active });
             var affectedRows = await this.QuerySql.UpdateAuthors(new QuerySql.UpdateAuthorsArgs { Bio = "Quote that everyone always attribute to Einstein" });
             ClassicAssert.AreEqual(2, affectedRows);
             var expected = new List<QuerySql.ListAuthorsRow>
@@ -98,13 +103,15 @@ namespace EndToEndTests
                 {
                     Id = 1111,
                     Name = "Bojack Horseman",
-                    Bio = "Quote that everyone always attribute to Einstein"
+                    Bio = "Quote that everyone always attribute to Einstein",
+                    Status = AuthorStatus.Active
                 },
                 new QuerySql.ListAuthorsRow
                 {
                     Id = 2222,
                     Name = "Dr. Seuss",
-                    Bio = "Quote that everyone always attribute to Einstein"
+                    Bio = "Quote that everyone always attribute to Einstein",
+                    Status = AuthorStatus.Active
                 }
             };
             var actual = await this.QuerySql.ListAuthors(new QuerySql.ListAuthorsArgs { Limit = 2, Offset = 0 });
@@ -114,6 +121,7 @@ namespace EndToEndTests
                 Assert.That(x.Id, Is.EqualTo(y.Id));
                 Assert.That(x.Name, Is.EqualTo(y.Name));
                 Assert.That(x.Bio, Is.EqualTo(y.Bio));
+                Assert.That(x.Status, Is.EqualTo(y.Status));
             }
 
             void AssertSequenceEquals(List<QuerySql.ListAuthorsRow> x, List<QuerySql.ListAuthorsRow> y)
@@ -127,12 +135,13 @@ namespace EndToEndTests
         [Test]
         public async Task TestExecLastId()
         {
-            var id1 = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs { Name = "Albert Einstein", Bio = "Quote that everyone always attribute to Einstein" });
+            var id1 = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs { Name = "Albert Einstein", Bio = "Quote that everyone always attribute to Einstein", Status = AuthorStatus.Active });
             var expected = new QuerySql.GetAuthorByIdRow
             {
                 Id = id1,
                 Name = "Albert Einstein",
-                Bio = "Quote that everyone always attribute to Einstein"
+                Bio = "Quote that everyone always attribute to Einstein",
+                Status = AuthorStatus.Active
             };
             var actual = await QuerySql.GetAuthorById(new QuerySql.GetAuthorByIdArgs { Id = id1 });
             AssertSingularEquals(expected, actual.Value);
@@ -141,14 +150,15 @@ namespace EndToEndTests
                 Assert.That(x.Id, Is.EqualTo(y.Id));
                 Assert.That(x.Name, Is.EqualTo(y.Name));
                 Assert.That(x.Bio, Is.EqualTo(y.Bio));
+                Assert.That(x.Status, Is.EqualTo(y.Status));
             }
         }
 
         [Test]
         public async Task TestSelfJoinEmbed()
         {
-            var id1 = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs { Name = "Albert Einstein", Bio = "Quote that everyone always attribute to Einstein" });
-            var id2 = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs { Name = "Albert Einstein", Bio = "Only 2 things are infinite, the universe and human stupidity" });
+            var id1 = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs { Name = "Albert Einstein", Bio = "Quote that everyone always attribute to Einstein", Status = AuthorStatus.Active });
+            var id2 = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs { Name = "Albert Einstein", Bio = "Only 2 things are infinite, the universe and human stupidity", Status = AuthorStatus.Active });
             var expected = new List<QuerySql.GetDuplicateAuthorsRow>()
             {
                 new QuerySql.GetDuplicateAuthorsRow
@@ -190,9 +200,9 @@ namespace EndToEndTests
         [Test]
         public async Task TestJoinEmbed()
         {
-            var bojackId = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs { Name = "Bojack Horseman", Bio = "Back in the 90s he was in a very famous TV show" });
+            var bojackId = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs { Name = "Bojack Horseman", Bio = "Back in the 90s he was in a very famous TV show", Status = AuthorStatus.Active });
             var bojackBookId = await QuerySql.CreateBook(new QuerySql.CreateBookArgs { Name = "One Trick Pony", AuthorId = bojackId });
-            var drSeussId = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs { Name = "Dr. Seuss", Bio = "You'll miss the best things if you keep your eyes shut" });
+            var drSeussId = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs { Name = "Dr. Seuss", Bio = "You'll miss the best things if you keep your eyes shut", Status = AuthorStatus.Active });
             var drSeussBookId = await QuerySql.CreateBook(new QuerySql.CreateBookArgs { AuthorId = drSeussId, Name = "How the Grinch Stole Christmas!" });
             var expected = new List<QuerySql.ListAllAuthorsBooksRow>()
             {
@@ -250,21 +260,23 @@ namespace EndToEndTests
         [Test]
         public async Task TestNargNull()
         {
-            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 1111, Name = "Bojack Horseman", Bio = "Back in the 90s he was in a very famous TV show" });
-            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 2222, Name = "Dr. Seuss", Bio = "You'll miss the best things if you keep your eyes shut" });
+            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 1111, Name = "Bojack Horseman", Bio = "Back in the 90s he was in a very famous TV show", Status = AuthorStatus.Active });
+            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 2222, Name = "Dr. Seuss", Bio = "You'll miss the best things if you keep your eyes shut", Status = AuthorStatus.Active });
             var expected = new List<QuerySql.GetAuthorByNamePatternRow>
             {
                 new QuerySql.GetAuthorByNamePatternRow
                 {
                     Id = 1111,
                     Name = "Bojack Horseman",
-                    Bio = "Back in the 90s he was in a very famous TV show"
+                    Bio = "Back in the 90s he was in a very famous TV show",
+                    Status = AuthorStatus.Active
                 },
                 new QuerySql.GetAuthorByNamePatternRow
                 {
                     Id = 2222,
                     Name = "Dr. Seuss",
-                    Bio = "You'll miss the best things if you keep your eyes shut"
+                    Bio = "You'll miss the best things if you keep your eyes shut",
+                    Status = AuthorStatus.Active
                 }
             };
             var actual = await this.QuerySql.GetAuthorByNamePattern(new QuerySql.GetAuthorByNamePatternArgs());
@@ -287,15 +299,16 @@ namespace EndToEndTests
         [Test]
         public async Task TestNargNotNull()
         {
-            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 1111, Name = "Bojack Horseman", Bio = "Back in the 90s he was in a very famous TV show" });
-            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 2222, Name = "Dr. Seuss", Bio = "You'll miss the best things if you keep your eyes shut" });
+            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 1111, Name = "Bojack Horseman", Bio = "Back in the 90s he was in a very famous TV show", Status = AuthorStatus.Active });
+            await this.QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 2222, Name = "Dr. Seuss", Bio = "You'll miss the best things if you keep your eyes shut", Status = AuthorStatus.Active });
             var expected = new List<QuerySql.GetAuthorByNamePatternRow>
             {
                 new QuerySql.GetAuthorByNamePatternRow
                 {
                     Id = 1111,
                     Name = "Bojack Horseman",
-                    Bio = "Back in the 90s he was in a very famous TV show"
+                    Bio = "Back in the 90s he was in a very famous TV show",
+                    Status = AuthorStatus.Active
                 }
             };
             var actual = await this.QuerySql.GetAuthorByNamePattern(new QuerySql.GetAuthorByNamePatternArgs { NamePattern = "Bojack%" });
@@ -312,6 +325,7 @@ namespace EndToEndTests
                 Assert.That(x.Id, Is.EqualTo(y.Id));
                 Assert.That(x.Name, Is.EqualTo(y.Name));
                 Assert.That(x.Bio, Is.EqualTo(y.Bio));
+                Assert.That(x.Status, Is.EqualTo(y.Status));
             }
         }
 
@@ -319,7 +333,7 @@ namespace EndToEndTests
         public async Task TestDuplicateParams()
         {
             // Test parameter deduplication where the same parameter is used multiple times
-            var id1 = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs { Name = "Albert Einstein", Bio = "Quote that everyone always attribute to Einstein" });
+            var id1 = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs { Name = "Albert Einstein", Bio = "Quote that everyone always attribute to Einstein", Status = AuthorStatus.Active });
             // Create test args based on the database type (PostgreSQL has additional date parameters)
             object duplicateArgs;
             if (typeof(QuerySql.GetAuthorsWithDuplicateParamsArgs).GetProperty("DateFilter") != null)
@@ -370,7 +384,7 @@ namespace EndToEndTests
             await connection.OpenAsync();
             var transaction = connection.BeginTransaction();
             var querySqlWithTx = QuerySql.WithTransaction(transaction);
-            await querySqlWithTx.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 1111, Name = "Bojack Horseman", Bio = "Back in the 90s he was in a very famous TV show" });
+            await querySqlWithTx.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 1111, Name = "Bojack Horseman", Bio = "Back in the 90s he was in a very famous TV show", Status = AuthorStatus.Active });
             var actual = await QuerySql.GetAuthor(new QuerySql.GetAuthorArgs { Name = "Bojack Horseman" });
             ClassicAssert.IsNull(actual);
             await transaction.CommitAsync();
@@ -378,7 +392,8 @@ namespace EndToEndTests
             {
                 Id = 1111,
                 Name = "Bojack Horseman",
-                Bio = "Back in the 90s he was in a very famous TV show"
+                Bio = "Back in the 90s he was in a very famous TV show",
+                Status = AuthorStatus.Active
             };
             actual = await QuerySql.GetAuthor(new QuerySql.GetAuthorArgs { Name = "Bojack Horseman" });
             AssertSingularEquals(expected, actual.Value);
@@ -387,6 +402,7 @@ namespace EndToEndTests
                 Assert.That(x.Id, Is.EqualTo(y.Id));
                 Assert.That(x.Name, Is.EqualTo(y.Name));
                 Assert.That(x.Bio, Is.EqualTo(y.Bio));
+                Assert.That(x.Status, Is.EqualTo(y.Status));
             }
         }
 
@@ -397,7 +413,7 @@ namespace EndToEndTests
             await connection.OpenAsync();
             var transaction = connection.BeginTransaction();
             var sqlQueryWithTx = QuerySql.WithTransaction(transaction);
-            await sqlQueryWithTx.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 1111, Name = "Bojack Horseman", Bio = "Back in the 90s he was in a very famous TV show" });
+            await sqlQueryWithTx.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 1111, Name = "Bojack Horseman", Bio = "Back in the 90s he was in a very famous TV show", Status = AuthorStatus.Active });
             await transaction.RollbackAsync();
             var actual = await QuerySql.GetAuthor(new QuerySql.GetAuthorArgs { Name = "Bojack Horseman" });
             ClassicAssert.IsNull(actual);
@@ -406,8 +422,8 @@ namespace EndToEndTests
         [Test]
         public async Task TestArray()
         {
-            var id1 = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs { Name = "Albert Einstein", Bio = "Quote that everyone always attribute to Einstein" });
-            var bojackId = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs { Name = "Bojack Horseman", Bio = "Back in the 90s he was in a very famous TV show" });
+            var id1 = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs { Name = "Albert Einstein", Bio = "Quote that everyone always attribute to Einstein", Status = AuthorStatus.Active });
+            var bojackId = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs { Name = "Bojack Horseman", Bio = "Back in the 90s he was in a very famous TV show", Status = AuthorStatus.Active });
             var actual = await QuerySql.GetAuthorsByIds(new QuerySql.GetAuthorsByIdsArgs { LongArr1 = new[] { id1, bojackId } });
             ClassicAssert.AreEqual(2, actual.Count);
         }
@@ -415,9 +431,9 @@ namespace EndToEndTests
         [Test]
         public async Task TestMultipleArrays()
         {
-            var id1 = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs { Name = "Albert Einstein", Bio = "Quote that everyone always attribute to Einstein" });
-            var id2 = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs { Name = "Albert Einstein", Bio = "Only 2 things are infinite, the universe and human stupidity" });
-            var bojackId = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs { Name = "Bojack Horseman", Bio = "Back in the 90s he was in a very famous TV show" });
+            var id1 = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs { Name = "Albert Einstein", Bio = "Quote that everyone always attribute to Einstein", Status = AuthorStatus.Active });
+            var id2 = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs { Name = "Albert Einstein", Bio = "Only 2 things are infinite, the universe and human stupidity", Status = AuthorStatus.Active });
+            var bojackId = await this.QuerySql.CreateAuthorReturnId(new QuerySql.CreateAuthorReturnIdArgs { Name = "Bojack Horseman", Bio = "Back in the 90s he was in a very famous TV show", Status = AuthorStatus.Active });
             var actual = await QuerySql.GetAuthorsByIdsAndNames(new QuerySql.GetAuthorsByIdsAndNamesArgs { LongArr1 = new[] { id1, bojackId }, StringArr2 = new[] { "Albert Einstein" } });
             ClassicAssert.AreEqual(1, actual.Count);
         }
@@ -465,7 +481,7 @@ namespace EndToEndTests
             // This test verifies that queries with inline comments work correctly
             // The bug has been fixed - inline comments are now properly removed during code generation
             // Test the CreateAuthorIncludingComment method
-            var result = await QuerySql.CreateAuthorIncludingComment(new QuerySql.CreateAuthorIncludingCommentArgs { Id = 9999, Name = "Test Author With Comments", Bio = "Biography with inline comments test" });
+            var result = await QuerySql.CreateAuthorIncludingComment(new QuerySql.CreateAuthorIncludingCommentArgs { Id = 9999, Name = "Test Author With Comments", Bio = "Biography with inline comments test", Status = AuthorStatus.Active });
             Assert.That(result, Is.Not.Null);
             Assert.That(result.Value.Name, Is.EqualTo("Test Author With Comments"));
             Assert.That(result.Value.Bio, Is.EqualTo("Biography with inline comments test"));
@@ -485,7 +501,7 @@ namespace EndToEndTests
             // - Missing imports for JsonDocument.Parse(), JsonSerializer.Deserialize()
             // First, create an author with JSON metadata
             var testMetadata = JsonDocument.Parse("{\"tags\": [\"fiction\", \"mystery\"], \"rating\": 4.5}").RootElement;
-            await QuerySql.CreateAuthorWithMetadata(new QuerySql.CreateAuthorWithMetadataArgs { Id = 12345, Name = "JSON Test Author", Bio = "Author with JSON metadata", Metadata = testMetadata });
+            await QuerySql.CreateAuthorWithMetadata(new QuerySql.CreateAuthorWithMetadataArgs { Id = 12345, Name = "JSON Test Author", Bio = "Author with JSON metadata", Metadata = testMetadata, Status = AuthorStatus.Active });
             // Create a book for this author
             await QuerySql.CreateBook(new QuerySql.CreateBookArgs { Name = "JSON Test Book", AuthorId = 12345 });
             // This query uses sqlc.embed(authors) which includes the JSON metadata field
@@ -876,6 +892,81 @@ namespace EndToEndTests
             {
                 Assert.That(x.CEnumNotNull, Is.EqualTo(y.CEnumNotNull));
             }
+        }
+
+        [Test]
+        [TestCase(AuthorStatus.Active)]
+        [TestCase(AuthorStatus.Inactive)]
+        [TestCase(AuthorStatus.Pending)]
+        [TestCase(AuthorStatus.Archived)]
+        public async Task TestPostgresAuthorStatusEnum(AuthorStatus status)
+        {
+            var result = await QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 88888, Name = "Status Test Author", Bio = "Testing author status enum", Status = status });
+            var expected = new QuerySql.CreateAuthorRow
+            {
+                Id = 88888,
+                Name = "Status Test Author",
+                Bio = "Testing author status enum",
+                Status = status
+            };
+            Assert.That(result, Is.Not.Null);
+            AssertSingularEquals(expected, result.Value);
+            void AssertSingularEquals(QuerySql.CreateAuthorRow x, QuerySql.CreateAuthorRow y)
+            {
+                Assert.That(x.Id, Is.EqualTo(y.Id));
+                Assert.That(x.Name, Is.EqualTo(y.Name));
+                Assert.That(x.Bio, Is.EqualTo(y.Bio));
+                Assert.That(x.Status, Is.EqualTo(y.Status));
+            }
+        }
+
+        [Test]
+        public async Task TestPostgresEnumEmbed()
+        {
+            // Test that enums are correctly handled when using sqlc.embed
+            // This covers the case where embedded tables contain enum fields
+            // Create authors with different enum statuses
+            await QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 11111, Name = "Active Author", Bio = "Bio for active author" });
+            await QuerySql.CreateAuthor(new QuerySql.CreateAuthorArgs { Id = 22222, Name = "Inactive Author", Bio = "Bio for inactive author" });
+            // Update author status
+            await QuerySql.CreateAuthorWithMetadata(new QuerySql.CreateAuthorWithMetadataArgs { Id = 33333, Name = "Status Test Author", Bio = "Testing explicit status", Metadata = null, Status = AuthorStatus.Active });
+            // Create a book for the active author
+            await QuerySql.CreateBook(new QuerySql.CreateBookArgs { Name = "Test Book", AuthorId = 33333 });
+            // Query that uses sqlc.embed with authors table containing enum status
+            var result = await QuerySql.GetAuthorsWithEmbeddedStatus(new QuerySql.GetAuthorsWithEmbeddedStatusArgs { Status = AuthorStatus.Active });
+            Assert.That(result, Is.Not.Empty);
+            var activeAuthor = result.First();
+            // Verify embedded Author struct with enum handling
+            Assert.That(activeAuthor.Author, Is.Not.Null);
+            var authorData = activeAuthor.Author.Value;
+            Assert.That(authorData.Id, Is.EqualTo(33333));
+            Assert.That(authorData.Name, Is.EqualTo("Status Test Author"));
+            Assert.That(authorData.Bio, Is.EqualTo("Testing explicit status"));
+            Assert.That(authorData.Status, Is.EqualTo(AuthorStatus.Active));
+            // Verify the book name is correctly retrieved
+            Assert.That(activeAuthor.BookName, Is.EqualTo("Test Book"));
+        }
+
+        [Test]
+        public async Task TestPostgresEnumEmbedReturning()
+        {
+            // Test that enums are correctly handled when using sqlc.embed in RETURNING clauses
+            // Create author using RETURNING sqlc.embed(authors) which includes enum field
+            var result = await QuerySql.CreateAuthorEmbed(new QuerySql.CreateAuthorEmbedArgs { Id = 22222, Name = "Embed Return Author", Bio = "Testing enum in RETURNING embed" });
+            Assert.That(result, Is.Not.Null);
+            var authorData = result.Value;
+            Assert.That(authorData.Id, Is.EqualTo(22222));
+            Assert.That(authorData.Name, Is.EqualTo("Embed Return Author"));
+            Assert.That(authorData.Bio, Is.EqualTo("Testing enum in RETURNING embed"));
+            Assert.That(authorData.Status, Is.EqualTo(AuthorStatus.Pending)); // Default enum value
+            // Test with explicit enum value
+            var resultWithStatus = await QuerySql.CreateAuthorWithMetadataEmbed(new QuerySql.CreateAuthorWithMetadataEmbedArgs { Id = 33333, Name = "Active Author", Bio = "Active status test", Metadata = null, Status = AuthorStatus.Active });
+            Assert.That(resultWithStatus, Is.Not.Null);
+            var activeAuthorData = resultWithStatus.Value;
+            Assert.That(activeAuthorData.Id, Is.EqualTo(33333));
+            Assert.That(activeAuthorData.Name, Is.EqualTo("Active Author"));
+            Assert.That(activeAuthorData.Bio, Is.EqualTo("Active status test"));
+            Assert.That(activeAuthorData.Status, Is.EqualTo(AuthorStatus.Active));
         }
 
         [Test]

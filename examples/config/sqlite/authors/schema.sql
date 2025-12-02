@@ -1,7 +1,8 @@
 CREATE TABLE authors (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    bio TEXT
+    bio TEXT,
+    status TEXT NOT NULL DEFAULT 'pending'
 );
 
 CREATE TABLE books (

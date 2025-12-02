@@ -20,13 +20,15 @@ public static class MacroTests
                               {
                                   Id = {{Consts.BojackId}},
                                   Name = {{Consts.BojackAuthor}},
-                                  Bio = {{Consts.BojackTheme}}
+                                  Bio = {{Consts.BojackTheme}},
+                                  Status = AuthorStatus.Active
                               },
                               new QuerySql.GetAuthorByNamePatternRow
                               {
                                   Id = {{Consts.DrSeussId}},
                                   Name = {{Consts.DrSeussAuthor}},
-                                  Bio = {{Consts.DrSeussQuote}}
+                                  Bio = {{Consts.DrSeussQuote}},
+                                  Status = AuthorStatus.Active
                               }
                           };
                      
@@ -64,7 +66,8 @@ public static class MacroTests
                               {
                                   Id = {{Consts.BojackId}},
                                   Name = {{Consts.BojackAuthor}},
-                                  Bio = {{Consts.BojackTheme}}
+                                  Bio = {{Consts.BojackTheme}},
+                                  Status = AuthorStatus.Active
                               }
                           };
                      
@@ -83,6 +86,7 @@ public static class MacroTests
                               Assert.That(x.Id, Is.EqualTo(y.Id));
                               Assert.That(x.Name, Is.EqualTo(y.Name));
                               Assert.That(x.Bio, Is.EqualTo(y.Bio));
+                              Assert.That(x.Status, Is.EqualTo(y.Status));
                           }
                       }
                      """

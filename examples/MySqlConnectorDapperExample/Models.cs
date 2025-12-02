@@ -12,6 +12,7 @@ public class Author
     public required long Id { get; init; }
     public required string Name { get; init; }
     public string? Bio { get; init; }
+    public required AuthorsStatus Status { get; init; }
 };
 public class Book
 {
@@ -84,6 +85,29 @@ public class ExtendedBio
     public BiosBioType? BioType { get; init; }
     public HashSet<BiosAuthorType>? AuthorType { get; init; }
 };
+public enum AuthorsStatus
+{
+    Invalid = 0, // reserved for invalid enum value
+    Active = 1,
+    Inactive = 2,
+    Pending = 3
+}
+
+public static class AuthorsStatusExtensions
+{
+    private static readonly Dictionary<string, AuthorsStatus> StringToEnum = new Dictionary<string, AuthorsStatus>()
+    {
+        [string.Empty] = AuthorsStatus.Invalid,
+        ["active"] = AuthorsStatus.Active,
+        ["inactive"] = AuthorsStatus.Inactive,
+        ["pending"] = AuthorsStatus.Pending
+    };
+    public static HashSet<AuthorsStatus> ToAuthorsStatusSet(this string me)
+    {
+        return new HashSet<AuthorsStatus>(me.Split(',').ToList().Select(v => StringToEnum[v]));
+    }
+}
+
 public enum BiosBioType
 {
     Invalid = 0, // reserved for invalid enum value

@@ -47,12 +47,13 @@ namespace MySqlConnectorDapperLegacyExampleGen
         private MySqlTransaction Transaction { get; }
         private string ConnectionString { get; }
 
-        private const string GetAuthorSql = "SELECT id, name, bio FROM authors WHERE name = @name LIMIT 1";
+        private const string GetAuthorSql = "SELECT id, name, bio, status FROM authors WHERE name = @name LIMIT 1";
         public class GetAuthorRow
         {
             public long Id { get; set; }
             public string Name { get; set; }
             public string Bio { get; set; }
+            public AuthorsStatus Status { get; set; }
         };
         public class GetAuthorArgs
         {
@@ -76,12 +77,82 @@ namespace MySqlConnectorDapperLegacyExampleGen
             return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetAuthorRow>(GetAuthorSql, queryParams, transaction: this.Transaction);
         }
 
-        private const string ListAuthorsSql = "SELECT id, name, bio FROM authors ORDER BY name LIMIT @limit OFFSET @offset";
+        private const string GetAuthorEmbedSql = "SELECT authors.id, authors.name, authors.bio, authors.status FROM authors WHERE name = @name LIMIT 1";
+        public class GetAuthorEmbedRow
+        {
+            public Author Author { get; set; }
+        };
+        public class GetAuthorEmbedArgs
+        {
+            public string Name { get; set; }
+        };
+        public async Task<GetAuthorEmbedRow> GetAuthorEmbed(GetAuthorEmbedArgs args)
+        {
+            if (this.Transaction == null)
+            {
+                using (var connection = new MySqlConnection(ConnectionString))
+                {
+                    await connection.OpenAsync();
+                    using (var command = new MySqlCommand(GetAuthorEmbedSql, connection))
+                    {
+                        command.Parameters.AddWithValue("@name", args.Name);
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync())
+                            {
+                                return new GetAuthorEmbedRow
+                                {
+                                    Author = new Author
+                                    {
+                                        Id = reader.GetInt64(0),
+                                        Name = reader.GetString(1),
+                                        Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
+                                        Status = reader.GetString(3).ToAuthorsStatus()
+                                    }
+                                };
+                            }
+                        }
+                    }
+                }
+
+                return null;
+            }
+
+            if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+                throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+            using (var command = this.Transaction.Connection.CreateCommand())
+            {
+                command.CommandText = GetAuthorEmbedSql;
+                command.Transaction = this.Transaction;
+                command.Parameters.AddWithValue("@name", args.Name);
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync())
+                    {
+                        return new GetAuthorEmbedRow
+                        {
+                            Author = new Author
+                            {
+                                Id = reader.GetInt64(0),
+                                Name = reader.GetString(1),
+                                Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
+                                Status = reader.GetString(3).ToAuthorsStatus()
+                            }
+                        };
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private const string ListAuthorsSql = "SELECT id, name, bio, status FROM authors ORDER BY name LIMIT @limit OFFSET @offset";
         public class ListAuthorsRow
         {
             public long Id { get; set; }
             public string Name { get; set; }
             public string Bio { get; set; }
+            public AuthorsStatus Status { get; set; }
         };
         public class ListAuthorsArgs
         {
@@ -179,12 +250,13 @@ namespace MySqlConnectorDapperLegacyExampleGen
             return await this.Transaction.Connection.QuerySingleAsync<long>(CreateAuthorReturnIdSql, queryParams, transaction: this.Transaction);
         }
 
-        private const string GetAuthorByIdSql = "SELECT id, name, bio FROM authors WHERE id = @id LIMIT 1";
+        private const string GetAuthorByIdSql = "SELECT id, name, bio, status FROM authors WHERE id = @id LIMIT 1";
         public class GetAuthorByIdRow
         {
             public long Id { get; set; }
             public string Name { get; set; }
             public string Bio { get; set; }
+            public AuthorsStatus Status { get; set; }
         };
         public class GetAuthorByIdArgs
         {
@@ -208,12 +280,13 @@ namespace MySqlConnectorDapperLegacyExampleGen
             return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetAuthorByIdRow>(GetAuthorByIdSql, queryParams, transaction: this.Transaction);
         }
 
-        private const string GetAuthorByNamePatternSql = "SELECT id, name, bio FROM authors WHERE name LIKE COALESCE(@name_pattern, '%')";
+        private const string GetAuthorByNamePatternSql = "SELECT id, name, bio, status FROM authors WHERE name LIKE COALESCE(@name_pattern, '%')";
         public class GetAuthorByNamePatternRow
         {
             public long Id { get; set; }
             public string Name { get; set; }
             public string Bio { get; set; }
+            public AuthorsStatus Status { get; set; }
         };
         public class GetAuthorByNamePatternArgs
         {
@@ -293,12 +366,13 @@ namespace MySqlConnectorDapperLegacyExampleGen
             return await this.Transaction.Connection.ExecuteAsync(UpdateAuthorsSql, queryParams, transaction: this.Transaction);
         }
 
-        private const string GetAuthorsByIdsSql = "SELECT id, name, bio FROM authors WHERE id IN (/*SLICE:ids*/@ids)";
+        private const string GetAuthorsByIdsSql = "SELECT id, name, bio, status FROM authors WHERE id IN (/*SLICE:ids*/@ids)";
         public class GetAuthorsByIdsRow
         {
             public long Id { get; set; }
             public string Name { get; set; }
             public string Bio { get; set; }
+            public AuthorsStatus Status { get; set; }
         };
         public class GetAuthorsByIdsArgs
         {
@@ -325,12 +399,13 @@ namespace MySqlConnectorDapperLegacyExampleGen
             return (await this.Transaction.Connection.QueryAsync<GetAuthorsByIdsRow>(transformedSql, queryParams, transaction: this.Transaction)).AsList();
         }
 
-        private const string GetAuthorsByIdsAndNamesSql = "SELECT id, name, bio FROM authors WHERE id IN (/*SLICE:ids*/@ids) AND name IN (/*SLICE:names*/@names)";
+        private const string GetAuthorsByIdsAndNamesSql = "SELECT id, name, bio, status FROM authors WHERE id IN (/*SLICE:ids*/@ids) AND name IN (/*SLICE:names*/@names)";
         public class GetAuthorsByIdsAndNamesRow
         {
             public long Id { get; set; }
             public string Name { get; set; }
             public string Bio { get; set; }
+            public AuthorsStatus Status { get; set; }
         };
         public class GetAuthorsByIdsAndNamesArgs
         {
@@ -383,7 +458,7 @@ namespace MySqlConnectorDapperLegacyExampleGen
             return await this.Transaction.Connection.QuerySingleAsync<long>(CreateBookSql, queryParams, transaction: this.Transaction);
         }
 
-        private const string ListAllAuthorsBooksSql = "SELECT authors.id, authors.name, authors.bio, books.id, books.name, books.author_id, books.description FROM authors JOIN books ON authors.id = books.author_id ORDER BY authors.name";
+        private const string ListAllAuthorsBooksSql = "SELECT authors.id, authors.name, authors.bio, authors.status, books.id, books.name, books.author_id, books.description FROM authors JOIN books ON authors.id = books.author_id ORDER BY authors.name";
         public class ListAllAuthorsBooksRow
         {
             public Author Author { get; set; }
@@ -402,7 +477,7 @@ namespace MySqlConnectorDapperLegacyExampleGen
                         {
                             var result = new List<ListAllAuthorsBooksRow>();
                             while (await reader.ReadAsync())
-                                result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) }, Book = new Book { Id = reader.GetInt64(3), Name = reader.GetString(4), AuthorId = reader.GetInt64(5), Description = reader.IsDBNull(6) ? null : reader.GetString(6) } });
+                                result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3).ToAuthorsStatus() }, Book = new Book { Id = reader.GetInt64(4), Name = reader.GetString(5), AuthorId = reader.GetInt64(6), Description = reader.IsDBNull(7) ? null : reader.GetString(7) } });
                             return result;
                         }
                     }
@@ -419,13 +494,13 @@ namespace MySqlConnectorDapperLegacyExampleGen
                 {
                     var result = new List<ListAllAuthorsBooksRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) }, Book = new Book { Id = reader.GetInt64(3), Name = reader.GetString(4), AuthorId = reader.GetInt64(5), Description = reader.IsDBNull(6) ? null : reader.GetString(6) } });
+                        result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3).ToAuthorsStatus() }, Book = new Book { Id = reader.GetInt64(4), Name = reader.GetString(5), AuthorId = reader.GetInt64(6), Description = reader.IsDBNull(7) ? null : reader.GetString(7) } });
                     return result;
                 }
             }
         }
 
-        private const string GetDuplicateAuthorsSql = "SELECT authors1.id, authors1.name, authors1.bio, authors2.id, authors2.name, authors2.bio FROM authors authors1 JOIN authors authors2 ON authors1.name = authors2.name WHERE authors1.id < authors2.id";
+        private const string GetDuplicateAuthorsSql = "SELECT authors1.id, authors1.name, authors1.bio, authors1.status, authors2.id, authors2.name, authors2.bio, authors2.status FROM authors authors1 JOIN authors authors2 ON authors1.name = authors2.name WHERE authors1.id < authors2.id";
         public class GetDuplicateAuthorsRow
         {
             public Author Author { get; set; }
@@ -444,7 +519,7 @@ namespace MySqlConnectorDapperLegacyExampleGen
                         {
                             var result = new List<GetDuplicateAuthorsRow>();
                             while (await reader.ReadAsync())
-                                result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) }, Author2 = new Author { Id = reader.GetInt64(3), Name = reader.GetString(4), Bio = reader.IsDBNull(5) ? null : reader.GetString(5) } });
+                                result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3).ToAuthorsStatus() }, Author2 = new Author { Id = reader.GetInt64(4), Name = reader.GetString(5), Bio = reader.IsDBNull(6) ? null : reader.GetString(6), Status = reader.GetString(7).ToAuthorsStatus() } });
                             return result;
                         }
                     }
@@ -461,18 +536,19 @@ namespace MySqlConnectorDapperLegacyExampleGen
                 {
                     var result = new List<GetDuplicateAuthorsRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) }, Author2 = new Author { Id = reader.GetInt64(3), Name = reader.GetString(4), Bio = reader.IsDBNull(5) ? null : reader.GetString(5) } });
+                        result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3).ToAuthorsStatus() }, Author2 = new Author { Id = reader.GetInt64(4), Name = reader.GetString(5), Bio = reader.IsDBNull(6) ? null : reader.GetString(6), Status = reader.GetString(7).ToAuthorsStatus() } });
                     return result;
                 }
             }
         }
 
-        private const string GetAuthorsByBookNameSql = "SELECT authors.id, authors.name, authors.bio, books.id, books.name, books.author_id, books.description FROM authors JOIN books ON authors.id = books.author_id WHERE books.name = @name";
+        private const string GetAuthorsByBookNameSql = "SELECT authors.id, authors.name, authors.bio, authors.status, books.id, books.name, books.author_id, books.description FROM authors JOIN books ON authors.id = books.author_id WHERE books.name = @name";
         public class GetAuthorsByBookNameRow
         {
             public long Id { get; set; }
             public string Name { get; set; }
             public string Bio { get; set; }
+            public AuthorsStatus Status { get; set; }
             public Book Book { get; set; }
         };
         public class GetAuthorsByBookNameArgs
@@ -493,7 +569,7 @@ namespace MySqlConnectorDapperLegacyExampleGen
                         {
                             var result = new List<GetAuthorsByBookNameRow>();
                             while (await reader.ReadAsync())
-                                result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Book = new Book { Id = reader.GetInt64(3), Name = reader.GetString(4), AuthorId = reader.GetInt64(5), Description = reader.IsDBNull(6) ? null : reader.GetString(6) } });
+                                result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3).ToAuthorsStatus(), Book = new Book { Id = reader.GetInt64(4), Name = reader.GetString(5), AuthorId = reader.GetInt64(6), Description = reader.IsDBNull(7) ? null : reader.GetString(7) } });
                             return result;
                         }
                     }
@@ -511,7 +587,7 @@ namespace MySqlConnectorDapperLegacyExampleGen
                 {
                     var result = new List<GetAuthorsByBookNameRow>();
                     while (await reader.ReadAsync())
-                        result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Book = new Book { Id = reader.GetInt64(3), Name = reader.GetString(4), AuthorId = reader.GetInt64(5), Description = reader.IsDBNull(6) ? null : reader.GetString(6) } });
+                        result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3).ToAuthorsStatus(), Book = new Book { Id = reader.GetInt64(4), Name = reader.GetString(5), AuthorId = reader.GetInt64(6), Description = reader.IsDBNull(7) ? null : reader.GetString(7) } });
                     return result;
                 }
             }
@@ -589,12 +665,13 @@ namespace MySqlConnectorDapperLegacyExampleGen
             await this.Transaction.Connection.ExecuteAsync(TruncateExtendedBiosSql, transaction: this.Transaction);
         }
 
-        private const string GetAuthorsWithDuplicateParamsSql = "SELECT id, name, bio FROM authors WHERE (name = @author_name OR bio LIKE CONCAT('%', @author_name, '%')) AND (id > @min_id OR id < @min_id + 1000)";
+        private const string GetAuthorsWithDuplicateParamsSql = "SELECT id, name, bio, status FROM authors WHERE (name = @author_name OR bio LIKE CONCAT('%', @author_name, '%')) AND (id > @min_id OR id < @min_id + 1000)";
         public class GetAuthorsWithDuplicateParamsRow
         {
             public long Id { get; set; }
             public string Name { get; set; }
             public string Bio { get; set; }
+            public AuthorsStatus Status { get; set; }
         };
         public class GetAuthorsWithDuplicateParamsArgs
         {
@@ -620,12 +697,13 @@ namespace MySqlConnectorDapperLegacyExampleGen
             return (await this.Transaction.Connection.QueryAsync<GetAuthorsWithDuplicateParamsRow>(GetAuthorsWithDuplicateParamsSql, queryParams, transaction: this.Transaction)).AsList();
         }
 
-        private const string GetAuthorWithTripleNameParamSql = "SELECT id, name, bio FROM authors WHERE name = @author_name OR bio LIKE CONCAT('%', @author_name, '%') OR CAST(id AS CHAR) LIKE CONCAT('%', @author_name, '%') LIMIT 1";
+        private const string GetAuthorWithTripleNameParamSql = "SELECT id, name, bio, status FROM authors WHERE name = @author_name OR bio LIKE CONCAT('%', @author_name, '%') OR CAST(id AS CHAR) LIKE CONCAT('%', @author_name, '%') LIMIT 1";
         public class GetAuthorWithTripleNameParamRow
         {
             public long Id { get; set; }
             public string Name { get; set; }
             public string Bio { get; set; }
+            public AuthorsStatus Status { get; set; }
         };
         public class GetAuthorWithTripleNameParamArgs
         {

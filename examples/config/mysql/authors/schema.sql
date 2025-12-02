@@ -1,7 +1,8 @@
 CREATE TABLE authors (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     name TEXT NOT NULL,
-    bio TEXT
+    bio TEXT,
+    status ENUM('active', 'inactive', 'pending') NOT NULL DEFAULT 'pending'
 );
 
 CREATE TABLE books (

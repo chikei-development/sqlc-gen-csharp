@@ -1,6 +1,9 @@
 -- name: GetAuthor :one
 SELECT * FROM authors WHERE name = ? LIMIT 1;
 
+-- name: GetAuthorEmbed :one
+SELECT sqlc.embed(authors) FROM authors WHERE name = ? LIMIT 1;
+
 -- name: ListAuthors :many
 SELECT * 
 FROM authors

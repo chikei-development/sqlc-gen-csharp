@@ -43,8 +43,8 @@ public class QuerySql
     private MySqlTransaction? Transaction { get; }
     private string? ConnectionString { get; }
 
-    private const string GetAuthorSql = "SELECT id, name, bio FROM authors WHERE name = @name LIMIT 1";
-    public readonly record struct GetAuthorRow(long Id, string Name, string? Bio);
+    private const string GetAuthorSql = "SELECT id, name, bio, status FROM authors WHERE name = @name LIMIT 1";
+    public readonly record struct GetAuthorRow(long Id, string Name, string? Bio, AuthorsStatus Status);
     public readonly record struct GetAuthorArgs(string Name);
     public async Task<GetAuthorRow?> GetAuthor(GetAuthorArgs args)
     {
@@ -64,7 +64,8 @@ public class QuerySql
                             {
                                 Id = reader.GetInt64(0),
                                 Name = reader.GetString(1),
-                                Bio = reader.IsDBNull(2) ? null : reader.GetString(2)
+                                Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
+                                Status = reader.GetString(3).ToAuthorsStatus()
                             };
                         }
                     }
@@ -89,7 +90,8 @@ public class QuerySql
                     {
                         Id = reader.GetInt64(0),
                         Name = reader.GetString(1),
-                        Bio = reader.IsDBNull(2) ? null : reader.GetString(2)
+                        Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
+                        Status = reader.GetString(3).ToAuthorsStatus()
                     };
                 }
             }
@@ -98,8 +100,71 @@ public class QuerySql
         return null;
     }
 
-    private const string ListAuthorsSql = "SELECT id, name, bio FROM authors ORDER BY name LIMIT @limit OFFSET @offset";
-    public readonly record struct ListAuthorsRow(long Id, string Name, string? Bio);
+    private const string GetAuthorEmbedSql = "SELECT authors.id, authors.name, authors.bio, authors.status FROM authors WHERE name = @name LIMIT 1";
+    public readonly record struct GetAuthorEmbedRow(Author? Author);
+    public readonly record struct GetAuthorEmbedArgs(string Name);
+    public async Task<GetAuthorEmbedRow?> GetAuthorEmbed(GetAuthorEmbedArgs args)
+    {
+        if (this.Transaction == null)
+        {
+            using (var connection = new MySqlConnection(ConnectionString))
+            {
+                await connection.OpenAsync();
+                using (var command = new MySqlCommand(GetAuthorEmbedSql, connection))
+                {
+                    command.Parameters.AddWithValue("@name", args.Name);
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            return new GetAuthorEmbedRow
+                            {
+                                Author = new Author
+                                {
+                                    Id = reader.GetInt64(0),
+                                    Name = reader.GetString(1),
+                                    Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
+                                    Status = reader.GetString(3).ToAuthorsStatus()
+                                }
+                            };
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        using (var command = this.Transaction.Connection.CreateCommand())
+        {
+            command.CommandText = GetAuthorEmbedSql;
+            command.Transaction = this.Transaction;
+            command.Parameters.AddWithValue("@name", args.Name);
+            using (var reader = await command.ExecuteReaderAsync())
+            {
+                if (await reader.ReadAsync())
+                {
+                    return new GetAuthorEmbedRow
+                    {
+                        Author = new Author
+                        {
+                            Id = reader.GetInt64(0),
+                            Name = reader.GetString(1),
+                            Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
+                            Status = reader.GetString(3).ToAuthorsStatus()
+                        }
+                    };
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private const string ListAuthorsSql = "SELECT id, name, bio, status FROM authors ORDER BY name LIMIT @limit OFFSET @offset";
+    public readonly record struct ListAuthorsRow(long Id, string Name, string? Bio, AuthorsStatus Status);
     public readonly record struct ListAuthorsArgs(int Limit, int Offset);
     public async Task<List<ListAuthorsRow>> ListAuthors(ListAuthorsArgs args)
     {
@@ -116,7 +181,7 @@ public class QuerySql
                     {
                         var result = new List<ListAuthorsRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new ListAuthorsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) });
+                            result.Add(new ListAuthorsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3).ToAuthorsStatus() });
                         return result;
                     }
                 }
@@ -135,7 +200,7 @@ public class QuerySql
             {
                 var result = new List<ListAuthorsRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new ListAuthorsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) });
+                    result.Add(new ListAuthorsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3).ToAuthorsStatus() });
                 return result;
             }
         }
@@ -239,8 +304,8 @@ public class QuerySql
         }
     }
 
-    private const string GetAuthorByIdSql = "SELECT id, name, bio FROM authors WHERE id = @id LIMIT 1";
-    public readonly record struct GetAuthorByIdRow(long Id, string Name, string? Bio);
+    private const string GetAuthorByIdSql = "SELECT id, name, bio, status FROM authors WHERE id = @id LIMIT 1";
+    public readonly record struct GetAuthorByIdRow(long Id, string Name, string? Bio, AuthorsStatus Status);
     public readonly record struct GetAuthorByIdArgs(long Id);
     public async Task<GetAuthorByIdRow?> GetAuthorById(GetAuthorByIdArgs args)
     {
@@ -260,7 +325,8 @@ public class QuerySql
                             {
                                 Id = reader.GetInt64(0),
                                 Name = reader.GetString(1),
-                                Bio = reader.IsDBNull(2) ? null : reader.GetString(2)
+                                Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
+                                Status = reader.GetString(3).ToAuthorsStatus()
                             };
                         }
                     }
@@ -285,7 +351,8 @@ public class QuerySql
                     {
                         Id = reader.GetInt64(0),
                         Name = reader.GetString(1),
-                        Bio = reader.IsDBNull(2) ? null : reader.GetString(2)
+                        Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
+                        Status = reader.GetString(3).ToAuthorsStatus()
                     };
                 }
             }
@@ -294,8 +361,8 @@ public class QuerySql
         return null;
     }
 
-    private const string GetAuthorByNamePatternSql = "SELECT id, name, bio FROM authors WHERE name LIKE COALESCE(@name_pattern, '%')";
-    public readonly record struct GetAuthorByNamePatternRow(long Id, string Name, string? Bio);
+    private const string GetAuthorByNamePatternSql = "SELECT id, name, bio, status FROM authors WHERE name LIKE COALESCE(@name_pattern, '%')";
+    public readonly record struct GetAuthorByNamePatternRow(long Id, string Name, string? Bio, AuthorsStatus Status);
     public readonly record struct GetAuthorByNamePatternArgs(string? NamePattern);
     public async Task<List<GetAuthorByNamePatternRow>> GetAuthorByNamePattern(GetAuthorByNamePatternArgs args)
     {
@@ -311,7 +378,7 @@ public class QuerySql
                     {
                         var result = new List<GetAuthorByNamePatternRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new GetAuthorByNamePatternRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) });
+                            result.Add(new GetAuthorByNamePatternRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3).ToAuthorsStatus() });
                         return result;
                     }
                 }
@@ -329,7 +396,7 @@ public class QuerySql
             {
                 var result = new List<GetAuthorByNamePatternRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new GetAuthorByNamePatternRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) });
+                    result.Add(new GetAuthorByNamePatternRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3).ToAuthorsStatus() });
                 return result;
             }
         }
@@ -418,8 +485,8 @@ public class QuerySql
         }
     }
 
-    private const string GetAuthorsByIdsSql = "SELECT id, name, bio FROM authors WHERE id IN (/*SLICE:ids*/@ids)";
-    public readonly record struct GetAuthorsByIdsRow(long Id, string Name, string? Bio);
+    private const string GetAuthorsByIdsSql = "SELECT id, name, bio, status FROM authors WHERE id IN (/*SLICE:ids*/@ids)";
+    public readonly record struct GetAuthorsByIdsRow(long Id, string Name, string? Bio, AuthorsStatus Status);
     public readonly record struct GetAuthorsByIdsArgs(long[] Ids);
     public async Task<List<GetAuthorsByIdsRow>> GetAuthorsByIds(GetAuthorsByIdsArgs args)
     {
@@ -438,7 +505,7 @@ public class QuerySql
                     {
                         var result = new List<GetAuthorsByIdsRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new GetAuthorsByIdsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) });
+                            result.Add(new GetAuthorsByIdsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3).ToAuthorsStatus() });
                         return result;
                     }
                 }
@@ -457,14 +524,14 @@ public class QuerySql
             {
                 var result = new List<GetAuthorsByIdsRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new GetAuthorsByIdsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) });
+                    result.Add(new GetAuthorsByIdsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3).ToAuthorsStatus() });
                 return result;
             }
         }
     }
 
-    private const string GetAuthorsByIdsAndNamesSql = "SELECT id, name, bio FROM authors WHERE id IN (/*SLICE:ids*/@ids) AND name IN (/*SLICE:names*/@names)";
-    public readonly record struct GetAuthorsByIdsAndNamesRow(long Id, string Name, string? Bio);
+    private const string GetAuthorsByIdsAndNamesSql = "SELECT id, name, bio, status FROM authors WHERE id IN (/*SLICE:ids*/@ids) AND name IN (/*SLICE:names*/@names)";
+    public readonly record struct GetAuthorsByIdsAndNamesRow(long Id, string Name, string? Bio, AuthorsStatus Status);
     public readonly record struct GetAuthorsByIdsAndNamesArgs(long[] Ids, string[] Names);
     public async Task<List<GetAuthorsByIdsAndNamesRow>> GetAuthorsByIdsAndNames(GetAuthorsByIdsAndNamesArgs args)
     {
@@ -486,7 +553,7 @@ public class QuerySql
                     {
                         var result = new List<GetAuthorsByIdsAndNamesRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new GetAuthorsByIdsAndNamesRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) });
+                            result.Add(new GetAuthorsByIdsAndNamesRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3).ToAuthorsStatus() });
                         return result;
                     }
                 }
@@ -507,7 +574,7 @@ public class QuerySql
             {
                 var result = new List<GetAuthorsByIdsAndNamesRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new GetAuthorsByIdsAndNamesRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) });
+                    result.Add(new GetAuthorsByIdsAndNamesRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3).ToAuthorsStatus() });
                 return result;
             }
         }
@@ -545,7 +612,7 @@ public class QuerySql
         }
     }
 
-    private const string ListAllAuthorsBooksSql = "SELECT authors.id, authors.name, authors.bio, books.id, books.name, books.author_id, books.description FROM authors JOIN books ON authors.id = books.author_id ORDER BY authors.name";
+    private const string ListAllAuthorsBooksSql = "SELECT authors.id, authors.name, authors.bio, authors.status, books.id, books.name, books.author_id, books.description FROM authors JOIN books ON authors.id = books.author_id ORDER BY authors.name";
     public readonly record struct ListAllAuthorsBooksRow(Author? Author, Book? Book);
     public async Task<List<ListAllAuthorsBooksRow>> ListAllAuthorsBooks()
     {
@@ -560,7 +627,7 @@ public class QuerySql
                     {
                         var result = new List<ListAllAuthorsBooksRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) }, Book = new Book { Id = reader.GetInt64(3), Name = reader.GetString(4), AuthorId = reader.GetInt64(5), Description = reader.IsDBNull(6) ? null : reader.GetString(6) } });
+                            result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3).ToAuthorsStatus() }, Book = new Book { Id = reader.GetInt64(4), Name = reader.GetString(5), AuthorId = reader.GetInt64(6), Description = reader.IsDBNull(7) ? null : reader.GetString(7) } });
                         return result;
                     }
                 }
@@ -577,13 +644,13 @@ public class QuerySql
             {
                 var result = new List<ListAllAuthorsBooksRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) }, Book = new Book { Id = reader.GetInt64(3), Name = reader.GetString(4), AuthorId = reader.GetInt64(5), Description = reader.IsDBNull(6) ? null : reader.GetString(6) } });
+                    result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3).ToAuthorsStatus() }, Book = new Book { Id = reader.GetInt64(4), Name = reader.GetString(5), AuthorId = reader.GetInt64(6), Description = reader.IsDBNull(7) ? null : reader.GetString(7) } });
                 return result;
             }
         }
     }
 
-    private const string GetDuplicateAuthorsSql = "SELECT authors1.id, authors1.name, authors1.bio, authors2.id, authors2.name, authors2.bio FROM authors authors1 JOIN authors authors2 ON authors1.name = authors2.name WHERE authors1.id < authors2.id";
+    private const string GetDuplicateAuthorsSql = "SELECT authors1.id, authors1.name, authors1.bio, authors1.status, authors2.id, authors2.name, authors2.bio, authors2.status FROM authors authors1 JOIN authors authors2 ON authors1.name = authors2.name WHERE authors1.id < authors2.id";
     public readonly record struct GetDuplicateAuthorsRow(Author? Author, Author? Author2);
     public async Task<List<GetDuplicateAuthorsRow>> GetDuplicateAuthors()
     {
@@ -598,7 +665,7 @@ public class QuerySql
                     {
                         var result = new List<GetDuplicateAuthorsRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) }, Author2 = new Author { Id = reader.GetInt64(3), Name = reader.GetString(4), Bio = reader.IsDBNull(5) ? null : reader.GetString(5) } });
+                            result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3).ToAuthorsStatus() }, Author2 = new Author { Id = reader.GetInt64(4), Name = reader.GetString(5), Bio = reader.IsDBNull(6) ? null : reader.GetString(6), Status = reader.GetString(7).ToAuthorsStatus() } });
                         return result;
                     }
                 }
@@ -615,14 +682,14 @@ public class QuerySql
             {
                 var result = new List<GetDuplicateAuthorsRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) }, Author2 = new Author { Id = reader.GetInt64(3), Name = reader.GetString(4), Bio = reader.IsDBNull(5) ? null : reader.GetString(5) } });
+                    result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3).ToAuthorsStatus() }, Author2 = new Author { Id = reader.GetInt64(4), Name = reader.GetString(5), Bio = reader.IsDBNull(6) ? null : reader.GetString(6), Status = reader.GetString(7).ToAuthorsStatus() } });
                 return result;
             }
         }
     }
 
-    private const string GetAuthorsByBookNameSql = "SELECT authors.id, authors.name, authors.bio, books.id, books.name, books.author_id, books.description FROM authors JOIN books ON authors.id = books.author_id WHERE books.name = @name";
-    public readonly record struct GetAuthorsByBookNameRow(long Id, string Name, string? Bio, Book? Book);
+    private const string GetAuthorsByBookNameSql = "SELECT authors.id, authors.name, authors.bio, authors.status, books.id, books.name, books.author_id, books.description FROM authors JOIN books ON authors.id = books.author_id WHERE books.name = @name";
+    public readonly record struct GetAuthorsByBookNameRow(long Id, string Name, string? Bio, AuthorsStatus Status, Book? Book);
     public readonly record struct GetAuthorsByBookNameArgs(string Name);
     public async Task<List<GetAuthorsByBookNameRow>> GetAuthorsByBookName(GetAuthorsByBookNameArgs args)
     {
@@ -638,7 +705,7 @@ public class QuerySql
                     {
                         var result = new List<GetAuthorsByBookNameRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Book = new Book { Id = reader.GetInt64(3), Name = reader.GetString(4), AuthorId = reader.GetInt64(5), Description = reader.IsDBNull(6) ? null : reader.GetString(6) } });
+                            result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3).ToAuthorsStatus(), Book = new Book { Id = reader.GetInt64(4), Name = reader.GetString(5), AuthorId = reader.GetInt64(6), Description = reader.IsDBNull(7) ? null : reader.GetString(7) } });
                         return result;
                     }
                 }
@@ -656,7 +723,7 @@ public class QuerySql
             {
                 var result = new List<GetAuthorsByBookNameRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Book = new Book { Id = reader.GetInt64(3), Name = reader.GetString(4), AuthorId = reader.GetInt64(5), Description = reader.IsDBNull(6) ? null : reader.GetString(6) } });
+                    result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3).ToAuthorsStatus(), Book = new Book { Id = reader.GetInt64(4), Name = reader.GetString(5), AuthorId = reader.GetInt64(6), Description = reader.IsDBNull(7) ? null : reader.GetString(7) } });
                 return result;
             }
         }
@@ -780,8 +847,8 @@ public class QuerySql
         }
     }
 
-    private const string GetAuthorsWithDuplicateParamsSql = "SELECT id, name, bio FROM authors WHERE (name = @author_name OR bio LIKE CONCAT('%', @author_name, '%')) AND (id > @min_id OR id < @min_id + 1000)";
-    public readonly record struct GetAuthorsWithDuplicateParamsRow(long Id, string Name, string? Bio);
+    private const string GetAuthorsWithDuplicateParamsSql = "SELECT id, name, bio, status FROM authors WHERE (name = @author_name OR bio LIKE CONCAT('%', @author_name, '%')) AND (id > @min_id OR id < @min_id + 1000)";
+    public readonly record struct GetAuthorsWithDuplicateParamsRow(long Id, string Name, string? Bio, AuthorsStatus Status);
     public readonly record struct GetAuthorsWithDuplicateParamsArgs(string? AuthorName, long? MinId);
     public async Task<List<GetAuthorsWithDuplicateParamsRow>> GetAuthorsWithDuplicateParams(GetAuthorsWithDuplicateParamsArgs args)
     {
@@ -798,7 +865,7 @@ public class QuerySql
                     {
                         var result = new List<GetAuthorsWithDuplicateParamsRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new GetAuthorsWithDuplicateParamsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) });
+                            result.Add(new GetAuthorsWithDuplicateParamsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3).ToAuthorsStatus() });
                         return result;
                     }
                 }
@@ -817,14 +884,14 @@ public class QuerySql
             {
                 var result = new List<GetAuthorsWithDuplicateParamsRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new GetAuthorsWithDuplicateParamsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) });
+                    result.Add(new GetAuthorsWithDuplicateParamsRow { Id = reader.GetInt64(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3).ToAuthorsStatus() });
                 return result;
             }
         }
     }
 
-    private const string GetAuthorWithTripleNameParamSql = "SELECT id, name, bio FROM authors WHERE name = @author_name OR bio LIKE CONCAT('%', @author_name, '%') OR CAST(id AS CHAR) LIKE CONCAT('%', @author_name, '%') LIMIT 1";
-    public readonly record struct GetAuthorWithTripleNameParamRow(long Id, string Name, string? Bio);
+    private const string GetAuthorWithTripleNameParamSql = "SELECT id, name, bio, status FROM authors WHERE name = @author_name OR bio LIKE CONCAT('%', @author_name, '%') OR CAST(id AS CHAR) LIKE CONCAT('%', @author_name, '%') LIMIT 1";
+    public readonly record struct GetAuthorWithTripleNameParamRow(long Id, string Name, string? Bio, AuthorsStatus Status);
     public readonly record struct GetAuthorWithTripleNameParamArgs(string? AuthorName);
     public async Task<GetAuthorWithTripleNameParamRow?> GetAuthorWithTripleNameParam(GetAuthorWithTripleNameParamArgs args)
     {
@@ -844,7 +911,8 @@ public class QuerySql
                             {
                                 Id = reader.GetInt64(0),
                                 Name = reader.GetString(1),
-                                Bio = reader.IsDBNull(2) ? null : reader.GetString(2)
+                                Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
+                                Status = reader.GetString(3).ToAuthorsStatus()
                             };
                         }
                     }
@@ -869,7 +937,8 @@ public class QuerySql
                     {
                         Id = reader.GetInt64(0),
                         Name = reader.GetString(1),
-                        Bio = reader.IsDBNull(2) ? null : reader.GetString(2)
+                        Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
+                        Status = reader.GetString(3).ToAuthorsStatus()
                     };
                 }
             }

@@ -10,6 +10,7 @@ public class Author
     public required int Id { get; init; }
     public required string Name { get; init; }
     public string? Bio { get; init; }
+    public required string Status { get; init; }
 };
 public class Book
 {

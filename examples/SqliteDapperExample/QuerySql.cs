@@ -40,12 +40,13 @@ public class QuerySql
     private SqliteTransaction? Transaction { get; }
     private string? ConnectionString { get; }
 
-    private const string GetAuthorSql = "SELECT id, name, bio FROM authors WHERE name = @name LIMIT 1";
+    private const string GetAuthorSql = "SELECT id, name, bio, status FROM authors WHERE name = @name LIMIT 1";
     public class GetAuthorRow
     {
         public required int Id { get; init; }
         public required string Name { get; init; }
         public string? Bio { get; init; }
+        public required string Status { get; init; }
     };
     public class GetAuthorArgs
     {
@@ -69,12 +70,82 @@ public class QuerySql
         return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetAuthorRow?>(GetAuthorSql, queryParams, transaction: this.Transaction);
     }
 
-    private const string ListAuthorsSql = "SELECT id, name, bio FROM authors ORDER BY name LIMIT @limit OFFSET @offset";
+    private const string GetAuthorEmbedSql = "SELECT authors.id, authors.name, authors.bio, authors.status FROM authors WHERE name = @name LIMIT 1";
+    public class GetAuthorEmbedRow
+    {
+        public required Author? Author { get; init; }
+    };
+    public class GetAuthorEmbedArgs
+    {
+        public required string Name { get; init; }
+    };
+    public async Task<GetAuthorEmbedRow?> GetAuthorEmbed(GetAuthorEmbedArgs args)
+    {
+        if (this.Transaction == null)
+        {
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                await connection.OpenAsync();
+                using (var command = new SqliteCommand(GetAuthorEmbedSql, connection))
+                {
+                    command.Parameters.AddWithValue("@name", args.Name);
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            return new GetAuthorEmbedRow
+                            {
+                                Author = new Author
+                                {
+                                    Id = reader.GetInt32(0),
+                                    Name = reader.GetString(1),
+                                    Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
+                                    Status = reader.GetString(3)
+                                }
+                            };
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        if (this.Transaction?.Connection == null || this.Transaction?.Connection.State != System.Data.ConnectionState.Open)
+            throw new InvalidOperationException("Transaction is provided, but its connection is null.");
+        using (var command = this.Transaction.Connection.CreateCommand())
+        {
+            command.CommandText = GetAuthorEmbedSql;
+            command.Transaction = this.Transaction;
+            command.Parameters.AddWithValue("@name", args.Name);
+            using (var reader = await command.ExecuteReaderAsync())
+            {
+                if (await reader.ReadAsync())
+                {
+                    return new GetAuthorEmbedRow
+                    {
+                        Author = new Author
+                        {
+                            Id = reader.GetInt32(0),
+                            Name = reader.GetString(1),
+                            Bio = reader.IsDBNull(2) ? null : reader.GetString(2),
+                            Status = reader.GetString(3)
+                        }
+                    };
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private const string ListAuthorsSql = "SELECT id, name, bio, status FROM authors ORDER BY name LIMIT @limit OFFSET @offset";
     public class ListAuthorsRow
     {
         public required int Id { get; init; }
         public required string Name { get; init; }
         public string? Bio { get; init; }
+        public required string Status { get; init; }
     };
     public class ListAuthorsArgs
     {
@@ -176,12 +247,13 @@ public class QuerySql
         return await this.Transaction.Connection.QuerySingleAsync<int>(CreateAuthorReturnIdSql, queryParams, transaction: this.Transaction);
     }
 
-    private const string GetAuthorByIdSql = "SELECT id, name, bio FROM authors WHERE id = @id LIMIT 1";
+    private const string GetAuthorByIdSql = "SELECT id, name, bio, status FROM authors WHERE id = @id LIMIT 1";
     public class GetAuthorByIdRow
     {
         public required int Id { get; init; }
         public required string Name { get; init; }
         public string? Bio { get; init; }
+        public required string Status { get; init; }
     };
     public class GetAuthorByIdArgs
     {
@@ -205,12 +277,13 @@ public class QuerySql
         return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetAuthorByIdRow?>(GetAuthorByIdSql, queryParams, transaction: this.Transaction);
     }
 
-    private const string GetAuthorByNamePatternSql = "SELECT id, name, bio FROM authors WHERE name LIKE COALESCE(@name_pattern, '%')";
+    private const string GetAuthorByNamePatternSql = "SELECT id, name, bio, status FROM authors WHERE name LIKE COALESCE(@name_pattern, '%')";
     public class GetAuthorByNamePatternRow
     {
         public required int Id { get; init; }
         public required string Name { get; init; }
         public string? Bio { get; init; }
+        public required string Status { get; init; }
     };
     public class GetAuthorByNamePatternArgs
     {
@@ -290,12 +363,13 @@ public class QuerySql
         return await this.Transaction.Connection.ExecuteAsync(UpdateAuthorsSql, queryParams, transaction: this.Transaction);
     }
 
-    private const string GetAuthorsByIdsSql = "SELECT id, name, bio FROM authors WHERE id IN (/*SLICE:ids*/@ids)";
+    private const string GetAuthorsByIdsSql = "SELECT id, name, bio, status FROM authors WHERE id IN (/*SLICE:ids*/@ids)";
     public class GetAuthorsByIdsRow
     {
         public required int Id { get; init; }
         public required string Name { get; init; }
         public string? Bio { get; init; }
+        public required string Status { get; init; }
     };
     public class GetAuthorsByIdsArgs
     {
@@ -322,12 +396,13 @@ public class QuerySql
         return (await this.Transaction.Connection.QueryAsync<GetAuthorsByIdsRow>(transformedSql, queryParams, transaction: this.Transaction)).AsList();
     }
 
-    private const string GetAuthorsByIdsAndNamesSql = "SELECT id, name, bio FROM authors WHERE id IN (/*SLICE:ids*/@ids) AND name IN (/*SLICE:names*/@names)";
+    private const string GetAuthorsByIdsAndNamesSql = "SELECT id, name, bio, status FROM authors WHERE id IN (/*SLICE:ids*/@ids) AND name IN (/*SLICE:names*/@names)";
     public class GetAuthorsByIdsAndNamesRow
     {
         public required int Id { get; init; }
         public required string Name { get; init; }
         public string? Bio { get; init; }
+        public required string Status { get; init; }
     };
     public class GetAuthorsByIdsAndNamesArgs
     {
@@ -384,7 +459,7 @@ public class QuerySql
         return await this.Transaction.Connection.QuerySingleAsync<int>(CreateBookSql, queryParams, transaction: this.Transaction);
     }
 
-    private const string ListAllAuthorsBooksSql = "SELECT authors.id, authors.name, authors.bio, books.id, books.name, books.author_id, books.description FROM authors JOIN books ON authors.id = books.author_id ORDER BY authors.name";
+    private const string ListAllAuthorsBooksSql = "SELECT authors.id, authors.name, authors.bio, authors.status, books.id, books.name, books.author_id, books.description FROM authors JOIN books ON authors.id = books.author_id ORDER BY authors.name";
     public class ListAllAuthorsBooksRow
     {
         public required Author? Author { get; init; }
@@ -403,7 +478,7 @@ public class QuerySql
                     {
                         var result = new List<ListAllAuthorsBooksRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) }, Book = new Book { Id = reader.GetInt32(3), Name = reader.GetString(4), AuthorId = reader.GetInt32(5), Description = reader.IsDBNull(6) ? null : reader.GetString(6) } });
+                            result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3) }, Book = new Book { Id = reader.GetInt32(4), Name = reader.GetString(5), AuthorId = reader.GetInt32(6), Description = reader.IsDBNull(7) ? null : reader.GetString(7) } });
                         return result;
                     }
                 }
@@ -420,13 +495,13 @@ public class QuerySql
             {
                 var result = new List<ListAllAuthorsBooksRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) }, Book = new Book { Id = reader.GetInt32(3), Name = reader.GetString(4), AuthorId = reader.GetInt32(5), Description = reader.IsDBNull(6) ? null : reader.GetString(6) } });
+                    result.Add(new ListAllAuthorsBooksRow { Author = new Author { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3) }, Book = new Book { Id = reader.GetInt32(4), Name = reader.GetString(5), AuthorId = reader.GetInt32(6), Description = reader.IsDBNull(7) ? null : reader.GetString(7) } });
                 return result;
             }
         }
     }
 
-    private const string GetDuplicateAuthorsSql = "SELECT authors1.id, authors1.name, authors1.bio, authors2.id, authors2.name, authors2.bio FROM authors authors1 JOIN authors authors2 ON authors1.name = authors2.name WHERE authors1.id < authors2.id";
+    private const string GetDuplicateAuthorsSql = "SELECT authors1.id, authors1.name, authors1.bio, authors1.status, authors2.id, authors2.name, authors2.bio, authors2.status FROM authors authors1 JOIN authors authors2 ON authors1.name = authors2.name WHERE authors1.id < authors2.id";
     public class GetDuplicateAuthorsRow
     {
         public required Author? Author { get; init; }
@@ -445,7 +520,7 @@ public class QuerySql
                     {
                         var result = new List<GetDuplicateAuthorsRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) }, Author2 = new Author { Id = reader.GetInt32(3), Name = reader.GetString(4), Bio = reader.IsDBNull(5) ? null : reader.GetString(5) } });
+                            result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3) }, Author2 = new Author { Id = reader.GetInt32(4), Name = reader.GetString(5), Bio = reader.IsDBNull(6) ? null : reader.GetString(6), Status = reader.GetString(7) } });
                         return result;
                     }
                 }
@@ -462,18 +537,19 @@ public class QuerySql
             {
                 var result = new List<GetDuplicateAuthorsRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2) }, Author2 = new Author { Id = reader.GetInt32(3), Name = reader.GetString(4), Bio = reader.IsDBNull(5) ? null : reader.GetString(5) } });
+                    result.Add(new GetDuplicateAuthorsRow { Author = new Author { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3) }, Author2 = new Author { Id = reader.GetInt32(4), Name = reader.GetString(5), Bio = reader.IsDBNull(6) ? null : reader.GetString(6), Status = reader.GetString(7) } });
                 return result;
             }
         }
     }
 
-    private const string GetAuthorsByBookNameSql = "SELECT authors.id, authors.name, authors.bio, books.id, books.name, books.author_id, books.description FROM authors JOIN books ON authors.id = books.author_id WHERE books.name = @name";
+    private const string GetAuthorsByBookNameSql = "SELECT authors.id, authors.name, authors.bio, authors.status, books.id, books.name, books.author_id, books.description FROM authors JOIN books ON authors.id = books.author_id WHERE books.name = @name";
     public class GetAuthorsByBookNameRow
     {
         public required int Id { get; init; }
         public required string Name { get; init; }
         public string? Bio { get; init; }
+        public required string Status { get; init; }
         public required Book? Book { get; init; }
     };
     public class GetAuthorsByBookNameArgs
@@ -494,7 +570,7 @@ public class QuerySql
                     {
                         var result = new List<GetAuthorsByBookNameRow>();
                         while (await reader.ReadAsync())
-                            result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Book = new Book { Id = reader.GetInt32(3), Name = reader.GetString(4), AuthorId = reader.GetInt32(5), Description = reader.IsDBNull(6) ? null : reader.GetString(6) } });
+                            result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3), Book = new Book { Id = reader.GetInt32(4), Name = reader.GetString(5), AuthorId = reader.GetInt32(6), Description = reader.IsDBNull(7) ? null : reader.GetString(7) } });
                         return result;
                     }
                 }
@@ -512,18 +588,19 @@ public class QuerySql
             {
                 var result = new List<GetAuthorsByBookNameRow>();
                 while (await reader.ReadAsync())
-                    result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Book = new Book { Id = reader.GetInt32(3), Name = reader.GetString(4), AuthorId = reader.GetInt32(5), Description = reader.IsDBNull(6) ? null : reader.GetString(6) } });
+                    result.Add(new GetAuthorsByBookNameRow { Id = reader.GetInt32(0), Name = reader.GetString(1), Bio = reader.IsDBNull(2) ? null : reader.GetString(2), Status = reader.GetString(3), Book = new Book { Id = reader.GetInt32(4), Name = reader.GetString(5), AuthorId = reader.GetInt32(6), Description = reader.IsDBNull(7) ? null : reader.GetString(7) } });
                 return result;
             }
         }
     }
 
-    private const string GetAuthorByIdWithMultipleNamedParamSql = "SELECT id, name, bio FROM authors WHERE id = @id_arg AND id = @id_arg LIMIT @take";
+    private const string GetAuthorByIdWithMultipleNamedParamSql = "SELECT id, name, bio, status FROM authors WHERE id = @id_arg AND id = @id_arg LIMIT @take";
     public class GetAuthorByIdWithMultipleNamedParamRow
     {
         public required int Id { get; init; }
         public required string Name { get; init; }
         public string? Bio { get; init; }
+        public required string Status { get; init; }
     };
     public class GetAuthorByIdWithMultipleNamedParamArgs
     {
@@ -549,12 +626,13 @@ public class QuerySql
         return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetAuthorByIdWithMultipleNamedParamRow?>(GetAuthorByIdWithMultipleNamedParamSql, queryParams, transaction: this.Transaction);
     }
 
-    private const string GetAuthorsWithDuplicateParamsSql = "SELECT id, name, bio FROM authors WHERE (name = @author_name OR bio LIKE '%' || @author_name || '%') AND (id > @min_id OR id < @min_id + 1000)";
+    private const string GetAuthorsWithDuplicateParamsSql = "SELECT id, name, bio, status FROM authors WHERE (name = @author_name OR bio LIKE '%' || @author_name || '%') AND (id > @min_id OR id < @min_id + 1000)";
     public class GetAuthorsWithDuplicateParamsRow
     {
         public required int Id { get; init; }
         public required string Name { get; init; }
         public string? Bio { get; init; }
+        public required string Status { get; init; }
     };
     public class GetAuthorsWithDuplicateParamsArgs
     {
@@ -580,12 +658,13 @@ public class QuerySql
         return (await this.Transaction.Connection.QueryAsync<GetAuthorsWithDuplicateParamsRow>(GetAuthorsWithDuplicateParamsSql, queryParams, transaction: this.Transaction)).AsList();
     }
 
-    private const string GetAuthorWithTripleNameParamSql = "SELECT id, name, bio FROM authors WHERE name = @author_name OR bio LIKE '%' || @author_name || '%' OR CAST(id AS TEXT) LIKE '%' || @author_name || '%' LIMIT 1";
+    private const string GetAuthorWithTripleNameParamSql = "SELECT id, name, bio, status FROM authors WHERE name = @author_name OR bio LIKE '%' || @author_name || '%' OR CAST(id AS TEXT) LIKE '%' || @author_name || '%' LIMIT 1";
     public class GetAuthorWithTripleNameParamRow
     {
         public required int Id { get; init; }
         public required string Name { get; init; }
         public string? Bio { get; init; }
+        public required string Status { get; init; }
     };
     public class GetAuthorWithTripleNameParamArgs
     {
@@ -609,12 +688,13 @@ public class QuerySql
         return await this.Transaction.Connection.QueryFirstOrDefaultAsync<GetAuthorWithTripleNameParamRow?>(GetAuthorWithTripleNameParamSql, queryParams, transaction: this.Transaction);
     }
 
-    private const string GetAuthorWithQuadrupleParamSql = "SELECT id, name, bio FROM authors WHERE name = @search_term OR bio LIKE '%' || @search_term || '%' OR CAST(id AS TEXT) = @search_term OR (LENGTH(@search_term) > 0 AND name IS NOT NULL) LIMIT 1";
+    private const string GetAuthorWithQuadrupleParamSql = "SELECT id, name, bio, status FROM authors WHERE name = @search_term OR bio LIKE '%' || @search_term || '%' OR CAST(id AS TEXT) = @search_term OR (LENGTH(@search_term) > 0 AND name IS NOT NULL) LIMIT 1";
     public class GetAuthorWithQuadrupleParamRow
     {
         public required int Id { get; init; }
         public required string Name { get; init; }
         public string? Bio { get; init; }
+        public required string Status { get; init; }
     };
     public class GetAuthorWithQuadrupleParamArgs
     {
