@@ -6,16 +6,13 @@
 </p>
 
 sqlc-gen-csharp is a .Net plugin for [sqlc](https://github.com/sqlc-dev/sqlc).<br/> It leverages the SQLC plugin system to generate type-safe C# code for SQL queries, supporting  PostgresSQL, MySQL & SQLite via the corresponding driver or suitable Dapper abstraction.
-
-This is the BONX fork for rapid improvements to be upstreamed once tested.
-
 ## Quickstart
 ```yaml
 version: "2"
 plugins:
 - name: csharp
   wasm:
-    url: https://github.com/DaredevilOSS/sqlc-gen-csharp/releases/download/v0.21.5-bonx/sqlc-gen-csharp.wasm
+    url: https://github.com/DaredevilOSS/sqlc-gen-csharp/releases/download/v0.26.0/sqlc-gen-csharp.wasm
     sha256: 0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5
 sql:
   # For PostgresSQL
@@ -401,7 +398,7 @@ pre-commit install
 SQLC protobuf are defined in sqlc-dev/sqlc repository.
 Generating C# code from protocol buffer files:
 ```
-make generate-protobuf
+make protobuf-generate
 ```
 
 ### Generating code
@@ -478,6 +475,8 @@ overrides:
   csharp_type:
     type: "Instant"
     notNull: false
+```
+
 </details>
 <details>
 <summary>NpgsqlDapper</summary>
@@ -490,108 +489,6 @@ useDapper: true
 targetFramework: net8.0
 generateCsproj: true
 namespaceName: NpgsqlDapperExampleGen
-overrides:
-- column: "GetPostgresFunctions:max_integer"
-  csharp_type:
-    type: "int"
-    notNull: false
-- column: "GetPostgresFunctions:max_varchar"
-  csharp_type:
-    type: "string"
-    notNull: false
-- column: "GetPostgresFunctions:max_timestamp"
-  csharp_type:
-    type: "DateTime"
-    notNull: true
-- column: "GetPostgresSpecialTypesCnt:c_json"
-  csharp_type:
-    type: "JsonElement"
-    notNull: false
-- column: "GetPostgresSpecialTypesCnt:c_jsonb"
-  csharp_type:
-    type: "JsonElement"
-    notNull: false
-- column: "*:c_json_string_override"
-  csharp_type:
-    type: "string"
-    notNull: false
-- column: "*:c_xml_string_override"
-  csharp_type:
-    type: "string"
-    notNull: false
-- column: "*:c_macaddr8"
-  csharp_type:
-    type: "string"
-    notNull: false
-- column: "*:c_timestamp_noda_instant_override"
-  csharp_type:
-    type: "Instant"
-    notNull: false
-```
-
-</details>
-<details>
-<summary>NpgsqlLegacy</summary>
-
-## Engine `postgresql`: [NpgsqlLegacyExample](examples/NpgsqlLegacyExample)
-### [Schema](examples/config/postgresql/authors/schema.sql) | [Queries](examples/config/postgresql/authors/query.sql) | [End2End Test](end2end/EndToEndTestsLegacy/NpgsqlTester.cs)
-### Config
-```yaml
-useDapper: false
-targetFramework: netstandard2.0
-generateCsproj: true
-namespaceName: NpgsqlLegacyExampleGen
-overrides:
-- column: "GetPostgresFunctions:max_integer"
-  csharp_type:
-    type: "int"
-    notNull: false
-- column: "GetPostgresFunctions:max_varchar"
-  csharp_type:
-    type: "string"
-    notNull: false
-- column: "GetPostgresFunctions:max_timestamp"
-  csharp_type:
-    type: "DateTime"
-    notNull: true
-- column: "GetPostgresSpecialTypesCnt:c_json"
-  csharp_type:
-    type: "JsonElement"
-    notNull: false
-- column: "GetPostgresSpecialTypesCnt:c_jsonb"
-  csharp_type:
-    type: "JsonElement"
-    notNull: false
-- column: "*:c_json_string_override"
-  csharp_type:
-    type: "string"
-    notNull: false
-- column: "*:c_xml_string_override"
-  csharp_type:
-    type: "string"
-    notNull: false
-- column: "*:c_macaddr8"
-  csharp_type:
-    type: "string"
-    notNull: false
-- column: "*:c_timestamp_noda_instant_override"
-  csharp_type:
-    type: "Instant"
-    notNull: false
-```
-
-</details>
-<details>
-<summary>NpgsqlDapperLegacy</summary>
-
-## Engine `postgresql`: [NpgsqlDapperLegacyExample](examples/NpgsqlDapperLegacyExample)
-### [Schema](examples/config/postgresql/authors/schema.sql) | [Queries](examples/config/postgresql/authors/query.sql) | [End2End Test](end2end/EndToEndTestsLegacy/NpgsqlDapperTester.cs)
-### Config
-```yaml
-useDapper: true
-targetFramework: netstandard2.0
-generateCsproj: true
-namespaceName: NpgsqlDapperLegacyExampleGen
 overrides:
 - column: "GetPostgresFunctions:max_integer"
   csharp_type:
@@ -703,76 +600,6 @@ overrides:
 
 </details>
 <details>
-<summary>MySqlConnectorLegacy</summary>
-
-## Engine `mysql`: [MySqlConnectorLegacyExample](examples/MySqlConnectorLegacyExample)
-### [Schema](examples/config/mysql/authors/schema.sql) | [Queries](examples/config/mysql/authors/query.sql) | [End2End Test](end2end/EndToEndTestsLegacy/MySqlConnectorTester.cs)
-### Config
-```yaml
-useDapper: false
-targetFramework: netstandard2.0
-generateCsproj: true
-namespaceName: MySqlConnectorLegacyExampleGen
-overrides:
-- column: "GetMysqlFunctions:max_int"
-  csharp_type:
-    type: "int"
-    notNull: false
-- column: "GetMysqlFunctions:max_varchar"
-  csharp_type:
-    type: "string"
-    notNull: false
-- column: "GetMysqlFunctions:max_timestamp"
-  csharp_type:
-    type: "DateTime"
-    notNull: true
-- column: "*:c_json_string_override"
-  csharp_type:
-    type: "string"
-    notNull: false
-- column: "*:c_timestamp_noda_instant_override"
-  csharp_type:
-    type: "Instant"
-    notNull: false
-```
-
-</details>
-<details>
-<summary>MySqlConnectorDapperLegacy</summary>
-
-## Engine `mysql`: [MySqlConnectorDapperLegacyExample](examples/MySqlConnectorDapperLegacyExample)
-### [Schema](examples/config/mysql/authors/schema.sql) | [Queries](examples/config/mysql/authors/query.sql) | [End2End Test](end2end/EndToEndTestsLegacy/MySqlConnectorDapperTester.cs)
-### Config
-```yaml
-useDapper: true
-targetFramework: netstandard2.0
-generateCsproj: true
-namespaceName: MySqlConnectorDapperLegacyExampleGen
-overrides:
-- column: "GetMysqlFunctions:max_int"
-  csharp_type:
-    type: "int"
-    notNull: false
-- column: "GetMysqlFunctions:max_varchar"
-  csharp_type:
-    type: "string"
-    notNull: false
-- column: "GetMysqlFunctions:max_timestamp"
-  csharp_type:
-    type: "DateTime"
-    notNull: true
-- column: "*:c_json_string_override"
-  csharp_type:
-    type: "string"
-    notNull: false
-- column: "*:c_timestamp_noda_instant_override"
-  csharp_type:
-    type: "Instant"
-    notNull: false
-```
-
-</details>
-<details>
 <summary>Sqlite</summary>
 
 ## Engine `sqlite`: [SqliteExample](examples/SqliteExample)
@@ -825,90 +652,6 @@ useDapper: true
 targetFramework: net8.0
 generateCsproj: true
 namespaceName: SqliteDapperExampleGen
-overrides:
-- column: "GetSqliteFunctions:max_integer"
-  csharp_type:
-    type: "int"
-- column: "GetSqliteFunctions:max_varchar"
-  csharp_type:
-    type: "string"
-- column: "GetSqliteFunctions:max_real"
-  csharp_type:
-    type: "decimal"
-- column: "*:c_text_datetime_override"
-  csharp_type:
-    type: "DateTime"
-- column: "*:c_integer_datetime_override"
-  csharp_type:
-    type: "DateTime"
-- column: "*:c_text_bool_override"
-  csharp_type:
-    type: "bool"
-- column: "*:c_integer_bool_override"
-  csharp_type:
-    type: "bool"
-- column: "*:c_text_noda_instant_override"
-  csharp_type:
-    type: "Instant"
-- column: "*:c_integer_noda_instant_override"
-  csharp_type:
-    type: "Instant"
-```
-
-</details>
-<details>
-<summary>SqliteLegacy</summary>
-
-## Engine `sqlite`: [SqliteLegacyExample](examples/SqliteLegacyExample)
-### [Schema](examples/config/sqlite/authors/schema.sql) | [Queries](examples/config/sqlite/authors/query.sql) | [End2End Test](end2end/EndToEndTestsLegacy/SqliteTester.cs)
-### Config
-```yaml
-useDapper: false
-targetFramework: netstandard2.0
-generateCsproj: true
-namespaceName: SqliteLegacyExampleGen
-overrides:
-- column: "GetSqliteFunctions:max_integer"
-  csharp_type:
-    type: "int"
-- column: "GetSqliteFunctions:max_varchar"
-  csharp_type:
-    type: "string"
-- column: "GetSqliteFunctions:max_real"
-  csharp_type:
-    type: "decimal"
-- column: "*:c_text_datetime_override"
-  csharp_type:
-    type: "DateTime"
-- column: "*:c_integer_datetime_override"
-  csharp_type:
-    type: "DateTime"
-- column: "*:c_text_bool_override"
-  csharp_type:
-    type: "bool"
-- column: "*:c_integer_bool_override"
-  csharp_type:
-    type: "bool"
-- column: "*:c_text_noda_instant_override"
-  csharp_type:
-    type: "Instant"
-- column: "*:c_integer_noda_instant_override"
-  csharp_type:
-    type: "Instant"
-```
-
-</details>
-<details>
-<summary>SqliteDapperLegacy</summary>
-
-## Engine `sqlite`: [SqliteDapperLegacyExample](examples/SqliteDapperLegacyExample)
-### [Schema](examples/config/sqlite/authors/schema.sql) | [Queries](examples/config/sqlite/authors/query.sql) | [End2End Test](end2end/EndToEndTestsLegacy/SqliteDapperTester.cs)
-### Config
-```yaml
-useDapper: true
-targetFramework: netstandard2.0
-generateCsproj: true
-namespaceName: SqliteDapperLegacyExampleGen
 overrides:
 - column: "GetSqliteFunctions:max_integer"
   csharp_type:
